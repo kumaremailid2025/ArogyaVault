@@ -8,7 +8,6 @@ import { Button } from "@/core/ui/button";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
-import { ContentTabs } from "@/components/app/content-tabs";
 
 export const metadata: Metadata = { title: "Profile & Settings | ArogyaVault" };
 
@@ -27,10 +26,7 @@ const NOTIFICATIONS = [
 
 export default function ProfilePage() {
   return (
-    <div className="p-5 lg:p-6 space-y-6 max-w-2xl">
-
-      {/* Content tabs */}
-      <ContentTabs active="settings" />
+    <div className="h-full overflow-y-auto"><div className="p-5 lg:p-7 space-y-6 max-w-2xl">
 
       {/* Profile card */}
       <div className="rounded-xl border border-border bg-background p-5 flex items-center gap-4">
@@ -150,7 +146,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-    </div>
+    </div></div>
   );
 }
 

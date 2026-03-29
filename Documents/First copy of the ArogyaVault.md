@@ -9,6 +9,22 @@ You need these set up before writing a single line of code.
 **GitHub** — one repo for the monorepo. **AWS Account** — all infrastructure lives here: Cognito (auth), RDS PostgreSQL (database), S3 (file storage), SNS (SMS OTP + push notifications), EC2/ECS (backend hosting), CloudFront (CDN). **OpenAI** — API key for GPT-4o. **Vercel** — web deployment, connects directly to GitHub. **Android Studio** — Flutter mobile development and Android emulator. **Sentry** — error tracking.
 
 ---
+## Git setup
+**New Project**
+1. echo "# ArogyaVault" >> README.md
+2. git init
+3. git add README.md
+4. git commit -m "first commit"
+5. git branch -M main
+5. git remote add origin https://github.com/kumaremailid2025/ArogyaVault.git
+6. git push -u origin main
+
+**Existing Project**
+1. git remote add origin https://github.com/kumaremailid2025/ArogyaVault.git
+2. git branch -M main
+3. git push -u origin main
+
+---
 
 ## ArogyaVault App Overview
 
