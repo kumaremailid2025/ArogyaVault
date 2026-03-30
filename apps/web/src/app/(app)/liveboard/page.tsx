@@ -361,6 +361,20 @@ function generateRephrasings(text: string): [string, string] {
   return [r1, r2];
 }
 
+const VOICE_LANGUAGES = [
+  { code: "en-IN", label: "English (India)",      native: "English"      },
+  { code: "hi-IN", label: "Hindi",                native: "हिन्दी"        },
+  { code: "te-IN", label: "Telugu",               native: "తెలుగు"       },
+  { code: "ta-IN", label: "Tamil",                native: "தமிழ்"        },
+  { code: "kn-IN", label: "Kannada",              native: "ಕನ್ನಡ"        },
+  { code: "ml-IN", label: "Malayalam",            native: "മലയാളം"       },
+  { code: "mr-IN", label: "Marathi",              native: "मराठी"        },
+  { code: "bn-IN", label: "Bengali",              native: "বাংলা"        },
+  { code: "gu-IN", label: "Gujarati",             native: "ગુજરાતી"      },
+  { code: "pa-IN", label: "Punjabi",              native: "ਪੰਜਾਬੀ"       },
+  { code: "ur-IN", label: "Urdu",                 native: "اردو"         },
+];
+
 function ArogyaTalkContent() {
   type PanelState =
     | { view: "analytics" }
@@ -372,16 +386,32 @@ function ArogyaTalkContent() {
   const [replyText, setReplyText] = React.useState("");
   const [replyTab, setReplyTab] = React.useState<"text" | "voice">("text");
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
+  const [voiceState, setVoiceState] = React.useState<"idle" | "recording" | "translating" | "done">("idle");
+  const [voiceLang, setVoiceLang] = React.useState("en-IN");
+  const [liveTranscript, setLiveTranscript] = React.useState("");
+  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
+  /** Stores the native-language transcript + lang code after voice recording */
+  const [voiceRecording, setVoiceRecording] = React.useState<{ lang: string; original: string } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = React.useRef<any>(null);
+  const finalTranscriptRef = React.useRef("");
+  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const activePostId = panel.view !== "analytics" ? panel.postId : null;
   const activePost = activePostId !== null
     ? COMMUNITY_POSTS.find((p) => p.id === activePostId) ?? null
+    : null;
+  /** True when we have a non-English voice recording to display alongside the translation */
+  const hasNativeTranscript = voiceRecording !== null && !voiceRecording.lang.startsWith("en");
+  const voiceLangInfo = hasNativeTranscript
+    ? (VOICE_LANGUAGES.find((l) => l.code === voiceRecording!.lang) ?? null)
     : null;
 
   function openReplies(postId: number) {
     setPanel({ view: "replies", postId });
     setReplyText("");
     setReplyTab("text");
+    setVoiceRecording(null);
   }
 
   function openSummary(postId: number) {
@@ -391,6 +421,7 @@ function ArogyaTalkContent() {
   function closePanel() {
     setPanel({ view: "analytics" });
     setReplyText("");
+    setVoiceRecording(null);
   }
 
   function handlePreviewSend() {
@@ -406,6 +437,101 @@ function ArogyaTalkContent() {
     setReplyText(original);
     setPanel({ view: "replies", postId });
   }
+
+  /* ── Voice recording ── */
+  function stopVoiceTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+
+  function stopVoiceRecording() {
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
+    stopVoiceTimer();
+  }
+
+  function formatSeconds(s: number) {
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
+  function startVoiceRecording() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      alert("Voice recording requires Chrome or Edge. Please type your reply instead.");
+      return;
+    }
+    finalTranscriptRef.current = "";
+    setLiveTranscript("");
+    setRecordingSeconds(0);
+    setVoiceState("recording");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition: any = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = voiceLang;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += event.results[i][0].transcript + " ";
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setLiveTranscript((finalTranscriptRef.current + interim).trim());
+    };
+
+    recognition.onend = () => {
+      stopVoiceTimer();
+      const text = finalTranscriptRef.current.trim();
+      if (!text) { setVoiceState("idle"); return; }
+
+      const isEnglish = voiceLang === "en-IN" || voiceLang.startsWith("en");
+
+      if (isEnglish) {
+        // No translation needed — go straight to done
+        setVoiceRecording(null);
+        setReplyText(text);
+        setVoiceState("done");
+        setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
+      } else {
+        // Store original native-language transcript so we can show it alongside the translation
+        setVoiceRecording({ lang: voiceLang, original: text });
+        setVoiceState("translating");
+        (async () => {
+          try {
+            const res = await fetch(
+              `/api/translate?text=${encodeURIComponent(text)}&from=${encodeURIComponent(voiceLang)}`
+            );
+            const data = await res.json() as { translated: string; original: string };
+            setReplyText(data.translated || text);
+          } catch {
+            setReplyText(text); // graceful fallback: use original transcript
+          }
+          setVoiceState("done");
+          setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
+        })();
+      }
+    };
+
+    recognition.onerror = () => { stopVoiceTimer(); setVoiceState("idle"); };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    timerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
+  }
+
+  /* Stop recording on unmount */
+  React.useEffect(() => {
+    return () => { stopVoiceRecording(); }; // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Stop recording when user navigates away from the replies panel */
+  React.useEffect(() => {
+    if (panel.view !== "replies") { stopVoiceRecording(); setVoiceState("idle"); }
+  }, [panel.view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -750,6 +876,22 @@ function ArogyaTalkContent() {
                       rows={3}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
                     />
+
+                    {/* Original native-language transcript reference */}
+                    {hasNativeTranscript && voiceRecording && (
+                      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <MicIcon className="size-3 text-muted-foreground/60" />
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {voiceLangInfo?.native ?? voiceRecording.lang} · Original
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground/80 leading-relaxed italic">
+                          {voiceRecording.original}
+                        </p>
+                      </div>
+                    )}
+
                     <Button
                       size="sm"
                       className="w-full"
@@ -760,16 +902,125 @@ function ArogyaTalkContent() {
                     </Button>
                   </>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-center">
-                    <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 mx-auto mb-2">
-                      <MicIcon className="size-4 text-primary" />
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-snug">
-                      Tap to record your voice reply. ArogyaAI will transcribe and format it for you.
-                    </p>
-                    <Button size="sm" variant="outline" className="mt-2.5 text-xs border-primary/30 text-primary">
-                      Start Recording
-                    </Button>
+                  <div className="space-y-2.5">
+
+                    {/* ── IDLE ── */}
+                    {voiceState === "idle" && (
+                      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-3">
+                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto">
+                          <MicIcon className="size-5 text-primary" />
+                        </div>
+
+                        {/* Language picker */}
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                            Speak in
+                          </label>
+                          <select
+                            value={voiceLang}
+                            onChange={(e) => setVoiceLang(e.target.value)}
+                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                          >
+                            {VOICE_LANGUAGES.map((l) => (
+                              <option key={l.code} value={l.code}>
+                                {l.native}  —  {l.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <p className="text-[11px] text-muted-foreground leading-snug text-center">
+                          ArogyaAI will transcribe your speech live as you speak.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs border-primary/30 text-primary"
+                          onClick={startVoiceRecording}
+                        >
+                          Start Recording
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* ── RECORDING ── */}
+                    {voiceState === "recording" && (
+                      <div className="space-y-2.5">
+                        {/* Pulsing mic + timer */}
+                        <div className="flex flex-col items-center gap-2 py-2">
+                          <div className="relative">
+                            <div className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                            <div className="relative flex size-12 items-center justify-center rounded-full bg-red-500 shadow-md">
+                              <MicIcon className="size-5 text-white" />
+                            </div>
+                          </div>
+                          <span className="text-sm font-mono font-bold text-red-500 tabular-nums">
+                            {formatSeconds(recordingSeconds)}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-muted-foreground">Listening in</span>
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Live transcript preview */}
+                        <div className="rounded-lg border border-border bg-background px-3 py-2.5 min-h-[60px] flex items-start">
+                          {liveTranscript ? (
+                            <p className="text-xs leading-relaxed text-foreground/70 italic">{liveTranscript}</p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground/50 italic m-auto self-center w-full text-center">
+                              Start speaking…
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-full text-xs"
+                          onClick={stopVoiceRecording}
+                        >
+                          Stop Recording
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* ── TRANSLATING ── */}
+                    {voiceState === "translating" && (
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-2">
+                        {/* Spinning sparkles icon */}
+                        <div
+                          className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto animate-spin"
+                          style={{ animationDuration: "1.8s" }}
+                        >
+                          <SparklesIcon className="size-5 text-primary" />
+                        </div>
+                        <p className="text-xs font-semibold text-primary">Translating to English…</p>
+                        {/* Show source → target */}
+                        <p className="text-[11px] text-muted-foreground">
+                          {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}
+                          {" → "}
+                          <span className="font-medium text-foreground/70">English</span>
+                        </p>
+                        {/* Original transcript preview */}
+                        {liveTranscript && (
+                          <p className="text-[11px] text-muted-foreground/60 italic leading-snug line-clamp-3 pt-1 border-t border-border/50">
+                            {liveTranscript}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── DONE — briefly shown before auto-switch to text tab ── */}
+                    {voiceState === "done" && (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 text-center">
+                        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-2">
+                          <span className="text-emerald-600 text-lg font-bold leading-none">✓</span>
+                        </div>
+                        <p className="text-xs font-semibold text-emerald-700">Transcribed successfully!</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Opening text editor…</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -792,9 +1043,11 @@ function ArogyaTalkContent() {
                 </button>
               </div>
 
-              {/* Original */}
+              {/* Your reply — English (translated if voice was in another language) */}
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Your reply</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  {hasNativeTranscript ? "Your reply · English (Translated)" : "Your reply"}
+                </p>
                 <button
                   onClick={() => setSelectedVersion(0)}
                   className={cn(
@@ -810,6 +1063,27 @@ function ArogyaTalkContent() {
                   )}
                 </button>
               </div>
+
+              {/* Original native-language recording — shown only when voice was non-English */}
+              {hasNativeTranscript && voiceRecording && (
+                <div>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <MicIcon className="size-3" />
+                    {voiceLangInfo?.native ?? voiceRecording.lang} · Recorded
+                  </p>
+                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {voiceLangInfo?.label ?? voiceRecording.lang}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">→ Translated to English above</span>
+                    </div>
+                    <p className="text-xs text-foreground/80 leading-relaxed">
+                      {voiceRecording.original}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* AI Rephrasings */}
               <div>
