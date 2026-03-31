@@ -1,0 +1,150 @@
+"use client";
+import * as React from "react";
+import type { VoiceState, VoiceRecording } from "@/models/user";
+
+export type { VoiceState, VoiceRecording };
+
+export interface UseVoiceRecorderReturn {
+  voiceState: VoiceState;
+  liveTranscript: string;
+  recordingSeconds: number;
+  voiceRecording: VoiceRecording | null;
+  formatSeconds: (s: number) => string;
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  reset: () => void;
+}
+
+/**
+ * Encapsulates all Web Speech API logic for voice input.
+ *
+ * - Uses window.SpeechRecognition / webkitSpeechRecognition
+ * - Translates non-English transcripts via /api/translate
+ * - Cleans up recognition and timer on unmount
+ *
+ * @param lang  BCP-47 language code, e.g. "en-IN", "hi-IN"
+ */
+export function useVoiceRecorder(lang: string): UseVoiceRecorderReturn {
+  const [voiceState, setVoiceState]             = React.useState<VoiceState>("idle");
+  const [liveTranscript, setLiveTranscript]     = React.useState("");
+  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
+  const [voiceRecording, setVoiceRecording]     = React.useState<VoiceRecording | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef     = React.useRef<any>(null);
+  const finalTranscriptRef = React.useRef("");
+  const timerRef           = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* Cleanup on unmount */
+  React.useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      stopTimer();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function formatSeconds(s: number): string {
+    return `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  }
+
+  function stopTimer() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function stopRecording() {
+    recognitionRef.current?.stop();
+    stopTimer();
+    setVoiceState("idle");
+    setLiveTranscript("");
+    setRecordingSeconds(0);
+    finalTranscriptRef.current = "";
+  }
+
+  function reset() {
+    stopRecording();
+    setVoiceRecording(null);
+  }
+
+  async function startRecording() {
+    const SpeechRecognition =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Voice input is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    finalTranscriptRef.current = "";
+    setLiveTranscript("");
+    setVoiceState("recording");
+    setRecordingSeconds(0);
+    setVoiceRecording(null);
+
+    timerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous     = true;
+    recognition.interimResults = true;
+    recognition.lang           = lang;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalTranscriptRef.current += t + " ";
+        } else {
+          interim = t;
+        }
+      }
+      setLiveTranscript(finalTranscriptRef.current + interim);
+    };
+
+    recognition.onend = async () => {
+      stopTimer();
+      const raw = finalTranscriptRef.current.trim();
+      if (!raw) { setVoiceState("idle"); return; }
+
+      if (!lang.startsWith("en")) {
+        setVoiceState("translating");
+        try {
+          const res  = await fetch(`/api/translate?text=${encodeURIComponent(raw)}&from=${lang}`);
+          const data = await res.json() as { translated: string; original: string };
+          setVoiceRecording({ lang, original: raw });
+          setLiveTranscript(data.translated);
+        } catch {
+          setVoiceRecording({ lang, original: raw });
+          setLiveTranscript(raw);
+        }
+      } else {
+        setVoiceRecording({ lang, original: raw });
+        setLiveTranscript(raw);
+      }
+      setVoiceState("done");
+    };
+
+    recognition.onerror = () => {
+      stopTimer();
+      setVoiceState("idle");
+    };
+
+    recognition.start();
+  }
+
+  return {
+    voiceState,
+    liveTranscript,
+    recordingSeconds,
+    voiceRecording,
+    formatSeconds,
+    startRecording,
+    stopRecording,
+    reset,
+  };
+}

@@ -7,6 +7,7 @@ import {
   VaultIcon,
   BotIcon,
   MessageCircleIcon,
+  GraduationCapIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,12 @@ const SYSTEM_GROUPS = [
     name: "ArogyaTalk",
     sub: "Community discussions",
     icon: MessageCircleIcon,
+  },
+  {
+    id: "learn",
+    name: "ArogyaLearn",
+    sub: "Evidence-based knowledge",
+    icon: GraduationCapIcon,
   },
 ];
 
