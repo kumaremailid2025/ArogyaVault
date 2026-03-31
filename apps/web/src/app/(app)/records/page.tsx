@@ -150,18 +150,18 @@ export default function RecordsPage() {
 
           <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border">
             {CATEGORIES.map((cat) => (
-              <button
+              <Button
                 key={cat.key}
+                variant={cat.key === "all" ? "default" : "outline"}
+                size="sm"
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors border",
-                  cat.key === "all"
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  "rounded-full h-auto px-3 py-1.5 text-sm font-medium whitespace-nowrap",
+                  cat.key !== "all" && "text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 )}
               >
                 <cat.icon className="size-3.5 shrink-0" />
                 {cat.label}
-              </button>
+              </Button>
             ))}
           </div>
 

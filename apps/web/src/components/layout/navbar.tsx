@@ -66,13 +66,15 @@ export function Navbar() {
 
           {/* Desktop right actions */}
           <Row gap="sm" className="hidden lg:flex">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              className="text-muted-foreground hover:border-primary hover:text-primary"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-            </button>
+            </Button>
             <Button asChild size="sm">
               <Link href="/sign-in">Sign In</Link>
             </Button>
@@ -80,18 +82,20 @@ export function Navbar() {
 
           {/* Mobile hamburger */}
           <Row gap="sm" className="lg:hidden">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground"
+              className="text-muted-foreground"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-            </button>
+            </Button>
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <button className="flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground" aria-label="Open menu">
+                <Button variant="outline" size="icon" aria-label="Open menu">
                   <MenuIcon className="size-5" />
-                </button>
+                </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 p-0">
                 <div className="flex flex-col h-full">

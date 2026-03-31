@@ -9,6 +9,7 @@ import {
   LoaderIcon,
 } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
+import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { SmartInput } from "@/components/shared/smart-input";
 import {
@@ -186,14 +187,16 @@ export default function AskAiPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {SUGGESTED_QUESTIONS.map((q) => (
-                <button
+                <Button
                   key={q}
+                  variant="outline"
+                  size="sm"
                   onClick={() => addToConversation(q)}
                   disabled={isTyping}
-                  className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded-full border-border h-auto px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
                 >
                   {q}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

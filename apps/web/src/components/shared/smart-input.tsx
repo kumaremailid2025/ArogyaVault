@@ -32,6 +32,12 @@ import {
   StopCircleIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
+import { Input } from "@/core/ui/input";
+import { Textarea } from "@/core/ui/textarea";
+import {
+  Select, SelectTrigger, SelectValue,
+  SelectContent, SelectItem,
+} from "@/core/ui/select";
 import { cn } from "@/lib/utils";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import { useFileAttach } from "@/hooks/use-file-attach";
@@ -161,7 +167,7 @@ export function SmartInput({
       {/* ── TEXT MODE ────────────────────────────────────────────── */}
       {mode === "text" && (
         <div className="px-3 pt-3 pb-1">
-          <textarea
+          <Textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => {
@@ -173,7 +179,7 @@ export function SmartInput({
             autoFocus={autoFocus}
             rows={1}
             aria-label="Message input"
-            className="w-full bg-transparent text-sm resize-none outline-none placeholder:text-muted-foreground/60 leading-[22px]"
+            className="w-full bg-transparent text-sm resize-none border-0 shadow-none outline-none min-h-0 p-0 placeholder:text-muted-foreground/60 leading-[22px] focus-visible:ring-0"
             style={{ overflowY: "hidden", minHeight: `${LINE_HEIGHT_PX}px` }}
           />
         </div>
@@ -183,41 +189,46 @@ export function SmartInput({
       {mode === "voice" && (
         <div className="p-3 space-y-2">
           {/* Language selector */}
-          <select
+          <Select
             value={voiceLang}
-            onChange={(e) => setVoiceLang(e.target.value)}
+            onValueChange={setVoiceLang}
             disabled={voice.voiceState === "recording"}
-            aria-label="Recording language"
-            className="w-full rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-xs outline-none focus:border-primary transition-colors"
           >
-            {VOICE_LANGUAGES.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.label} — {l.native}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger size="sm" className="w-full text-xs" aria-label="Recording language">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VOICE_LANGUAGES.map((l) => (
+                <SelectItem key={l.code} value={l.code} className="text-xs">
+                  {l.label} — {l.native}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Record / Stop button */}
           {voice.voiceState === "idle" || voice.voiceState === "done" ? (
-            <button
+            <Button
+              variant="outline"
               onClick={voice.startRecording}
               aria-label="Start recording"
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+              className="w-full h-auto flex items-center justify-center gap-2 rounded-lg border-dashed py-3 text-sm font-medium text-muted-foreground hover:border-primary/40 hover:text-primary"
             >
               <MicIcon className="size-4" />
               {voice.voiceState === "done" ? "Record again" : "Tap to record"}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="ghost"
               onClick={voice.stopRecording}
               aria-label="Stop recording"
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 py-3 text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30 transition-colors"
+              className="w-full h-auto flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 py-3 text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
             >
               <span className="size-2 rounded-full bg-red-500 animate-ping inline-block" />
               {voice.voiceState === "translating"
                 ? "Translating…"
                 : `Recording ${voice.formatSeconds(voice.recordingSeconds)} — tap to stop`}
-            </button>
+            </Button>
           )}
 
           {/* Live transcript */}
@@ -272,7 +283,7 @@ export function SmartInput({
               </p>
 
               {/* Hidden file inputs */}
-              <input
+              <Input
                 ref={imageInputRef}
                 type="file"
                 accept="image/*"
@@ -283,7 +294,7 @@ export function SmartInput({
                   e.target.value = "";
                 }}
               />
-              <input
+              <Input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*,.pdf,.doc,.docx,.txt"
@@ -305,22 +316,24 @@ export function SmartInput({
                 <div className="rounded-lg border border-border bg-muted/30 p-2.5 flex items-center gap-2">
                   <ImageIcon className="size-4 text-muted-foreground shrink-0" />
                   <span className="flex-1 text-xs truncate">{s.file.name}</span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={attach.resetAttach}
                     aria-label="Remove file"
                     className="text-muted-foreground hover:text-foreground shrink-0"
                   >
                     <XIcon className="size-3.5" />
-                  </button>
+                  </Button>
                 </div>
-                <input
+                <Input
                   type="text"
                   value={s.caption}
                   onChange={(e) =>
                     attach.setAttachState({ ...s, caption: e.target.value })
                   }
                   placeholder="Add a caption (optional)…"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary transition-colors"
+                  className="w-full h-8 text-xs"
                 />
                 <Button
                   size="sm"
@@ -391,13 +404,15 @@ export function SmartInput({
           <span className="text-[10px] font-medium text-primary flex-1 truncate">
             {attach.attachedDoc.filename}
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => attach.setAttachedDoc(null)}
             aria-label="Remove attachment"
             className="text-muted-foreground hover:text-foreground shrink-0"
           >
             <XIcon className="size-3" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -411,21 +426,23 @@ export function SmartInput({
         {/* Mode switcher */}
         <div className="flex items-center gap-0.5 flex-1">
           {modes.map((m) => (
-            <button
+            <Button
               key={m}
+              variant="ghost"
+              size="icon-sm"
               onClick={() => switchMode(m)}
               title={MODE_META[m].label}
               aria-label={`Switch to ${MODE_META[m].label} input`}
               aria-pressed={mode === m}
               className={cn(
-                "flex items-center justify-center rounded-md p-1.5 transition-colors",
+                "rounded-md",
                 mode === m
-                  ? "text-primary bg-primary/10"
+                  ? "text-primary bg-primary/10 hover:bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
               {MODE_META[m].icon}
-            </button>
+            </Button>
           ))}
         </div>
 

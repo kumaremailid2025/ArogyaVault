@@ -2,6 +2,7 @@
 import * as React from "react";
 import { BrainCircuitIcon, SparklesIcon, FileTextIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
+import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { AI_MESSAGES, AI_FEATURES, AI_SUGGESTIONS } from "@/data/dashboard-data";
 
@@ -27,11 +28,15 @@ export function ArogyaAIContent() {
       {/* Feature cards */}
       <div className="grid grid-cols-2 gap-3">
         {AI_FEATURES.map((f) => (
-          <button key={f.label} className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-left hover:border-primary/40 hover:bg-primary/10 transition-colors">
+          <Button
+            key={f.label}
+            variant="ghost"
+            className="rounded-xl border border-primary/20 bg-primary/5 p-3 h-auto text-left flex-col items-start hover:border-primary/40 hover:bg-primary/10"
+          >
             <f.icon className="size-4 text-primary mb-1.5" />
             <p className="text-sm font-semibold">{f.label}</p>
             <p className="text-xs text-muted-foreground leading-snug mt-0.5">{f.desc}</p>
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -72,13 +77,15 @@ export function ArogyaAIContent() {
         </p>
         <div className="flex flex-wrap gap-2">
           {AI_SUGGESTIONS.map((q) => (
-            <button
+            <Button
               key={q}
+              variant="outline"
+              size="sm"
               onClick={() => setQuery(q)}
-              className="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary hover:border-primary hover:bg-primary/5 transition-colors"
+              className="rounded-full border-primary/30 h-auto px-3 py-1 text-xs text-primary hover:border-primary hover:bg-primary/5"
             >
               {q}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

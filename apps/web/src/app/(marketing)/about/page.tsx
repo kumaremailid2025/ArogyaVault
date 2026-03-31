@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
 import { CtaSection } from "@/components/sections/cta-section";
@@ -302,9 +303,9 @@ export default function AboutPage() {
                 </Stack>
                 <Text className="text-sm text-muted-foreground">
                   Reach out at{" "}
-                  <a href="mailto:careers@arogyavault.in" className="text-primary underline underline-offset-4">
+                  <Link href="mailto:careers@arogyavault.in" className="text-primary underline underline-offset-4">
                     careers@arogyavault.in
-                  </a>
+                  </Link>
                 </Text>
               </Stack>
             </Surface>

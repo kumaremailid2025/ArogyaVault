@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
   AlertTriangleIcon, UploadCloudIcon, UsersIcon, SparklesIcon, CheckIcon,
+  VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import {
@@ -16,13 +17,28 @@ import {
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Badge } from "@/core/ui/badge";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
   () => import("@/components/app/invite-modal").then((m) => ({ default: m.InviteModal })),
   { ssr: false, loading: () => null }
 );
-import { cn } from "@/lib/utils";
+
+/* ── Top-nav items ───────────────────────────────────────────────── */
+const TOP_NAV = [
+  { id: "yours",     label: "My Vault",    href: "/liveboard?g=yours",     icon: VaultIcon },
+  { id: "community", label: "Community",   href: "/liveboard?g=community", icon: MessageCircleIcon },
+  { id: "arogyaai",  label: "ArogyaAI",    href: "/ask-ai",                icon: BotIcon },
+  { id: "learn",     label: "ArogyaLearn", href: "/liveboard?g=learn",     icon: GraduationCapIcon },
+] as const;
+
+/* ── Groups available for targeted invites ───────────────────────── */
+const INVITE_GROUPS = [
+  { id: "ravi",   name: "Ravi Kumar" },
+  { id: "sharma", name: "Dr. Sharma's Clinic" },
+  { id: "priya",  name: "Priya Singh" },
+];
 
 /* ── Dummy notifications ─────────────────────────────────────────── */
 type Notif = {
@@ -75,13 +91,34 @@ const INITIAL_NOTIFICATIONS: Notif[] = [
 ];
 
 export function AppHeader() {
-  const router = useRouter();
-  const [inviteOpen, setInviteOpen] = React.useState(false);
-  const [notifOpen, setNotifOpen] = React.useState(false);
+  const router       = useRouter();
+  const pathname     = usePathname();
+  const searchParams = useSearchParams();
+  const activeG      = searchParams.get("g") ?? "";
+
+  const [inviteOpen,    setInviteOpen]    = React.useState(false);
+  const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);
+  const [notifOpen,     setNotifOpen]     = React.useState(false);
   const [notifications, setNotifications] = React.useState(INITIAL_NOTIFICATIONS);
   const notifRef = React.useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  /* ── Invite helpers ──────────────────────────────────────────── */
+  function openInvite(groupId?: string) {
+    setInviteContext(groupId);
+    setInviteOpen(true);
+  }
+
+  /* Carry the current group context into the profile page so the sidebar
+     stays visible when navigating there from a community section */
+  const profileHref = activeG ? `/profile?g=${activeG}` : "/profile";
+
+  /* ── Active top-nav detection ────────────────────────────────── */
+  function isNavActive(item: (typeof TOP_NAV)[number]) {
+    if (item.href === "/ask-ai") return pathname === "/ask-ai";
+    return pathname.startsWith("/liveboard") && activeG === item.id;
+  }
 
   /* Close notification panel on outside click */
   React.useEffect(() => {
@@ -110,34 +147,95 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6">
-        {/* Logo */}
-        <Link href="/liveboard" className="flex items-center gap-2 font-bold text-primary">
+      <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 relative">
+
+        {/* ── Logo ─────────────────────────────────────────────── */}
+        <Link href="/liveboard" className="flex items-center gap-2 font-bold text-primary cursor-pointer shrink-0">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <HeartPulseIcon className="size-3.5" />
           </div>
           <span className="text-base tracking-tight">ArogyaVault</span>
         </Link>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-2">
-          {/* Global invite button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:flex items-center gap-1.5 h-8 text-xs"
-            onClick={() => setInviteOpen(true)}
-          >
-            <UserPlusIcon className="size-3.5" />
-            Invite
-          </Button>
+        {/* ── Centred top nav ──────────────────────────────────── */}
+        <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-0.5">
+          {TOP_NAV.map((item) => {
+            const active = isNavActive(item);
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <item.icon className="size-3.5 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Right actions ────────────────────────────────────── */}
+        <div className="flex items-center gap-2 shrink-0">
+
+          {/* Vertical separator between nav and actions */}
+          <div className="hidden md:block w-px h-5 bg-border mx-1" />
+
+          {/* Invite — split button: left = direct action, right = dropdown list */}
+          <div className="hidden sm:flex items-stretch h-8 rounded-md border border-input text-xs font-medium overflow-hidden">
+            {/* Direct invite — opens modal at app level */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openInvite()}
+              className="rounded-none h-full px-3 gap-1.5 border-r border-input text-xs font-medium"
+            >
+              <UserPlusIcon className="size-3.5" />
+              Invite
+            </Button>
+
+            {/* Chevron — opens group-specific list */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded-none h-full px-2">
+                  <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => openInvite()}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <UserPlusIcon className="size-3.5" />
+                  Invite
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                {INVITE_GROUPS.map((g) => (
+                  <DropdownMenuItem
+                    key={g.id}
+                    onClick={() => openInvite(g.id)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <UsersIcon className="size-3.5" />
+                    Invite to {g.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           {/* Notification bell + panel */}
           <div className="relative" ref={notifRef}>
             <Button
               variant="ghost"
               size="icon"
-              className="relative size-9"
+              className="relative size-9 cursor-pointer"
               onClick={() => { setNotifOpen((v) => !v); if (!notifOpen) markAllRead(); }}
             >
               <BellIcon className="size-4" />
@@ -154,23 +252,26 @@ export function AppHeader() {
                 {/* Panel header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                   <span className="font-semibold text-sm">Notifications</span>
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={markAllRead}
-                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    className="h-auto p-0 text-xs text-primary gap-1"
                   >
                     <CheckIcon className="size-3" /> Mark all read
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Notification list */}
                 <div className="divide-y divide-border max-h-80 overflow-y-auto">
                   {notifications.map((n) => (
-                    <button
+                    <Button
                       key={n.id}
+                      variant="ghost"
                       onClick={() => markRead(n.id)}
                       className={cn(
-                        "w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors",
-                        !n.read && "bg-primary/5"
+                        "w-full h-auto flex items-start gap-3 px-4 py-3 text-left rounded-none hover:bg-muted/50",
+                        !n.read && "bg-primary/5 hover:bg-primary/5"
                       )}
                     >
                       <div className={cn(
@@ -194,15 +295,15 @@ export function AppHeader() {
                         <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{n.desc}</p>
                         <p className="text-[10px] text-muted-foreground/70 mt-1">{n.time}</p>
                       </div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
 
                 {/* Footer */}
                 <div className="border-t border-border px-4 py-2.5">
-                  <button className="w-full text-xs text-center text-primary hover:underline">
+                  <Button variant="link" size="sm" className="w-full h-auto p-0 text-xs text-primary">
                     View all notifications
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -211,7 +312,7 @@ export function AppHeader() {
           {/* Profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-full pl-1 pr-2 py-1 hover:bg-muted transition-colors">
+              <Button variant="ghost" size="sm" className="rounded-full h-auto pl-1 pr-2 py-1 gap-2">
                 <Avatar className="size-7">
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground font-semibold">
                     KU
@@ -219,7 +320,7 @@ export function AppHeader() {
                 </Avatar>
                 <span className="hidden sm:block text-sm font-medium">Kumar</span>
                 <ChevronDownIcon className="size-3.5 text-muted-foreground" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
@@ -230,12 +331,12 @@ export function AppHeader() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                <Link href={profileHref} className="flex items-center gap-2 cursor-pointer">
                   <UserCircleIcon className="size-4" /> Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                <Link href={profileHref} className="flex items-center gap-2 cursor-pointer">
                   <SettingsIcon className="size-4" /> Settings
                 </Link>
               </DropdownMenuItem>
@@ -251,8 +352,12 @@ export function AppHeader() {
         </div>
       </header>
 
-      {/* Global invite modal */}
-      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      {/* Global invite modal — groupContext drives the framing */}
+      <InviteModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        groupContext={inviteContext}
+      />
     </>
   );
 }

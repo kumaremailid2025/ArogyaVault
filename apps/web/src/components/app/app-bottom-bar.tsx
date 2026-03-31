@@ -7,6 +7,7 @@ import {
   FileTextIcon, CheckCircle2Icon, LoaderIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
+import { Input } from "@/core/ui/input";
 import { cn } from "@/lib/utils";
 
 type UploadFile = { name: string; size: string; status: "uploading" | "done" };
@@ -98,12 +99,14 @@ export function AppBottomBar() {
               <span className="truncate flex-1 font-medium">{u.name}</span>
               <span className="text-muted-foreground shrink-0">{u.size}</span>
               {u.status === "done" && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => dismissUpload(u.name)}
                   className="ml-1 text-muted-foreground hover:text-foreground"
                 >
                   <XIcon className="size-3" />
-                </button>
+                </Button>
               )}
             </div>
           ))}
@@ -113,7 +116,7 @@ export function AppBottomBar() {
       {/* Input row */}
       <div className="px-4 py-3 flex items-center gap-2">
         {/* Hidden file input */}
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           multiple
@@ -136,7 +139,7 @@ export function AppBottomBar() {
 
         {/* AI search input */}
         <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 focus-within:border-primary transition-colors">
-          <input
+          <Input
             ref={inputRef}
             type="text"
             value={query}
@@ -146,7 +149,7 @@ export function AppBottomBar() {
                 ? "Ask a follow-up question…"
                 : "Ask anything about your health records…"
             }
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="flex-1 border-0 shadow-none bg-transparent h-auto py-0 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

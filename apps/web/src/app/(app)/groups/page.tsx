@@ -6,11 +6,12 @@ import {
   ArrowRightIcon, ArrowLeftIcon, ArrowLeftRightIcon,
   UsersIcon, PlusCircleIcon, ShieldCheckIcon, LayersIcon,
   EyeIcon, UploadCloudIcon, BellIcon, CheckCircle2Icon,
-  XCircleIcon, ToggleRightIcon,
+  XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
+import { Switch } from "@/core/ui/switch";
 import dynamic from "next/dynamic";
 
 const ContentTabs = dynamic(
@@ -95,19 +96,11 @@ function PermissionRow({ perm }: { perm: PermissionType }) {
         </div>
       </div>
       {/* Toggle */}
-      <button
-        onClick={() => setEnabled(v => !v)}
-        className={cn(
-          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-          enabled ? "bg-primary" : "bg-muted-foreground/30"
-        )}
+      <Switch
+        checked={enabled}
+        onCheckedChange={setEnabled}
         aria-label={perm.label}
-      >
-        <span className={cn(
-          "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
-          enabled ? "translate-x-4" : "translate-x-0"
-        )} />
-      </button>
+      />
     </div>
   );
 }

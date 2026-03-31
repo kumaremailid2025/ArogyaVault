@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ShieldCheckIcon,
@@ -12,6 +13,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { Input } from "@/core/ui/input";
+import { Label } from "@/core/ui/label";
+import { Separator } from "@/core/ui/separator";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/core/ui/input-otp";
 import { cn } from "@/lib/utils";
 
@@ -97,7 +100,10 @@ export default function SignInPage() {
           {/* Step indicator */}
           <div className="flex items-center gap-3">
             <StepDot active={true}  done={step === "otp"} label="1" />
-            <div className={cn("h-px flex-1 transition-colors", step === "otp" ? "bg-primary" : "bg-border")} />
+            <Separator
+              className={cn("transition-colors", step === "otp" ? "bg-primary" : "bg-border")}
+              style={{ flex: 1, flexShrink: 1 }}
+            />
             <StepDot active={step === "otp"} done={false} label="2" />
           </div>
 
@@ -112,7 +118,7 @@ export default function SignInPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="phone">Mobile Number</label>
+                <Label className="text-sm font-medium" htmlFor="phone">Mobile Number</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -137,9 +143,9 @@ export default function SignInPage() {
 
               <p className="text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
-                <a href="/contact" className="underline underline-offset-4 hover:text-primary">Terms of Service</a>
+                <Link href="/contact" className="underline underline-offset-4 hover:text-primary">Terms of Service</Link>
                 {" "}and{" "}
-                <a href="/security" className="underline underline-offset-4 hover:text-primary">Privacy Policy</a>.
+                <Link href="/security" className="underline underline-offset-4 hover:text-primary">Privacy Policy</Link>.
               </p>
             </form>
           )}
@@ -151,18 +157,20 @@ export default function SignInPage() {
                 <h2 className="text-2xl font-bold tracking-tight">Enter the OTP</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Sent to <span className="font-semibold text-foreground">{phone}</span>.{" "}
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     type="button"
                     onClick={() => setStep("phone")}
-                    className="text-primary underline underline-offset-4 hover:text-primary/80"
+                    className="h-auto p-0 text-primary underline underline-offset-4 hover:text-primary/80"
                   >
                     Change
-                  </button>
+                  </Button>
                 </p>
               </div>
 
               <div className="space-y-3">
-                <label className="text-sm font-medium">6-digit OTP</label>
+                <Label className="text-sm font-medium">6-digit OTP</Label>
                 <InputOTP
                   maxLength={6}
                   value={otp}
@@ -179,7 +187,14 @@ export default function SignInPage() {
                 </InputOTP>
                 <p className="text-xs text-muted-foreground">
                   Didn't receive it?{" "}
-                  <button type="button" className="text-primary underline underline-offset-4">Resend OTP</button>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    type="button"
+                    className="h-auto p-0 text-primary underline underline-offset-4"
+                  >
+                    Resend OTP
+                  </Button>
                 </p>
               </div>
 

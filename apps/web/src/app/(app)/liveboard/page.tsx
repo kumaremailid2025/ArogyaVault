@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import {
   ThumbsUpIcon, MessageSquareIcon,
@@ -18,8 +19,10 @@ import {
   StethoscopeIcon, ScanLineIcon, UserIcon,
   ArrowRightIcon, BrainCircuitIcon, FileTextIcon, UsersIcon,
   BookOpenIcon, SparklesIcon, ShieldCheckIcon, TrendingUpIcon, UserPlusIcon,
+  Ghost,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
+import { Input } from "@/core/ui/input";
 import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import dynamic from "next/dynamic";
@@ -152,24 +155,25 @@ function ArogyaLearnContent() {
       <div className="space-y-2.5">
         {drugs.map((d, i) => (
           <div key={i} className="flex gap-1.5">
-            <input
+            <Input
+              suppressHydrationWarning
               type="text" value={d}
               onChange={(e) => setDrugs((prev) => prev.map((v, idx) => idx === i ? e.target.value : v))}
               placeholder={`Drug ${i + 1} (e.g. Metformin)`}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
             />
             {i >= 2 && (
-              <button onClick={() => setDrugs((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground shrink-0">
-                <XIcon className="size-3.5" />
-              </button>
+              <Button onClick={() => setDrugs((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground shrink-0"><XIcon className="size-3.5" />
+              </Button>
             )}
           </div>
         ))}
         {full && drugs.length < 5 && (
-          <button
+          <Button
+            suppressHydrationWarning
             onClick={() => setDrugs((prev) => [...prev, ""])}
             className="text-[11px] text-primary hover:underline"
-          >+ Add another drug</button>
+          >+ Add another drug</Button>
         )}
         <Button size="sm" className="w-full" disabled={drugs.filter(d => d.trim()).length < 2} onClick={runDrugCheck}>
           Check Interactions
@@ -270,7 +274,9 @@ function ArogyaLearnContent() {
       <div className="shrink-0 px-5 pt-3 pb-0 lg:px-6">
         <div className="flex gap-1 rounded-xl bg-muted/50 p-1 border border-border">
           {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
-            <button
+            <Button
+              variant={activeTab === id ? "default" : "ghost"}
+              suppressHydrationWarning
               key={id}
               onClick={() => {
                 setActiveTab(id);
@@ -288,7 +294,7 @@ function ArogyaLearnContent() {
             >
               <Icon className="size-3 shrink-0" />
               <span className="hidden sm:inline">{label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -306,7 +312,8 @@ function ArogyaLearnContent() {
             {/* Level selector */}
             <div className="flex rounded-xl border border-border overflow-hidden">
               {(Object.entries(LEVEL_CONFIG) as [EduLevel, typeof LEVEL_CONFIG[EduLevel]][]).map(([key, cfg]) => (
-                <button
+                <Button
+                  suppressHydrationWarning
                   key={key}
                   onClick={() => { setLevel(key); setCategory("all"); }}
                   className={cn(
@@ -318,29 +325,31 @@ function ArogyaLearnContent() {
                 >
                   <span className="text-xs font-semibold">{cfg.label}</span>
                   <span className="text-[10px] leading-snug mt-0.5 hidden sm:block">{cfg.desc.split(",")[0]}</span>
-                </button>
+                </Button>
               ))}
             </div>
 
             {/* Search */}
             <div className="relative">
               <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <input
+              <Input
+                suppressHydrationWarning
                 type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search conditions, medications, lab values…"
                 className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/70"
               />
               {search && (
-                <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <XIcon className="size-3.5" />
-                </button>
+                <Button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><XIcon className="size-3.5" />
+                </Button>
               )}
             </div>
 
             {/* Categories */}
             <div className="flex flex-wrap gap-1.5">
               {EDU_CATEGORIES.map((cat) => (
-                <button
+                <Button
+                  variant={category === cat.id ? "default": 'ghost'}
+                  suppressHydrationWarning
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
                   className={cn(
@@ -352,7 +361,7 @@ function ArogyaLearnContent() {
                 >
                   <cat.icon className={cn("size-3", category === cat.id ? "text-primary-foreground" : cat.color)} />
                   {cat.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -369,7 +378,8 @@ function ArogyaLearnContent() {
                   const Icon = t.categoryIcon;
                   const isSelected = panel.view === "topic" && panel.id === t.id;
                   return (
-                    <button
+                    <Button
+                      suppressHydrationWarning
                       key={t.id}
                       onClick={() => setPanel({ view: "topic", id: t.id })}
                       className={cn(
@@ -392,7 +402,7 @@ function ArogyaLearnContent() {
                           <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug">{t.summary}</p>
                         </div>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -405,7 +415,8 @@ function ArogyaLearnContent() {
           <div className="space-y-3 pt-1">
             <div className="relative">
               <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <input
+              <Input
+                suppressHydrationWarning
                 type="text" value={systemSearch} onChange={(e) => setSystemSearch(e.target.value)}
                 placeholder="Search medical systems…"
                 className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/70"
@@ -416,7 +427,8 @@ function ArogyaLearnContent() {
                 const Icon = sys.icon;
                 const isSelected = selectedSystem?.id === sys.id;
                 return (
-                  <button
+                  <Button
+                    suppressHydrationWarning
                     key={sys.id}
                     onClick={() => { setSelectedSystem(sys); setPanel({ view: "system-detail" }); }}
                     className={cn(
@@ -435,7 +447,7 @@ function ArogyaLearnContent() {
                       </div>
                       <ChevronRightIcon className="size-4 text-muted-foreground/50 shrink-0" />
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -449,20 +461,22 @@ function ArogyaLearnContent() {
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Filter by Body Region</p>
               <div className="flex flex-wrap gap-1.5">
-                <button
+                <Button
+                  suppressHydrationWarning
                   onClick={() => setDeptRegion("all")}
                   className={cn("rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
                     deptRegion === "all" ? "bg-primary border-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/40"
                   )}
-                >All</button>
+                >All</Button>
                 {BODY_REGIONS.map((r) => (
-                  <button
+                  <Button
+                    suppressHydrationWarning
                     key={r.id}
                     onClick={() => setDeptRegion(r.id)}
                     className={cn("rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
                       deptRegion === r.id ? "bg-primary border-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/40"
                     )}
-                  >{r.label}</button>
+                  >{r.label}</Button>
                 ))}
               </div>
             </div>
@@ -471,7 +485,8 @@ function ArogyaLearnContent() {
             <div className="rounded-xl border border-border bg-muted/20 p-4 text-center">
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 {BODY_REGIONS.map((r) => (
-                  <button
+                  <Button
+                    suppressHydrationWarning
                     key={r.id}
                     onClick={() => setDeptRegion(r.id === deptRegion ? "all" : r.id)}
                     className={cn(
@@ -481,7 +496,7 @@ function ArogyaLearnContent() {
                   >
                     <span className="text-base">{r.id === "head" ? "🧠" : r.id === "chest" ? "❤️" : r.id === "abdomen" ? "🫁" : r.id === "neuro" ? "🧠" : r.id === "musculo" ? "🦴" : r.id === "systemic" ? "🩺" : "🫀"}</span>
                     <span className="text-[9px] text-muted-foreground leading-tight">{r.label}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -492,7 +507,8 @@ function ArogyaLearnContent() {
                 const Icon = dept.icon;
                 const isSelected = selectedDept?.id === dept.id;
                 return (
-                  <button
+                  <Button
+                    suppressHydrationWarning
                     key={dept.id}
                     onClick={() => { setSelectedDept(dept); setPanel({ view: "dept-detail" }); }}
                     className={cn(
@@ -510,7 +526,7 @@ function ArogyaLearnContent() {
                       </div>
                       <ChevronRightIcon className="size-3.5 text-muted-foreground/50 shrink-0" />
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -531,7 +547,8 @@ function ArogyaLearnContent() {
                 <FileUpIcon className="size-5 text-muted-foreground/40 mx-auto mb-1.5" />
                 <p className="text-xs font-medium text-muted-foreground">Upload PDF</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-0.5">Research paper, clinical guide, drug monograph…</p>
-                <input
+                <Input
+                  suppressHydrationWarning
                   ref={pdfInputRef} type="file" accept=".pdf,.doc,.docx,.txt"
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfFile(f); }}
@@ -543,7 +560,8 @@ function ArogyaLearnContent() {
               <div className="flex gap-1.5">
                 <div className="relative flex-1">
                   <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
-                  <input
+                  <Input
+                    suppressHydrationWarning
                     type="url" value={pdfUrlInput} onChange={(e) => setPdfUrlInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handlePdfUrl()}
                     placeholder="https://pubmed.ncbi.nlm.nih.gov/..."
@@ -566,12 +584,13 @@ function ArogyaLearnContent() {
                   </p>
                   <p className="text-[10px] text-emerald-600">{pdfMessages.length - 1} question{pdfMessages.length !== 2 ? "s" : ""} asked</p>
                 </div>
-                <button
+                <Button
+                  suppressHydrationWarning
                   onClick={() => { setPdfSource(null); setPdfMessages([]); setPanel({ view: "overview" }); }}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <XIcon className="size-3.5" />
-                </button>
+                </Button>
               </div>
             )}
 
@@ -609,12 +628,13 @@ function ArogyaLearnContent() {
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                     <PillIcon className="size-3 text-emerald-600" /> Drug Interaction Checker
                   </p>
-                  <button
+                  <Button
+                    suppressHydrationWarning
                     onClick={() => { setPanel({ view: "drug-check" }); setChecked(false); setInteractionResults([]); }}
                     className="text-[10px] text-primary hover:underline"
                   >
                     Full checker →
-                  </button>
+                  </Button>
                 </div>
                 <DrugCheckerUI />
               </div>
@@ -656,9 +676,8 @@ function ArogyaLearnContent() {
             return (
               <div className="p-4 space-y-4">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setPanel({ view: "overview" })} className="text-muted-foreground hover:text-foreground transition-colors">
-                    <ArrowLeftIcon className="size-4" />
-                  </button>
+                  <Button onClick={() => setPanel({ view: "overview" })} className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="size-4" />
+                  </Button>
                   <span className="text-sm font-semibold flex-1 leading-snug line-clamp-1">{activeTopic.title}</span>
                 </div>
 
@@ -719,9 +738,8 @@ function ArogyaLearnContent() {
           {panel.view === "drug-check" && (
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <button onClick={() => { setPanel({ view: "overview" }); setChecked(false); setInteractionResults([]); setDrugs(["", ""]); }} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeftIcon className="size-4" />
-                </button>
+                <Button variant="ghost" onClick={() => { setPanel({ view: "overview" }); setChecked(false); setInteractionResults([]); setDrugs(["", ""]); }} className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="size-4" />
+                </Button>
                 <span className="text-sm font-semibold flex-1">Drug Interaction Checker</span>
               </div>
               <p className="text-[11px] text-muted-foreground leading-snug">Enter up to 5 drugs to check for known interactions. Results are based on published pharmacokinetic and pharmacodynamic data.</p>
@@ -736,9 +754,8 @@ function ArogyaLearnContent() {
           {panel.view === "system-detail" && selectedSystem && (
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <button onClick={() => { setPanel({ view: "overview" }); setSelectedSystem(null); }} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeftIcon className="size-4" />
-                </button>
+                <Button onClick={() => { setPanel({ view: "overview" }); setSelectedSystem(null); }} className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="size-4" />
+                </Button>
                 <span className="text-sm font-semibold flex-1">{selectedSystem.name}</span>
               </div>
 
@@ -821,9 +838,8 @@ function ArogyaLearnContent() {
           {panel.view === "dept-detail" && selectedDept && (
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <button onClick={() => { setPanel({ view: "overview" }); setSelectedDept(null); }} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeftIcon className="size-4" />
-                </button>
+                <Button onClick={() => { setPanel({ view: "overview" }); setSelectedDept(null); }} className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="size-4" />
+                </Button>
                 <span className="text-sm font-semibold flex-1">{selectedDept.name}</span>
               </div>
 
@@ -884,9 +900,8 @@ function ArogyaLearnContent() {
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="shrink-0 p-3 border-b border-border flex items-center gap-2">
-                <button onClick={() => { setPanel({ view: "overview" }); setActiveTab("pdf"); }} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                  <ArrowLeftIcon className="size-4" />
-                </button>
+                <Button onClick={() => { setPanel({ view: "overview" }); setActiveTab("pdf"); }} className="text-muted-foreground hover:text-foreground transition-colors shrink-0"><ArrowLeftIcon className="size-4" />
+                </Button>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold truncate">
                     {pdfSource.type === "file" ? pdfSource.name : (pdfSource.url.split("/").pop() || "Document")}
@@ -951,7 +966,8 @@ function ArogyaLearnContent() {
               {/* Input */}
               <div className="shrink-0 p-3 border-t border-border">
                 <div className="flex gap-1.5">
-                  <input
+                  <Input
+                    suppressHydrationWarning
                     type="text" value={pdfQuestion}
                     onChange={(e) => setPdfQuestion(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handlePdfAsk()}
@@ -1206,7 +1222,9 @@ function ArogyaTalkContent() {
                     <p className="text-sm mt-1.5 leading-relaxed">{p.text}</p>
                     <div className="flex items-center gap-4 mt-2">
                       {/* Like */}
-                      <button
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); toggleLike(p.id); }}
                         className={cn(
                           "flex items-center gap-1 text-xs transition-colors",
@@ -1214,9 +1232,11 @@ function ArogyaTalkContent() {
                         )}
                       >
                         <ThumbsUpIcon className={cn("size-3.5", likedPosts.has(p.id) && "fill-current")} /> {p.likes}
-                      </button>
+                      </Button>
                       {/* Replies */}
-                      <button
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); openReplies(p.id); }}
                         className={cn(
                           "flex items-center gap-1 text-xs transition-colors",
@@ -1227,9 +1247,11 @@ function ArogyaTalkContent() {
                       >
                         <MessageSquareIcon className="size-3.5" />
                         {p.replyCount} {p.replyCount === 1 ? "reply" : "replies"}
-                      </button>
+                      </Button>
                       {/* AI Summary */}
-                      <button
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); openSummary(p.id); }}
                         className={cn(
                           "flex items-center gap-1 text-xs transition-colors",
@@ -1239,7 +1261,7 @@ function ArogyaTalkContent() {
                         )}
                       >
                         <SparklesIcon className="size-3.5" /> AI Summary
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1358,9 +1380,8 @@ function ArogyaTalkContent() {
                   <SparklesIcon className="size-4 text-violet-600" />
                   <span className="text-sm font-semibold">AI Summary</span>
                 </div>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               {/* Original question */}
@@ -1388,12 +1409,13 @@ function ArogyaTalkContent() {
               </div>
 
               {/* View replies CTA */}
-              <button
+              <Button
+                suppressHydrationWarning
                 onClick={() => openReplies(activePost.id)}
                 className="w-full rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5"
               >
                 <MessageSquareIcon className="size-3.5" /> View all {activePost.replyCount} replies
-              </button>
+              </Button>
             </div>
           )}
 
@@ -1402,9 +1424,8 @@ function ArogyaTalkContent() {
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">{activePost.replyCount} Replies</span>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button variant="ghost" onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               {/* Post preview */}
@@ -1452,16 +1473,16 @@ function ArogyaTalkContent() {
           {panel.view === "reply-preview" && activePost && (
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  suppressHydrationWarning
                   onClick={handleBackToCompose}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ArrowLeftIcon className="size-4" />
-                </button>
+                </Button>
                 <span className="text-sm font-semibold flex-1">Review Your Reply</span>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               {/* Your reply — English (translated if voice was in another language) */}
@@ -1469,7 +1490,8 @@ function ArogyaTalkContent() {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                   {hasNativeTranscript ? "Your reply · English (Translated)" : "Your reply"}
                 </p>
-                <button
+                <Button
+                  suppressHydrationWarning
                   onClick={() => setSelectedVersion(0)}
                   className={cn(
                     "w-full text-left rounded-lg border px-3 py-2.5 transition-colors",
@@ -1482,7 +1504,7 @@ function ArogyaTalkContent() {
                   {selectedVersion === 0 && (
                     <span className="text-[10px] text-primary font-medium mt-1 block">✓ Selected</span>
                   )}
-                </button>
+                </Button>
               </div>
 
               {/* Attached document — shown when reply came from the Attach mode */}
@@ -1502,8 +1524,7 @@ function ArogyaTalkContent() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 bg-muted/30 px-3 py-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
+                        <Image src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" width={48} height={48} unoptimized />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
                           <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
@@ -1542,7 +1563,8 @@ function ArogyaTalkContent() {
                 </p>
                 <div className="space-y-2">
                   {panel.rephrasings.map((r, i) => (
-                    <button
+                    <Button
+                      suppressHydrationWarning
                       key={i}
                       onClick={() => setSelectedVersion((i + 1) as 1 | 2)}
                       className={cn(
@@ -1559,7 +1581,7 @@ function ArogyaTalkContent() {
                         )}
                       </div>
                       <p className="text-xs leading-relaxed">{r}</p>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1768,24 +1790,30 @@ function LinkedMemberContent({ id }: { id: string }) {
                     </div>
                     <p className="text-sm mt-1.5 leading-relaxed">{p.text}</p>
                     <div className="flex items-center gap-4 mt-2">
-                      <button
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); toggleLike(p.id); }}
                         className={cn("flex items-center gap-1 text-xs transition-colors", likedPosts.has(p.id) ? "text-primary font-medium" : "text-muted-foreground hover:text-primary")}
                       >
                         <ThumbsUpIcon className={cn("size-3.5", likedPosts.has(p.id) && "fill-current")} /> {p.likes}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); openReplies(p.id); }}
                         className={cn("flex items-center gap-1 text-xs transition-colors", panel.view === "replies" && activePostId === p.id ? "text-primary font-medium" : "text-muted-foreground hover:text-primary")}
                       >
                         <MessageSquareIcon className="size-3.5" /> {p.replyCount} {p.replyCount === 1 ? "reply" : "replies"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        suppressHydrationWarning
                         onClick={(e) => { e.stopPropagation(); openSummary(p.id); }}
                         className={cn("flex items-center gap-1 text-xs transition-colors", panel.view === "summary" && activePostId === p.id ? "text-violet-600 font-medium" : "text-muted-foreground hover:text-violet-600")}
                       >
                         <SparklesIcon className="size-3.5" /> AI Summary
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1857,9 +1885,8 @@ function LinkedMemberContent({ id }: { id: string }) {
                   <SparklesIcon className="size-4 text-violet-600" />
                   <span className="text-sm font-semibold">AI Summary</span>
                 </div>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               <div className="rounded-lg bg-muted/50 border border-border/60 px-3 py-2.5">
@@ -1892,12 +1919,13 @@ function LinkedMemberContent({ id }: { id: string }) {
                 </div>
               )}
 
-              <button
+              <Button
+                suppressHydrationWarning
                 onClick={() => openReplies(activePost.id)}
                 className="w-full rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5"
               >
                 <MessageSquareIcon className="size-3.5" /> View all {activePost.replyCount} {activePost.replyCount === 1 ? "reply" : "replies"}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -1906,9 +1934,8 @@ function LinkedMemberContent({ id }: { id: string }) {
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">{activePost.replyCount} {activePost.replyCount === 1 ? "Reply" : "Replies"}</span>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button variant="ghost" onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               <div className="rounded-lg bg-muted/50 border border-border/60 px-3 py-2.5">
@@ -1954,26 +1981,25 @@ function LinkedMemberContent({ id }: { id: string }) {
           {panel.view === "reply-preview" && activePost && (
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <button onClick={handleBackToCompose} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeftIcon className="size-4" />
-                </button>
+                <Button onClick={handleBackToCompose} className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="size-4" />
+                </Button>
                 <span className="text-sm font-semibold flex-1">Review Your Reply</span>
-                <button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <XIcon className="size-4" />
-                </button>
+                <Button onClick={closePanel} className="text-muted-foreground hover:text-foreground transition-colors"><XIcon className="size-4" />
+                </Button>
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                   {lHasNative ? "Your reply · English (Translated)" : "Your reply"}
                 </p>
-                <button
+                <Button
+                  suppressHydrationWarning
                   onClick={() => setSelectedVersion(0)}
                   className={cn("w-full text-left rounded-lg border px-3 py-2.5 transition-colors", selectedVersion === 0 ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/30")}
                 >
                   <p className="text-xs leading-relaxed">{panel.original}</p>
                   {selectedVersion === 0 && <span className="text-[10px] text-primary font-medium mt-1 block">✓ Selected</span>}
-                </button>
+                </Button>
               </div>
 
               {/* Attached document */}
@@ -1993,8 +2019,7 @@ function LinkedMemberContent({ id }: { id: string }) {
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 bg-muted/30 px-3 py-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
+                        <Image src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" width={48} height={48} unoptimized />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
                           <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
@@ -2029,7 +2054,8 @@ function LinkedMemberContent({ id }: { id: string }) {
                 </p>
                 <div className="space-y-2">
                   {panel.rephrasings.map((r, i) => (
-                    <button
+                    <Button
+                      suppressHydrationWarning
                       key={i}
                       onClick={() => setSelectedVersion((i + 1) as 1 | 2)}
                       className={cn("w-full text-left rounded-lg border px-3 py-2.5 transition-colors", selectedVersion === i + 1 ? "border-violet-400 bg-violet-50/50" : "border-border bg-background hover:border-violet-200")}
@@ -2039,7 +2065,7 @@ function LinkedMemberContent({ id }: { id: string }) {
                         {selectedVersion === i + 1 && <span className="text-[10px] text-violet-600 font-medium">✓ Selected</span>}
                       </div>
                       <p className="text-xs leading-relaxed">{r}</p>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
