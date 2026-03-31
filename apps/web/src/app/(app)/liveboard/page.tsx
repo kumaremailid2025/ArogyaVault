@@ -8,7 +8,7 @@ import {
   ArrowRightLeftIcon,
   GlobeIcon, FlameIcon, MapPinIcon, TrophyIcon, ZapIcon, XIcon,
   MicIcon, ArrowLeftIcon,
-  PaperclipIcon, ImageIcon,
+  PaperclipIcon,
   GraduationCapIcon, PillIcon, FlaskConicalIcon,
   ClipboardListIcon, MicroscopeIcon, SearchIcon,
   CheckCircle2Icon, AlertTriangleIcon, XCircleIcon,
@@ -28,6 +28,10 @@ import { cn } from "@/lib/utils";
 /* ── New module imports ─────────────────────────────────────────── */
 import { YoursContent } from "@/components/liveboard/yours-content";
 import { ArogyaAIContent } from "@/components/liveboard/arogyaai-content";
+import { SmartInput } from "@/components/shared/smart-input";
+import { ComposeBox } from "@/components/shared/compose-box";
+import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
+import type { SmartInputSubmitPayload } from "@/models/input";
 import { COMMUNITY_POSTS, TRENDING_TOPICS, TOP_CONTRIBUTORS, REGION_ACTIVITY, POST_SUMMARIES, POST_AI_RESPONSES } from "@/data/community-data";
 import { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } from "@/data/linked-member-data";
 import { VOICE_LANGUAGES } from "@/data/voice-languages";
@@ -1009,47 +1013,32 @@ function ArogyaTalkContent() {
   const nextPostIdRef = React.useRef(COMMUNITY_POSTS.length);
 
   const [panel, setPanel] = React.useState<PanelState>({ view: "analytics" });
-  const [replyText, setReplyText] = React.useState("");
-  const [replyTab, setReplyTab] = React.useState<"text" | "voice" | "attach">("text");
-
-  type AttachStep =
-    | { step: "select" }
-    | { step: "preview"; file: File; previewUrl: string; caption: string }
-    | { step: "analyzing" }
-    | { step: "analyzed"; file: File; previewUrl: string; caption: string; docType: string; extractedText: string; summary: string };
-  const [attachState, setAttachState] = React.useState<AttachStep>({ step: "select" });
-  const [attachedDoc, setAttachedDoc] = React.useState<{
-    filename: string; previewUrl: string; docType: string; isPdf: boolean;
-  } | null>(null);
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
-  const [voiceState, setVoiceState] = React.useState<"idle" | "recording" | "translating" | "done">("idle");
-  const [voiceLang, setVoiceLang] = React.useState("en-IN");
-  const [liveTranscript, setLiveTranscript] = React.useState("");
-  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
-  /** Stores the native-language transcript + lang code after voice recording */
-  const [voiceRecording, setVoiceRecording] = React.useState<{ lang: string; original: string } | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = React.useRef<any>(null);
-  const finalTranscriptRef = React.useRef("");
-  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /**
+   * Stores the submitted compose payload so the reply-preview panel
+   * can display voice/attachment metadata (replaces the old inline
+   * voice + attach state that duplicated logic from the hooks).
+   */
+  const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
 
   const activePostId = panel.view !== "analytics" ? panel.postId : null;
   const activePost = activePostId !== null
     ? posts.find((p) => p.id === activePostId) ?? null
     : null;
-  /** True when we have a non-English voice recording to display alongside the translation */
-  const hasNativeTranscript = voiceRecording !== null && !voiceRecording.lang.startsWith("en");
-  const voiceLangInfo = hasNativeTranscript
-    ? (VOICE_LANGUAGES.find((l) => l.code === voiceRecording!.lang) ?? null)
+
+  /* Derived from pendingReply for the preview panel */
+  const hasNativeTranscript =
+    pendingReply?.voiceRecording !== null &&
+    pendingReply?.voiceRecording !== undefined &&
+    !pendingReply.voiceRecording.lang.startsWith("en");
+  const voiceLangInfo = hasNativeTranscript && pendingReply?.voiceRecording
+    ? (VOICE_LANGUAGES.find((l) => l.code === pendingReply.voiceRecording!.lang) ?? null)
     : null;
 
   function openReplies(postId: number) {
     setPanel({ view: "replies", postId });
-    setReplyText("");
-    setReplyTab("text");
-    setVoiceRecording(null);
-    setAttachState({ step: "select" });
-    setAttachedDoc(null);
+    setPendingReply(null);
   }
 
   function openSummary(postId: number) {
@@ -1058,38 +1047,27 @@ function ArogyaTalkContent() {
 
   function closePanel() {
     setPanel({ view: "analytics" });
-    setReplyText("");
-    setVoiceRecording(null);
-    setAttachState({ step: "select" });
-    setAttachedDoc(null);
+    setPendingReply(null);
   }
 
-  function handlePreviewSend() {
+  /** Called by ComposeBox when user clicks "Preview & Send" */
+  function handlePreviewSend(payload: ComposeSubmitPayload) {
     if (panel.view !== "replies") return;
-    const rephrasings = generateRephrasings(replyText);
+    const text = payload.text.trim();
+    if (!text) return;
+    setPendingReply(payload);
     setSelectedVersion(1);
-    setPanel({ view: "reply-preview", postId: panel.postId, original: replyText, rephrasings });
+    setPanel({
+      view: "reply-preview",
+      postId: panel.postId,
+      original: text,
+      rephrasings: generateRephrasings(text),
+    });
   }
 
   function handleBackToCompose() {
     if (panel.view !== "reply-preview") return;
-    const { postId, original } = panel;
-    setReplyText(original);
-    setPanel({ view: "replies", postId });
-  }
-
-  /* ── Compose new post ── */
-  function handlePost() {
-    const trimmed = composeText.trim();
-    if (!trimmed) return;
-    const newPost: CommunityPost = {
-      id: nextPostIdRef.current++,
-      initials: "KU", author: "Kumar", location: "Hyderabad", time: "Just now",
-      text: trimmed, likes: 0, replyCount: 0, tag: "Discussion",
-      replies: [],
-    };
-    setPosts((prev) => [newPost, ...prev]);
-    setComposeText("");
+    setPanel({ view: "replies", postId: panel.postId });
   }
 
   /* ── Like toggle ── */
@@ -1128,147 +1106,9 @@ function ArogyaTalkContent() {
     closePanel();
   }
 
-  /* ── Image / PDF attachment ── */
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const previewUrl = URL.createObjectURL(file);
-    setAttachState({ step: "preview", file, previewUrl, caption: "" });
-    // reset input so same file can be re-selected after reset
-    e.target.value = "";
-  }
-
-  function resetAttach() {
-    setAttachState({ step: "select" });
-    setAttachedDoc(null);
-  }
-
-  async function handleAnalyzeImage() {
-    if (attachState.step !== "preview") return;
-    const { file, previewUrl, caption } = attachState;
-    setAttachState({ step: "analyzing" });
-    try {
-      const res = await fetch("/api/analyze-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, mimeType: file.type }),
-      });
-      const data = await res.json() as { docType: string; extractedText: string; summary: string };
-      setAttachState({ step: "analyzed", file, previewUrl, caption, ...data });
-    } catch {
-      // On failure return to preview
-      setAttachState({ step: "preview", file, previewUrl, caption });
-    }
-  }
-
-  function handleUseAttachment() {
-    if (attachState.step !== "analyzed") return;
-    const { file, previewUrl, caption, docType, summary } = attachState;
-    const replyContent = caption ? `${caption}\n\n${summary}` : summary;
-    setAttachedDoc({
-      filename: file.name,
-      previewUrl,
-      docType,
-      isPdf: file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"),
-    });
-    setReplyText(replyContent);
-    setReplyTab("text");
-  }
-
-  /* ── Voice recording ── */
-  function stopVoiceTimer() {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-  }
-
-  function stopVoiceRecording() {
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    stopVoiceTimer();
-  }
-
-  function formatSeconds(s: number) {
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  }
-
-  function startVoiceRecording() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      alert("Voice recording requires Chrome or Edge. Please type your reply instead.");
-      return;
-    }
-    finalTranscriptRef.current = "";
-    setLiveTranscript("");
-    setRecordingSeconds(0);
-    setVoiceState("recording");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognition: any = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = voiceLang;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscriptRef.current += event.results[i][0].transcript + " ";
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      setLiveTranscript((finalTranscriptRef.current + interim).trim());
-    };
-
-    recognition.onend = () => {
-      stopVoiceTimer();
-      const text = finalTranscriptRef.current.trim();
-      if (!text) { setVoiceState("idle"); return; }
-
-      const isEnglish = voiceLang === "en-IN" || voiceLang.startsWith("en");
-
-      if (isEnglish) {
-        // No translation needed — go straight to done
-        setVoiceRecording(null);
-        setReplyText(text);
-        setVoiceState("done");
-        setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
-      } else {
-        // Store original native-language transcript so we can show it alongside the translation
-        setVoiceRecording({ lang: voiceLang, original: text });
-        setVoiceState("translating");
-        (async () => {
-          try {
-            const res = await fetch(
-              `/api/translate?text=${encodeURIComponent(text)}&from=${encodeURIComponent(voiceLang)}`
-            );
-            const data = await res.json() as { translated: string; original: string };
-            setReplyText(data.translated || text);
-          } catch {
-            setReplyText(text); // graceful fallback: use original transcript
-          }
-          setVoiceState("done");
-          setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
-        })();
-      }
-    };
-
-    recognition.onerror = () => { stopVoiceTimer(); setVoiceState("idle"); };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    timerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
-  }
-
-  /* Stop recording on unmount */
-  React.useEffect(() => {
-    return () => { stopVoiceRecording(); }; // eslint-disable-line react-hooks/exhaustive-deps
-  }, []);
-
-  /* Stop recording when user navigates away from the replies panel */
-  React.useEffect(() => {
-    if (panel.view !== "replies") { stopVoiceRecording(); setVoiceState("idle"); }
-  }, [panel.view]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Voice recording, file attachment, and all related state is now
+     managed by useVoiceRecorder / useFileAttach inside <ComposeBox />.
+     No duplicate hooks or handlers needed here. */
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -1310,28 +1150,35 @@ function ArogyaTalkContent() {
         <div className="flex-1 min-w-0 overflow-y-auto px-5 pb-5 lg:px-6">
           <div className="space-y-3 pt-1">
 
-            {/* Compose box */}
+            {/* Compose box — SmartInput (grows from 1 line, supports voice/image/attach) */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-              <div className="flex gap-2 items-start">
-                <Avatar className="size-7 shrink-0 mt-0.5">
+              <div className="flex gap-2 items-center mb-2">
+                <Avatar className="size-7 shrink-0">
                   <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">KU</AvatarFallback>
                 </Avatar>
-                <textarea
-                  value={composeText}
-                  onChange={(e) => setComposeText(e.target.value)}
-                  placeholder="Share a tip, ask the community, or start a discussion…"
-                  rows={2}
-                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/70"
-                />
-                <Button
-                  size="sm"
-                  className="shrink-0"
-                  disabled={!composeText.trim()}
-                  onClick={handlePost}
-                >
-                  Post
-                </Button>
+                <span className="text-xs text-muted-foreground">Share a tip, question, or experience with the community</span>
               </div>
+              <SmartInput
+                value={composeText}
+                onChange={setComposeText}
+                onSubmit={(payload: SmartInputSubmitPayload) => {
+                  const trimmed = payload.text.trim();
+                  if (!trimmed) return;
+                  const newPost: CommunityPost = {
+                    id: nextPostIdRef.current++,
+                    initials: "KU", author: "Kumar", location: "Hyderabad", time: "Just now",
+                    text: trimmed, likes: 0, replyCount: 0, tag: "Discussion",
+                    replies: [],
+                  };
+                  setPosts((prev) => [newPost, ...prev]);
+                  setComposeText("");
+                }}
+                placeholder="Share a tip, ask the community, or start a discussion…"
+                submitLabel="Post"
+                modes={["text", "voice", "image", "attach"]}
+                maxRows={4}
+                layout="chat"
+              />
             </div>
 
             {/* Post cards */}
@@ -1588,384 +1435,15 @@ function ArogyaTalkContent() {
                 ))}
               </div>
 
-              {/* Compose area */}
-              <div className="space-y-2.5 pt-1 border-t border-border">
-                <p className="text-[11px] font-semibold text-muted-foreground pt-2">Add your reply</p>
-
-                {/* Text / Voice / Attach tabs */}
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    onClick={() => setReplyTab("text")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium transition-colors",
-                      replyTab === "text"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <MessageSquareIcon className="size-3" /> Text
-                  </button>
-                  <button
-                    onClick={() => setReplyTab("voice")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium transition-colors",
-                      replyTab === "voice"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <MicIcon className="size-3" /> Voice
-                  </button>
-                  <button
-                    onClick={() => setReplyTab("attach")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium transition-colors",
-                      replyTab === "attach"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <PaperclipIcon className="size-3" /> Attach
-                  </button>
-                </div>
-
-                {replyTab === "text" ? (
-                  <>
-                    <textarea
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Write a helpful reply…"
-                      rows={3}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
-                    />
-
-                    {/* Original native-language transcript reference */}
-                    {hasNativeTranscript && voiceRecording && (
-                      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <MicIcon className="size-3 text-muted-foreground/60" />
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            {voiceLangInfo?.native ?? voiceRecording.lang} · Original
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground/80 leading-relaxed italic">
-                          {voiceRecording.original}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Attached document reference */}
-                    {attachedDoc && (
-                      <div className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                        {attachedDoc.isPdf ? (
-                          <FileTextIcon className="size-5 text-red-400 shrink-0" />
-                        ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={attachedDoc.previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">📎 Attachment</p>
-                          <p className="text-xs font-medium truncate">{attachedDoc.docType}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{attachedDoc.filename}</p>
-                        </div>
-                        <button onClick={() => setAttachedDoc(null)} className="shrink-0 text-muted-foreground hover:text-foreground">
-                          <XIcon className="size-3.5" />
-                        </button>
-                      </div>
-                    )}
-
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      disabled={!replyText.trim()}
-                      onClick={handlePreviewSend}
-                    >
-                      Preview &amp; Send
-                    </Button>
-                  </>
-                ) : replyTab === "attach" ? (
-                  /* ════════════════════════════════
-                     ATTACH TAB — 4-step flow
-                  ════════════════════════════════ */
-                  <div className="space-y-2.5">
-
-                    {/* STEP 1 — SELECT */}
-                    {attachState.step === "select" && (
-                      <label className="block cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*,.pdf"
-                          className="sr-only"
-                          onChange={handleFileSelect}
-                        />
-                        <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-5 text-center hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                          <div className="flex gap-2 justify-center mb-3">
-                            <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <ImageIcon className="size-4 text-primary" />
-                            </div>
-                            <div className="size-9 rounded-xl bg-red-50 flex items-center justify-center">
-                              <FileTextIcon className="size-4 text-red-500" />
-                            </div>
-                          </div>
-                          <p className="text-xs font-semibold mb-1">Share a document or photo</p>
-                          <p className="text-[11px] text-muted-foreground leading-snug mb-3">
-                            Prescription, lab report, scan — show your proof to the community
-                          </p>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary">
-                            <PaperclipIcon className="size-3" /> Browse Files
-                          </span>
-                          <p className="text-[10px] text-muted-foreground mt-2">JPG · PNG · PDF supported</p>
-                        </div>
-                      </label>
-                    )}
-
-                    {/* STEP 2 — PREVIEW */}
-                    {attachState.step === "preview" && (
-                      <>
-                        {/* File preview */}
-                        <div className="relative rounded-lg border border-border overflow-hidden">
-                          {attachState.file.type === "application/pdf" || attachState.file.name.toLowerCase().endsWith(".pdf") ? (
-                            <div className="bg-red-50 p-3 flex items-center gap-3">
-                              <FileTextIcon className="size-8 text-red-400 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate">{attachState.file.name}</p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  {(attachState.file.size / 1024).toFixed(0)} KB · PDF Document
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={attachState.previewUrl}
-                              alt="Preview"
-                              className="w-full max-h-36 object-cover"
-                            />
-                          )}
-                          <button
-                            onClick={resetAttach}
-                            className="absolute top-1.5 right-1.5 size-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                          >
-                            <XIcon className="size-3" />
-                          </button>
-                        </div>
-
-                        {/* Caption */}
-                        <div>
-                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-                            Caption <span className="normal-case font-normal">(optional)</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={attachState.caption}
-                            onChange={(e) =>
-                              setAttachState((prev) =>
-                                prev.step === "preview" ? { ...prev, caption: e.target.value } : prev
-                              )
-                            }
-                            placeholder="e.g. My latest HbA1c report showing 6.9%…"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
-                          />
-                        </div>
-
-                        <Button size="sm" className="w-full" onClick={handleAnalyzeImage}>
-                          <SparklesIcon className="size-3.5 mr-1.5" /> Analyze with AI
-                        </Button>
-                      </>
-                    )}
-
-                    {/* STEP 3 — ANALYZING */}
-                    {attachState.step === "analyzing" && (
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-2">
-                        <div
-                          className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto animate-spin"
-                          style={{ animationDuration: "1.8s" }}
-                        >
-                          <SparklesIcon className="size-5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-primary">AI is reading your document…</p>
-                        <p className="text-[11px] text-muted-foreground">Extracting text and generating summary</p>
-                      </div>
-                    )}
-
-                    {/* STEP 4 — ANALYZED */}
-                    {attachState.step === "analyzed" && (
-                      <>
-                        {/* Mini file header */}
-                        <div className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/30 px-3 py-2">
-                          {attachState.file.type === "application/pdf" || attachState.file.name.toLowerCase().endsWith(".pdf") ? (
-                            <FileTextIcon className="size-6 text-red-400 shrink-0" />
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={attachState.previewUrl}
-                              alt=""
-                              className="size-10 rounded-md object-cover shrink-0"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate">{attachState.file.name}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {attachState.docType} · AI Analyzed ✓
-                            </p>
-                          </div>
-                          <button
-                            onClick={resetAttach}
-                            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            <XIcon className="size-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Extracted text */}
-                        <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                            Extracted Text
-                          </p>
-                          <pre className="text-[11px] text-foreground/70 leading-relaxed font-sans whitespace-pre-wrap line-clamp-5">
-                            {attachState.extractedText}
-                          </pre>
-                        </div>
-
-                        {/* AI Summary */}
-                        <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <SparklesIcon className="size-3.5 text-violet-600" />
-                            <span className="text-[11px] font-semibold text-violet-700">AI Summary</span>
-                          </div>
-                          <p className="text-xs leading-relaxed text-foreground/80">
-                            {attachState.summary}
-                          </p>
-                        </div>
-
-                        <Button size="sm" className="w-full" onClick={handleUseAttachment}>
-                          Use as Reply
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-
-                    {/* ── IDLE ── */}
-                    {voiceState === "idle" && (
-                      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-3">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto">
-                          <MicIcon className="size-5 text-primary" />
-                        </div>
-
-                        {/* Language picker */}
-                        <div>
-                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                            Speak in
-                          </label>
-                          <select
-                            value={voiceLang}
-                            onChange={(e) => setVoiceLang(e.target.value)}
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
-                          >
-                            {VOICE_LANGUAGES.map((l) => (
-                              <option key={l.code} value={l.code}>
-                                {l.native}  —  {l.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <p className="text-[11px] text-muted-foreground leading-snug text-center">
-                          ArogyaAI will transcribe your speech live as you speak.
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full text-xs border-primary/30 text-primary"
-                          onClick={startVoiceRecording}
-                        >
-                          Start Recording
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* ── RECORDING ── */}
-                    {voiceState === "recording" && (
-                      <div className="space-y-2.5">
-                        {/* Pulsing mic + timer */}
-                        <div className="flex flex-col items-center gap-2 py-2">
-                          <div className="relative">
-                            <div className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
-                            <div className="relative flex size-12 items-center justify-center rounded-full bg-red-500 shadow-md">
-                              <MicIcon className="size-5 text-white" />
-                            </div>
-                          </div>
-                          <span className="text-sm font-mono font-bold text-red-500 tabular-nums">
-                            {formatSeconds(recordingSeconds)}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] text-muted-foreground">Listening in</span>
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                              {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Live transcript preview */}
-                        <div className="rounded-lg border border-border bg-background px-3 py-2.5 min-h-[60px] flex items-start">
-                          {liveTranscript ? (
-                            <p className="text-xs leading-relaxed text-foreground/70 italic">{liveTranscript}</p>
-                          ) : (
-                            <p className="text-[11px] text-muted-foreground/50 italic m-auto self-center w-full text-center">
-                              Start speaking…
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="w-full text-xs"
-                          onClick={stopVoiceRecording}
-                        >
-                          Stop Recording
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* ── TRANSLATING ── */}
-                    {voiceState === "translating" && (
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-2">
-                        {/* Spinning sparkles icon */}
-                        <div
-                          className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto animate-spin"
-                          style={{ animationDuration: "1.8s" }}
-                        >
-                          <SparklesIcon className="size-5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-primary">Translating to English…</p>
-                        {/* Show source → target */}
-                        <p className="text-[11px] text-muted-foreground">
-                          {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}
-                          {" → "}
-                          <span className="font-medium text-foreground/70">English</span>
-                        </p>
-                        {/* Original transcript preview */}
-                        {liveTranscript && (
-                          <p className="text-[11px] text-muted-foreground/60 italic leading-snug line-clamp-3 pt-1 border-t border-border/50">
-                            {liveTranscript}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ── DONE — briefly shown before auto-switch to text tab ── */}
-                    {voiceState === "done" && (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 text-center">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-2">
-                          <span className="text-emerald-600 text-lg font-bold leading-none">✓</span>
-                        </div>
-                        <p className="text-xs font-semibold text-emerald-700">Transcribed successfully!</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Opening text editor…</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              {/* Compose area — ComposeBox (wraps SmartInput) */}
+              <div className="pt-1 border-t border-border">
+                <p className="text-[11px] font-semibold text-muted-foreground pt-2 pb-2">Add your reply</p>
+                <ComposeBox
+                  onSubmit={handlePreviewSend}
+                  placeholder="Write a helpful reply…"
+                  submitLabel="Preview & Send"
+                  modes={["text", "voice", "attach"]}
+                />
               </div>
             </div>
           )}
@@ -2007,28 +1485,28 @@ function ArogyaTalkContent() {
                 </button>
               </div>
 
-              {/* Attached document — shown when reply came from the Attach tab */}
-              {attachedDoc && (
+              {/* Attached document — shown when reply came from the Attach mode */}
+              {pendingReply?.attachedDoc && (
                 <div>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <PaperclipIcon className="size-3" /> Attached Document
                   </p>
                   <div className="rounded-lg border border-border overflow-hidden">
-                    {attachedDoc.isPdf ? (
+                    {pendingReply.attachedDoc.isPdf ? (
                       <div className="flex items-center gap-3 bg-red-50 px-3 py-2.5">
                         <FileTextIcon className="size-7 text-red-400 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{attachedDoc.filename}</p>
-                          <p className="text-[10px] text-muted-foreground">{attachedDoc.docType}</p>
+                          <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
+                          <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 bg-muted/30 px-3 py-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
+                        <img src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{attachedDoc.filename}</p>
-                          <p className="text-[10px] text-muted-foreground">{attachedDoc.docType}</p>
+                          <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
+                          <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
                         </div>
                       </div>
                     )}
@@ -2037,21 +1515,21 @@ function ArogyaTalkContent() {
               )}
 
               {/* Original native-language recording — shown only when voice was non-English */}
-              {hasNativeTranscript && voiceRecording && (
+              {hasNativeTranscript && pendingReply?.voiceRecording && (
                 <div>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <MicIcon className="size-3" />
-                    {voiceLangInfo?.native ?? voiceRecording.lang} · Recorded
+                    {voiceLangInfo?.native ?? pendingReply.voiceRecording.lang} · Recorded
                   </p>
                   <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {voiceLangInfo?.label ?? voiceRecording.lang}
+                        {voiceLangInfo?.label ?? pendingReply.voiceRecording.lang}
                       </span>
                       <span className="text-[10px] text-muted-foreground">→ Translated to English above</span>
                     </div>
                     <p className="text-xs text-foreground/80 leading-relaxed">
-                      {voiceRecording.original}
+                      {pendingReply.voiceRecording.original}
                     </p>
                   </div>
                 </div>
@@ -2129,69 +1607,52 @@ function LinkedMemberContent({ id }: { id: string }) {
   const [posts, setPosts] = React.useState<LinkedPost[]>(member?.posts ?? []);
   const [composeText, setComposeText] = React.useState("");
   const [likedPosts, setLikedPosts] = React.useState<Set<number>>(new Set());
-  const [replyText, setReplyText] = React.useState("");
-  const [replyTab, setReplyTab] = React.useState<"text" | "voice" | "attach">("text");
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
   const nextPostIdRef = React.useRef((member?.posts.length ?? 0) + 100);
 
-  /* ── Attach state ── */
-  type LAttachStep =
-    | { step: "select" }
-    | { step: "preview"; file: File; previewUrl: string; caption: string }
-    | { step: "analyzing" }
-    | { step: "analyzed"; file: File; previewUrl: string; caption: string; docType: string; extractedText: string; summary: string };
-  const [attachState, setAttachState] = React.useState<LAttachStep>({ step: "select" });
-  const [attachedDoc, setAttachedDoc] = React.useState<{ filename: string; previewUrl: string; docType: string; isPdf: boolean } | null>(null);
-
-  /* ── Voice state ── */
-  const [voiceState, setVoiceState] = React.useState<"idle" | "recording" | "translating" | "done">("idle");
-  const [voiceLang, setVoiceLang] = React.useState("en-IN");
-  const [liveTranscript, setLiveTranscript] = React.useState("");
-  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
-  const [voiceRecording, setVoiceRecording] = React.useState<{ lang: string; original: string } | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lRecognitionRef = React.useRef<any>(null);
-  const lFinalTranscriptRef = React.useRef("");
-  const lTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  /**
+   * Stores the submitted compose payload for the reply-preview panel.
+   * Voice recording and attachment metadata live here instead of as
+   * separate inline state (which is now managed by ComposeBox's hooks).
+   */
+  const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
 
   if (!member) return null;
 
   const activePostId = panel.view !== "connection-info" ? panel.postId : null;
   const activePost = activePostId !== null ? posts.find((p) => p.id === activePostId) ?? null : null;
-  const lHasNative = voiceRecording !== null && !voiceRecording.lang.startsWith("en");
-  const lVoiceLangInfo = lHasNative ? (VOICE_LANGUAGES.find((l) => l.code === voiceRecording!.lang) ?? null) : null;
-
-  function resetVoiceAttach() {
-    setReplyTab("text");
-    setVoiceRecording(null);
-    setAttachState({ step: "select" });
-    setAttachedDoc(null);
-  }
+  const lHasNative =
+    pendingReply?.voiceRecording !== null &&
+    pendingReply?.voiceRecording !== undefined &&
+    !pendingReply.voiceRecording.lang.startsWith("en");
+  const lVoiceLangInfo = lHasNative && pendingReply?.voiceRecording
+    ? (VOICE_LANGUAGES.find((l) => l.code === pendingReply.voiceRecording!.lang) ?? null)
+    : null;
 
   function openReplies(postId: number) {
     setPanel({ view: "replies", postId });
-    setReplyText("");
-    resetVoiceAttach();
+    setPendingReply(null);
   }
   function openSummary(postId: number) { setPanel({ view: "summary", postId }); }
   function closePanel() {
     setPanel({ view: "connection-info" });
-    setReplyText("");
-    resetVoiceAttach();
+    setPendingReply(null);
   }
 
-  function handlePreviewSend() {
+  function handlePreviewSend(payload: ComposeSubmitPayload) {
     if (panel.view !== "replies") return;
+    const text = payload.text.trim();
+    if (!text) return;
+    setPendingReply(payload);
     setSelectedVersion(1);
-    setPanel({ view: "reply-preview", postId: panel.postId, original: replyText, rephrasings: generateRephrasings(replyText) });
+    setPanel({ view: "reply-preview", postId: panel.postId, original: text, rephrasings: generateRephrasings(text) });
   }
   function handleBackToCompose() {
     if (panel.view !== "reply-preview") return;
-    setReplyText(panel.original);
     setPanel({ view: "replies", postId: panel.postId });
   }
-  function handlePost() {
-    const trimmed = composeText.trim();
+  function handlePost(payload: SmartInputSubmitPayload) {
+    const trimmed = payload.text.trim();
     if (!trimmed) return;
     const newPost: LinkedPost = {
       id: nextPostIdRef.current++, initials: "KU", author: "You",
@@ -2216,89 +1677,9 @@ function LinkedMemberContent({ id }: { id: string }) {
     ));
     closePanel();
   }
-
-  /* ── Attach helpers ── */
-  function lHandleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if (!file) return;
-    setAttachState({ step: "preview", file, previewUrl: URL.createObjectURL(file), caption: "" });
-    e.target.value = "";
-  }
-  function lResetAttach() { setAttachState({ step: "select" }); setAttachedDoc(null); }
-  async function lHandleAnalyzeImage() {
-    if (attachState.step !== "preview") return;
-    const { file, previewUrl, caption } = attachState;
-    setAttachState({ step: "analyzing" });
-    try {
-      const res = await fetch("/api/analyze-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, mimeType: file.type }) });
-      const data = await res.json() as { docType: string; extractedText: string; summary: string };
-      setAttachState({ step: "analyzed", file, previewUrl, caption, ...data });
-    } catch {
-      setAttachState({ step: "preview", file, previewUrl, caption });
-    }
-  }
-  function lHandleUseAttachment() {
-    if (attachState.step !== "analyzed") return;
-    const { file, previewUrl, caption, docType, summary } = attachState;
-    setAttachedDoc({ filename: file.name, previewUrl, docType, isPdf: file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf") });
-    setReplyText(caption ? `${caption}\n\n${summary}` : summary);
-    setReplyTab("text");
-  }
-
-  /* ── Voice helpers ── */
-  function lStopVoiceTimer() { if (lTimerRef.current) { clearInterval(lTimerRef.current); lTimerRef.current = null; } }
-  function lStopVoiceRecording() { if (lRecognitionRef.current) { lRecognitionRef.current.stop(); lRecognitionRef.current = null; } lStopVoiceTimer(); }
-  function lFormatSeconds(s: number) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
-
-  function lStartVoiceRecording() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert("Voice recording requires Chrome or Edge."); return; }
-    lFinalTranscriptRef.current = "";
-    setLiveTranscript(""); setRecordingSeconds(0); setVoiceState("recording");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognition: any = new SR();
-    recognition.continuous = true; recognition.interimResults = true; recognition.lang = voiceLang;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) lFinalTranscriptRef.current += event.results[i][0].transcript + " ";
-        else interim += event.results[i][0].transcript;
-      }
-      setLiveTranscript((lFinalTranscriptRef.current + interim).trim());
-    };
-    recognition.onend = () => {
-      lStopVoiceTimer();
-      const text = lFinalTranscriptRef.current.trim();
-      if (!text) { setVoiceState("idle"); return; }
-      if (voiceLang === "en-IN" || voiceLang.startsWith("en")) {
-        setVoiceRecording(null); setReplyText(text); setVoiceState("done");
-        setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
-      } else {
-        setVoiceRecording({ lang: voiceLang, original: text }); setVoiceState("translating");
-        (async () => {
-          try {
-            const res = await fetch(`/api/translate?text=${encodeURIComponent(text)}&from=${encodeURIComponent(voiceLang)}`);
-            const data = await res.json() as { translated: string; original: string };
-            setReplyText(data.translated || text);
-          } catch { setReplyText(text); }
-          setVoiceState("done");
-          setTimeout(() => { setReplyTab("text"); setVoiceState("idle"); setLiveTranscript(""); }, 1200);
-        })();
-      }
-    };
-    recognition.onerror = () => { lStopVoiceTimer(); setVoiceState("idle"); };
-    lRecognitionRef.current = recognition; recognition.start();
-    lTimerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
-  }
-
-  /* Stop recording on unmount */
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  React.useEffect(() => () => { lStopVoiceRecording(); }, []);
-  /* Stop recording when leaving replies panel */
-  React.useEffect(() => {
-    if (panel.view !== "replies") { lStopVoiceRecording(); setVoiceState("idle"); }
-  }, [panel.view]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Voice recording, file attachment, and all related state is now
+     managed by useVoiceRecorder / useFileAttach inside <ComposeBox />.
+     No duplicate hooks or handlers needed here. */
 
   const linkedSummary = activePostId !== null
     ? (LINKED_POST_SUMMARIES[id]?.[activePostId] ?? (activePost && activePost.replyCount === 0 ? "No replies yet on this post." : `${activePost?.replyCount ?? 0} ${activePost?.replyCount === 1 ? "reply" : "replies"} received.`))
@@ -2343,21 +1724,24 @@ function LinkedMemberContent({ id }: { id: string }) {
         <div className="flex-1 min-w-0 overflow-y-auto px-5 pb-5 lg:px-6">
           <div className="space-y-3 pt-1">
 
-            {/* Compose */}
+            {/* Compose — SmartInput (growing textarea + voice/image/attach) */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-              <div className="flex gap-2 items-start">
-                <Avatar className="size-7 shrink-0 mt-0.5">
+              <div className="flex gap-2 items-center mb-2">
+                <Avatar className="size-7 shrink-0">
                   <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">KU</AvatarFallback>
                 </Avatar>
-                <textarea
-                  value={composeText}
-                  onChange={(e) => setComposeText(e.target.value)}
-                  placeholder={`Share an update, note, or question with ${member.name.split(" ")[0]}…`}
-                  rows={2}
-                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/70"
-                />
-                <Button size="sm" className="shrink-0" disabled={!composeText.trim()} onClick={handlePost}>Post</Button>
+                <span className="text-xs text-muted-foreground">Post to {member.name.split(" ")[0]}&apos;s feed</span>
               </div>
+              <SmartInput
+                value={composeText}
+                onChange={setComposeText}
+                onSubmit={handlePost}
+                placeholder={`Share an update, note, or question with ${member.name.split(" ")[0]}…`}
+                submitLabel="Post"
+                modes={["text", "voice", "image", "attach"]}
+                maxRows={4}
+                layout="chat"
+              />
             </div>
 
             {/* Posts */}
@@ -2553,242 +1937,15 @@ function LinkedMemberContent({ id }: { id: string }) {
                 )}
               </div>
 
-              <div className="space-y-2.5 pt-1 border-t border-border">
-                <p className="text-[11px] font-semibold text-muted-foreground pt-2">Add your reply</p>
-
-                {/* Text / Voice / Attach tabs */}
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  {(["text", "voice", "attach"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setReplyTab(tab)}
-                      className={cn(
-                        "flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium transition-colors",
-                        replyTab === tab ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {tab === "text"   && <><MessageSquareIcon className="size-3" /> Text</>}
-                      {tab === "voice"  && <><MicIcon className="size-3" /> Voice</>}
-                      {tab === "attach" && <><PaperclipIcon className="size-3" /> Attach</>}
-                    </button>
-                  ))}
-                </div>
-
-                {/* ── TEXT tab ── */}
-                {replyTab === "text" && (
-                  <>
-                    <textarea
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Write a helpful reply…"
-                      rows={3}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
-                    />
-                    {lHasNative && voiceRecording && (
-                      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <MicIcon className="size-3 text-muted-foreground/60" />
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            {lVoiceLangInfo?.native ?? voiceRecording.lang} · Original
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground/80 leading-relaxed italic">{voiceRecording.original}</p>
-                      </div>
-                    )}
-                    {attachedDoc && (
-                      <div className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                        {attachedDoc.isPdf ? <FileTextIcon className="size-5 text-red-400 shrink-0" /> : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={attachedDoc.previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">📎 Attachment</p>
-                          <p className="text-xs font-medium truncate">{attachedDoc.docType}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{attachedDoc.filename}</p>
-                        </div>
-                        <button onClick={() => setAttachedDoc(null)} className="shrink-0 text-muted-foreground hover:text-foreground">
-                          <XIcon className="size-3.5" />
-                        </button>
-                      </div>
-                    )}
-                    <Button size="sm" className="w-full" disabled={!replyText.trim()} onClick={handlePreviewSend}>
-                      Preview &amp; Send
-                    </Button>
-                  </>
-                )}
-
-                {/* ── ATTACH tab ── */}
-                {replyTab === "attach" && (
-                  <div className="space-y-2.5">
-                    {attachState.step === "select" && (
-                      <label className="block cursor-pointer">
-                        <input type="file" accept="image/*,.pdf" className="sr-only" onChange={lHandleFileSelect} />
-                        <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-5 text-center hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                          <div className="flex gap-2 justify-center mb-3">
-                            <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center"><ImageIcon className="size-4 text-primary" /></div>
-                            <div className="size-9 rounded-xl bg-red-50 flex items-center justify-center"><FileTextIcon className="size-4 text-red-500" /></div>
-                          </div>
-                          <p className="text-xs font-semibold mb-1">Share a document or photo</p>
-                          <p className="text-[11px] text-muted-foreground leading-snug mb-3">Prescription, lab report, scan — share as proof</p>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary">
-                            <PaperclipIcon className="size-3" /> Browse Files
-                          </span>
-                          <p className="text-[10px] text-muted-foreground mt-2">JPG · PNG · PDF supported</p>
-                        </div>
-                      </label>
-                    )}
-                    {attachState.step === "preview" && (
-                      <>
-                        <div className="relative rounded-lg border border-border overflow-hidden">
-                          {attachState.file.type === "application/pdf" || attachState.file.name.toLowerCase().endsWith(".pdf") ? (
-                            <div className="bg-red-50 p-3 flex items-center gap-3">
-                              <FileTextIcon className="size-8 text-red-400 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate">{attachState.file.name}</p>
-                                <p className="text-[10px] text-muted-foreground">{(attachState.file.size / 1024).toFixed(0)} KB · PDF</p>
-                              </div>
-                            </div>
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={attachState.previewUrl} alt="Preview" className="w-full max-h-36 object-cover" />
-                          )}
-                          <button onClick={lResetAttach} className="absolute top-1.5 right-1.5 size-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">
-                            <XIcon className="size-3" />
-                          </button>
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-                            Caption <span className="normal-case font-normal">(optional)</span>
-                          </label>
-                          <input
-                            type="text" value={attachState.caption}
-                            onChange={(e) => setAttachState((prev) => prev.step === "preview" ? { ...prev, caption: e.target.value } : prev)}
-                            placeholder="e.g. My latest HbA1c showing 6.9%…"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary placeholder:text-muted-foreground"
-                          />
-                        </div>
-                        <Button size="sm" className="w-full" onClick={lHandleAnalyzeImage}>
-                          <SparklesIcon className="size-3.5 mr-1.5" /> Analyze with AI
-                        </Button>
-                      </>
-                    )}
-                    {attachState.step === "analyzing" && (
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-2">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto animate-spin" style={{ animationDuration: "1.8s" }}>
-                          <SparklesIcon className="size-5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-primary">AI is reading your document…</p>
-                        <p className="text-[11px] text-muted-foreground">Extracting text and generating summary</p>
-                      </div>
-                    )}
-                    {attachState.step === "analyzed" && (
-                      <>
-                        <div className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/30 px-3 py-2">
-                          {attachState.file.type === "application/pdf" || attachState.file.name.toLowerCase().endsWith(".pdf") ? (
-                            <FileTextIcon className="size-6 text-red-400 shrink-0" />
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={attachState.previewUrl} alt="" className="size-10 rounded-md object-cover shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate">{attachState.file.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{attachState.docType} · AI Analyzed ✓</p>
-                          </div>
-                          <button onClick={lResetAttach} className="shrink-0 text-muted-foreground hover:text-foreground"><XIcon className="size-3.5" /></button>
-                        </div>
-                        <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Extracted Text</p>
-                          <pre className="text-[11px] text-foreground/70 leading-relaxed font-sans whitespace-pre-wrap line-clamp-5">{attachState.extractedText}</pre>
-                        </div>
-                        <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <SparklesIcon className="size-3.5 text-violet-600" />
-                            <span className="text-[11px] font-semibold text-violet-700">AI Summary</span>
-                          </div>
-                          <p className="text-xs leading-relaxed text-foreground/80">{attachState.summary}</p>
-                        </div>
-                        <Button size="sm" className="w-full" onClick={lHandleUseAttachment}>Use as Reply</Button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* ── VOICE tab ── */}
-                {replyTab === "voice" && (
-                  <div className="space-y-2.5">
-                    {voiceState === "idle" && (
-                      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-3">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto">
-                          <MicIcon className="size-5 text-primary" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Speak in</label>
-                          <select
-                            value={voiceLang} onChange={(e) => setVoiceLang(e.target.value)}
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-primary cursor-pointer"
-                          >
-                            {VOICE_LANGUAGES.map((l) => (
-                              <option key={l.code} value={l.code}>{l.native}  —  {l.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-snug text-center">ArogyaAI will transcribe your speech live.</p>
-                        <Button size="sm" variant="outline" className="w-full text-xs border-primary/30 text-primary" onClick={lStartVoiceRecording}>
-                          Start Recording
-                        </Button>
-                      </div>
-                    )}
-                    {voiceState === "recording" && (
-                      <div className="space-y-2.5">
-                        <div className="flex flex-col items-center gap-2 py-2">
-                          <div className="relative">
-                            <div className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
-                            <div className="relative flex size-12 items-center justify-center rounded-full bg-red-500 shadow-md">
-                              <MicIcon className="size-5 text-white" />
-                            </div>
-                          </div>
-                          <span className="text-sm font-mono font-bold text-red-500 tabular-nums">{lFormatSeconds(recordingSeconds)}</span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] text-muted-foreground">Listening in</span>
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                              {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background px-3 py-2.5 min-h-[60px] flex items-start">
-                          {liveTranscript
-                            ? <p className="text-xs leading-relaxed text-foreground/70 italic">{liveTranscript}</p>
-                            : <p className="text-[11px] text-muted-foreground/50 italic m-auto self-center w-full text-center">Start speaking…</p>
-                          }
-                        </div>
-                        <Button size="sm" variant="destructive" className="w-full text-xs" onClick={lStopVoiceRecording}>Stop Recording</Button>
-                      </div>
-                    )}
-                    {voiceState === "translating" && (
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-2">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 mx-auto animate-spin" style={{ animationDuration: "1.8s" }}>
-                          <SparklesIcon className="size-5 text-primary" />
-                        </div>
-                        <p className="text-xs font-semibold text-primary">Translating to English…</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.native ?? voiceLang}{" → "}<span className="font-medium text-foreground/70">English</span>
-                        </p>
-                        {liveTranscript && (
-                          <p className="text-[11px] text-muted-foreground/60 italic leading-snug line-clamp-3 pt-1 border-t border-border/50">{liveTranscript}</p>
-                        )}
-                      </div>
-                    )}
-                    {voiceState === "done" && (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 text-center">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-2">
-                          <span className="text-emerald-600 text-lg font-bold leading-none">✓</span>
-                        </div>
-                        <p className="text-xs font-semibold text-emerald-700">Transcribed successfully!</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Opening text editor…</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              {/* Compose area — ComposeBox (wraps SmartInput) */}
+              <div className="pt-1 border-t border-border">
+                <p className="text-[11px] font-semibold text-muted-foreground pt-2 pb-2">Add your reply</p>
+                <ComposeBox
+                  onSubmit={handlePreviewSend}
+                  placeholder="Write a helpful reply…"
+                  submitLabel="Preview & Send"
+                  modes={["text", "voice", "attach"]}
+                />
               </div>
             </div>
           )}
@@ -2820,27 +1977,27 @@ function LinkedMemberContent({ id }: { id: string }) {
               </div>
 
               {/* Attached document */}
-              {attachedDoc && (
+              {pendingReply?.attachedDoc && (
                 <div>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <PaperclipIcon className="size-3" /> Attached Document
                   </p>
                   <div className="rounded-lg border border-border overflow-hidden">
-                    {attachedDoc.isPdf ? (
+                    {pendingReply.attachedDoc.isPdf ? (
                       <div className="flex items-center gap-3 bg-red-50 px-3 py-2.5">
                         <FileTextIcon className="size-7 text-red-400 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{attachedDoc.filename}</p>
-                          <p className="text-[10px] text-muted-foreground">{attachedDoc.docType}</p>
+                          <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
+                          <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 bg-muted/30 px-3 py-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
+                        <img src={pendingReply.attachedDoc.previewUrl} alt="" className="size-12 rounded object-cover shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{attachedDoc.filename}</p>
-                          <p className="text-[10px] text-muted-foreground">{attachedDoc.docType}</p>
+                          <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
+                          <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
                         </div>
                       </div>
                     )}
@@ -2849,19 +2006,19 @@ function LinkedMemberContent({ id }: { id: string }) {
               )}
 
               {/* Native language recording reference */}
-              {lHasNative && voiceRecording && (
+              {lHasNative && pendingReply?.voiceRecording && (
                 <div>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <MicIcon className="size-3" /> {lVoiceLangInfo?.native ?? voiceRecording.lang} · Recorded
+                    <MicIcon className="size-3" /> {lVoiceLangInfo?.native ?? pendingReply.voiceRecording.lang} · Recorded
                   </p>
                   <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {lVoiceLangInfo?.label ?? voiceRecording.lang}
+                        {lVoiceLangInfo?.label ?? pendingReply.voiceRecording.lang}
                       </span>
                       <span className="text-[10px] text-muted-foreground">→ Translated to English above</span>
                     </div>
-                    <p className="text-xs text-foreground/80 leading-relaxed">{voiceRecording.original}</p>
+                    <p className="text-xs text-foreground/80 leading-relaxed">{pendingReply.voiceRecording.original}</p>
                   </div>
                 </div>
               )}
