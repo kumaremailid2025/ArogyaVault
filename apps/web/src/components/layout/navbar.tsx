@@ -2,15 +2,22 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   MenuIcon, XIcon, MoonIcon, SunIcon, HeartPulseIcon,
+  LogOutIcon, LayoutDashboardIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/core/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/core/ui/sheet";
 import { Container, Row } from "@/core/primitives";
+import { Avatar, AvatarFallback } from "@/core/ui/avatar";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/core/ui/dropdown-menu";
+import { useAuthStore } from "@/stores";
 
 const NAV_LINKS = [
   { label: "Home",         href: "/" },
@@ -43,7 +50,25 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const displayName = user?.name ?? "User";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const handleSignOut = () => {
+    logout();
+    router.push("/sign-in");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-md">
@@ -75,9 +100,43 @@ export function Navbar() {
             >
               {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
             </Button>
-            <Button asChild size="sm">
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
+
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full h-auto pl-1 pr-2 py-1 gap-2">
+                    <Avatar className="size-7">
+                      <AvatarFallback className="text-xs bg-primary text-primary-foreground font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{displayName}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    <span className="font-semibold">{displayName}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/liveboard" className="flex items-center gap-2 cursor-pointer">
+                      <LayoutDashboardIcon className="size-4" /> Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <LogOutIcon className="size-4" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild size="sm">
+                <Link href="/sign-in">Sign In</Link>
+              </Button>
+            )}
           </Row>
 
           {/* Mobile hamburger */}
@@ -124,9 +183,29 @@ export function Navbar() {
                   </nav>
                   {/* Mobile CTA */}
                   <div className="border-t border-border p-4">
-                    <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
-                      <Link href="/sign-in">Sign In</Link>
-                    </Button>
+                    {isAuthenticated ? (
+                      <div className="flex flex-col gap-2">
+                        <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
+                          <Link href="/liveboard" className="flex items-center gap-2">
+                            <LayoutDashboardIcon className="size-4" /> Dashboard
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setMobileOpen(false);
+                            handleSignOut();
+                          }}
+                        >
+                          <LogOutIcon className="size-4 mr-2" /> Sign Out
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
+                        <Link href="/sign-in">Sign In</Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </SheetContent>

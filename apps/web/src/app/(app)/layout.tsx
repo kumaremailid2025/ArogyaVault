@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
+import { AuthGuard } from "@/components/shared/auth-guard";
 
 /* ── Lazy-loaded shell components ────────────────────────────────── */
 const AppHeader = dynamic(
@@ -19,24 +20,26 @@ const AppBottomBar = dynamic(
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      {/* Persistent header */}
-      <AppHeader />
+    <AuthGuard>
+      <div className="flex h-screen flex-col overflow-hidden">
+        {/* Persistent header */}
+        <AppHeader />
 
-      {/* Body: sidebar + scrollable content */}
-      <div className="flex flex-1 overflow-hidden">
-        <AppSidebar />
+        {/* Body: sidebar + scrollable content */}
+        <div className="flex flex-1 overflow-hidden">
+          <AppSidebar />
 
-        {/* Content column */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Scrollable content */}
-          <main className="flex-1 overflow-hidden">
-            {children}
-          </main>
-          {/* Persistent bottom bar */}
-          <AppBottomBar />
+          {/* Content column */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Scrollable content */}
+            <main className="flex-1 overflow-hidden">
+              {children}
+            </main>
+            {/* Persistent bottom bar */}
+            <AppBottomBar />
+          </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

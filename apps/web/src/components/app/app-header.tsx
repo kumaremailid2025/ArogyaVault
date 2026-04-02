@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Badge } from "@/core/ui/badge";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -141,9 +142,24 @@ export function AppHeader() {
     );
   }
 
-  function handleSignOut() {
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const displayName = user?.name ?? "User";
+  const displayPhone = user?.phone
+    ? `${user.phone.slice(0, 3)} ${user.phone.slice(3, 8)} ${user.phone.slice(8)}`
+    : "";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const handleSignOut = () => {
+    logout();
     router.push("/sign-in");
-  }
+  };
 
   return (
     <>
@@ -315,18 +331,18 @@ export function AppHeader() {
               <Button variant="ghost" size="sm" className="rounded-full h-auto pl-1 pr-2 py-1 gap-2">
                 <Avatar className="size-7">
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground font-semibold">
-                    KU
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:block text-sm font-medium">Kumar</span>
+                <span className="hidden sm:block text-sm font-medium">{displayName}</span>
                 <ChevronDownIcon className="size-3.5 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="font-semibold">Kumar</span>
-                  <span className="text-xs font-normal text-muted-foreground">+91 98765 43210</span>
+                  <span className="font-semibold">{displayName}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{displayPhone}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
