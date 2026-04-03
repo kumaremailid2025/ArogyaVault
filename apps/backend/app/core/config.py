@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     app_name: str = "ArogyaVault API"
     debug: bool = False
 
+    # JWT
+    jwt_secret: str = "arogyavault-dev-secret-change-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+
     # AWS
     aws_region: str = "ap-south-1"
     aws_access_key_id: str = ""

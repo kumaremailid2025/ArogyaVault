@@ -9,6 +9,8 @@ import dynamic from "next/dynamic";
 
 import type { SmartInputSubmitPayload } from "@/models/input";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
+
+/* ── Mock data — used for "invited" variant only ──────────────────── */
 import { COMMUNITY_POSTS } from "@/data/community-data";
 import {
   LINKED_MEMBER_DATA,
@@ -16,15 +18,30 @@ import {
   LINKED_POST_AI_RESPONSES,
 } from "@/data/linked-member-data";
 import {
-  COMMUNITY_FILES,
+  COMMUNITY_FILES as MOCK_COMMUNITY_FILES,
   INVITED_FILES,
   RECENT_FILE_QA,
 } from "@/data/community-files-data";
 import {
-  COMMUNITY_MEMBERS,
+  COMMUNITY_MEMBERS as MOCK_COMMUNITY_MEMBERS,
   INVITED_GROUP_MEMBERS,
 } from "@/data/community-members-data";
 import { generateRephrasings } from "@/lib/post-utils";
+
+/* ── API hooks — used for "community" variant ─────────────────────── */
+import {
+  usePosts,
+  useCreatePost,
+  useSubmitReply,
+  useToggleLike,
+  usePostSummary,
+  useRephrase,
+  useFiles,
+  useRecentFileQA,
+  useAskFileQuestion,
+  useMembers,
+} from "@/hooks/api";
+
 import type { CommunityPost, LinkedPost, CommunityFile, CommunityMember } from "@/models/community";
 
 import type {
@@ -55,6 +72,9 @@ const InviteModal = dynamic(
    Single orchestrator for /community and /community/[groupId].
    Owns: banner, state, center content (feed/files/members),
    right panel, and invite modal.
+
+   "community" variant → data fetched from backend API
+   "invited" variant   → data from local mock imports
 ═══════════════════════════════════════════════════════════════════ */
 
 interface CommunityWrapperContainerProps {
@@ -161,36 +181,70 @@ export const CommunityWrapperContainer = ({
   group,
   tab = "feed",
 }: CommunityWrapperContainerProps) => {
-  /* ── Resolve data source ── */
-  const member = variant === "invited" ? LINKED_MEMBER_DATA[group] : null;
-  const initialPosts = variant === "community" ? COMMUNITY_POSTS : (member?.posts ?? []);
+  const isCommunity = variant === "community";
+  const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
+
+  /* ── Resolve invited data source (mock) ── */
+  const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
+
+  /* ══════════════════════════════════════════════════════════════════
+     API HOOKS — always called (React rules), enabled only for community
+     ══════════════════════════════════════════════════════════════════ */
+
+  const postsQuery = usePosts(groupId, isCommunity);
+  const filesQuery = useFiles(groupId, isCommunity);
+  const membersQuery = useMembers(groupId, isCommunity);
+  const recentQAQuery = useRecentFileQA(groupId, isCommunity);
+
+  const createPostMut = useCreatePost(groupId);
+  const submitReplyMut = useSubmitReply(groupId);
+  const toggleLikeMut = useToggleLike(groupId);
+  const rephraseMut = useRephrase();
+  const askFileQuestionMut = useAskFileQuestion(groupId);
 
   /* ── State ── */
   const [inviteOpen, setInviteOpen] = React.useState(false);
-  const [posts, setPosts] = React.useState<(CommunityPost | LinkedPost)[]>(initialPosts);
   const [composeText, setComposeText] = React.useState("");
   const [likedPosts, setLikedPosts] = React.useState<Set<number>>(new Set());
   const [panelState, setPanelState] = React.useState<PanelState>({ view: "default" });
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
   const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
+
+  /* ── Local state for invited variant only ── */
+  const [invitedPosts, setInvitedPosts] = React.useState<(CommunityPost | LinkedPost)[]>(
+    member?.posts ?? [],
+  );
+  const [invitedFiles, setInvitedFiles] = React.useState<CommunityFile[]>(
+    INVITED_FILES[group] ?? [],
+  );
   const nextPostIdRef = React.useRef(
-    variant === "community"
-      ? COMMUNITY_POSTS.length
+    isCommunity
+      ? 100
       : (member?.posts.length ?? 0) + 100,
   );
 
-  /* ── File state ── */
-  const initialFiles = variant === "community"
-    ? COMMUNITY_FILES
-    : (INVITED_FILES[group] ?? []);
-  const [communityFiles, setCommunityFiles] = React.useState<CommunityFile[]>(initialFiles);
   const [selectedFileId, setSelectedFileId] = React.useState<number | null>(null);
-
-  /* ── Member state ── */
-  const membersList: CommunityMember[] = variant === "community"
-    ? COMMUNITY_MEMBERS
-    : (INVITED_GROUP_MEMBERS[group] ?? []);
   const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
+
+  /* ══════════════════════════════════════════════════════════════════
+     RESOLVED DATA — community from API, invited from mock
+     ══════════════════════════════════════════════════════════════════ */
+
+  const posts: (CommunityPost | LinkedPost)[] = isCommunity
+    ? (postsQuery.data ?? [])
+    : invitedPosts;
+
+  const communityFiles: CommunityFile[] = isCommunity
+    ? (filesQuery.data as CommunityFile[] ?? [])
+    : invitedFiles;
+
+  const membersList: CommunityMember[] = isCommunity
+    ? (membersQuery.data as CommunityMember[] ?? [])
+    : (INVITED_GROUP_MEMBERS[group] ?? []);
+
+  /* ── Summary panel query (on-demand, fires when panel is open) ── */
+  const summaryPostId = panelState.view === "summary" ? panelState.postId : null;
+  const summaryQuery = usePostSummary(groupId, summaryPostId, isCommunity && summaryPostId !== null);
 
   /* ── Derived ── */
   const activePostId = (panelState.view === "summary" || panelState.view === "replies" || panelState.view === "reply-preview")
@@ -201,17 +255,17 @@ export const CommunityWrapperContainer = ({
     : null;
 
   const linkedSummary =
-    variant === "invited" && activePostId !== null
+    !isCommunity && activePostId !== null
       ? LINKED_POST_SUMMARIES[group]?.[activePostId] ??
         (activePost && activePost.replyCount === 0
           ? "No replies yet on this post."
           : `${activePost?.replyCount ?? 0} ${activePost?.replyCount === 1 ? "reply" : "replies"} received.`)
-      : "";
+      : (isCommunity && summaryQuery.data?.summary) || "";
 
   const linkedAiResponse =
-    variant === "invited" && activePostId !== null
+    !isCommunity && activePostId !== null
       ? LINKED_POST_AI_RESPONSES[group]?.[activePostId] ?? ""
-      : "";
+      : (isCommunity && summaryQuery.data?.ai_response) || "";
 
   /* ── File derived ── */
   const activeFileId = (panelState.view === "file-detail" || panelState.view === "file-qa")
@@ -228,10 +282,9 @@ export const CommunityWrapperContainer = ({
       ? membersList.find((m) => m.id === selectedMemberId) ?? null
       : null;
 
-  /* Filtered recent Q&A for current file set (community vs invited) */
+  /* Filtered recent Q&A for current file set */
   const currentRecentQA = React.useMemo(() => {
-    if (variant === "invited") {
-      /* For invited, build from the invited files Q&A */
+    if (!isCommunity) {
       const invFiles = INVITED_FILES[group] ?? [];
       return invFiles.flatMap((f) =>
         f.questions.map((qa) => ({
@@ -246,8 +299,9 @@ export const CommunityWrapperContainer = ({
         })),
       ).slice(0, 5);
     }
-    return RECENT_FILE_QA;
-  }, [variant, group]);
+    // Community: use API data or fallback to mock
+    return recentQAQuery.data ?? RECENT_FILE_QA;
+  }, [isCommunity, group, recentQAQuery.data]);
 
   /* ── Banner config ── */
   const bannerConfig = React.useMemo(
@@ -255,7 +309,10 @@ export const CommunityWrapperContainer = ({
     [variant, group, tab],
   );
 
-  /* ── Handlers ── */
+  /* ══════════════════════════════════════════════════════════════════
+     HANDLERS
+     ══════════════════════════════════════════════════════════════════ */
+
   const openReplies = React.useCallback((postId: number) => {
     setPanelState({ view: "replies", postId });
     setPendingReply(null);
@@ -270,13 +327,39 @@ export const CommunityWrapperContainer = ({
     setPendingReply(null);
   }, []);
 
+  /* ── Rephrase / preview ── */
   const handlePreviewSend = React.useCallback((payload: ComposeSubmitPayload) => {
+    const text = payload.text.trim();
+    if (!text) return;
+
     setPanelState((prev) => {
       if (prev.view !== "replies") return prev;
-      const text = payload.text.trim();
-      if (!text) return prev;
       setPendingReply(payload);
       setSelectedVersion(1);
+
+      if (isCommunity) {
+        // Call API for rephrasings — optimistic: set panel with placeholder, update on success
+        rephraseMut.mutate(text, {
+          onSuccess: (data) => {
+            setPanelState((cur) => {
+              if (cur.view !== "reply-preview") return cur;
+              return {
+                ...cur,
+                rephrasings: data.rephrasings as [string, string],
+              };
+            });
+          },
+        });
+        // Show panel immediately with local fallback rephrasings
+        return {
+          view: "reply-preview" as const,
+          postId: prev.postId,
+          original: text,
+          rephrasings: generateRephrasings(text),
+        };
+      }
+
+      // Invited: local rephrasings
       return {
         view: "reply-preview" as const,
         postId: prev.postId,
@@ -284,7 +367,7 @@ export const CommunityWrapperContainer = ({
         rephrasings: generateRephrasings(text),
       };
     });
-  }, []);
+  }, [isCommunity, rephraseMut]);
 
   const handleBackToCompose = React.useCallback(() => {
     setPanelState((prev) =>
@@ -292,80 +375,96 @@ export const CommunityWrapperContainer = ({
     );
   }, []);
 
+  /* ── Like ── */
   const toggleLike = React.useCallback((postId: number) => {
+    if (isCommunity) {
+      // Optimistic local update + API call
+      setLikedPosts((prev) => {
+        const next = new Set(prev);
+        next.has(postId) ? next.delete(postId) : next.add(postId);
+        return next;
+      });
+      toggleLikeMut.mutate(postId);
+      return;
+    }
+
+    // Invited: local only
     setLikedPosts((prev) => {
       const next = new Set(prev);
       next.has(postId) ? next.delete(postId) : next.add(postId);
       return next;
     });
-    setPosts((prev) =>
+    setInvitedPosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
         const delta = likedPosts.has(postId) ? -1 : 1;
         return { ...p, likes: p.likes + delta };
       }),
     );
-  }, [likedPosts]);
+  }, [isCommunity, likedPosts, toggleLikeMut]);
 
+  /* ── Submit reply ── */
   const handleSubmitReply = React.useCallback(() => {
     setPanelState((prev) => {
       if (prev.view !== "reply-preview") return prev;
       const { postId, original, rephrasings } = prev;
       const versions: string[] = [original, ...rephrasings];
       const text = versions[selectedVersion];
-      const author = variant === "community" ? "Kumar" : "You";
-      setPosts((ps) =>
-        ps.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                replyCount: p.replyCount + 1,
-                replies: [
-                  ...p.replies,
-                  { initials: "KU", author, time: "Just now", text },
-                ],
-              }
-            : p,
-        ),
-      );
+
+      if (isCommunity) {
+        submitReplyMut.mutate({ postId, text });
+      } else {
+        const author = "You";
+        setInvitedPosts((ps) =>
+          ps.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  replyCount: p.replyCount + 1,
+                  replies: [
+                    ...p.replies,
+                    { initials: "KU", author, time: "Just now", text },
+                  ],
+                }
+              : p,
+          ),
+        );
+      }
+
       setPendingReply(null);
       setSelectedVersion(0);
       return { view: "replies", postId };
     });
-  }, [selectedVersion, variant]);
+  }, [selectedVersion, isCommunity, submitReplyMut]);
 
+  /* ── Create post ── */
   const handlePost = React.useCallback(
     (payload: SmartInputSubmitPayload) => {
       const trimmed = payload.text.trim();
       if (!trimmed) return;
-      const newPost = variant === "community"
-        ? ({
-            id: nextPostIdRef.current++,
-            initials: "KU",
-            author: "Kumar",
-            location: "Hyderabad",
-            time: "Just now",
-            text: trimmed,
-            likes: 0,
-            replyCount: 0,
-            tag: "Discussion",
-            replies: [],
-          } as CommunityPost)
-        : ({
-            id: nextPostIdRef.current++,
-            initials: "KU",
-            author: "You",
-            time: "Just now",
-            text: trimmed,
-            likes: 0,
-            replyCount: 0,
-            tag: "Update",
-            replies: [],
-          } as LinkedPost);
-      setPosts((prev) => [newPost, ...prev]);
+
+      if (isCommunity) {
+        createPostMut.mutate({ text: trimmed, tag: "Discussion" });
+        setComposeText("");
+        return;
+      }
+
+      // Invited: local
+      const newPost = {
+        id: nextPostIdRef.current++,
+        initials: "KU",
+        author: "You",
+        time: "Just now",
+        text: trimmed,
+        likes: 0,
+        replyCount: 0,
+        tag: "Update",
+        replies: [],
+      } as LinkedPost;
+      setInvitedPosts((prev) => [newPost, ...prev]);
       setComposeText("");
     },
-    [variant],
+    [isCommunity, createPostMut],
   );
 
   /* ── File handlers ── */
@@ -392,8 +491,13 @@ export const CommunityWrapperContainer = ({
       : selectedFileId;
     if (fId === null) return;
 
-    /* Add new Q&A to the file */
-    setCommunityFiles((prev) =>
+    if (isCommunity) {
+      askFileQuestionMut.mutate({ fileId: fId, question: text });
+      return;
+    }
+
+    // Invited: local update
+    setInvitedFiles((prev) =>
       prev.map((f) => {
         if (f.id !== fId) return f;
         const newQA = {
@@ -411,7 +515,7 @@ export const CommunityWrapperContainer = ({
         };
       }),
     );
-  }, [panelState, selectedFileId]);
+  }, [panelState, selectedFileId, isCommunity, askFileQuestionMut]);
 
   const handleSelectFileFromQA = React.useCallback((fileId: number) => {
     setSelectedFileId(fileId);
@@ -425,19 +529,19 @@ export const CommunityWrapperContainer = ({
   }, []);
 
   /* ── Early return for missing invited member ── */
-  if (variant === "invited" && !member) return null;
+  if (!isCommunity && !member) return null;
 
   /* ── Compose placeholder ── */
   const composePlaceholder =
-    variant === "invited" && member
+    !isCommunity && member
       ? `Share an update, note, or question with ${member.name.split(" ")[0]}…`
       : undefined;
 
   /* ── Files / Members titles ── */
   const filesTitle =
-    variant === "community" ? "Community Files" : `${member?.name ?? ""}'s Shared Files`;
-  const membersTitle = variant === "community" ? "Community Members" : "Group Members";
-  const memberCount = variant === "community" ? "12,847" : (member?.memberCount ?? membersList.length);
+    isCommunity ? "Community Files" : `${member?.name ?? ""}'s Shared Files`;
+  const membersTitle = isCommunity ? "Community Members" : "Group Members";
+  const memberCount = isCommunity ? "12,847" : (member?.memberCount ?? membersList.length);
 
   /* ── Render ── */
   return (
@@ -563,7 +667,7 @@ export const CommunityWrapperContainer = ({
       <InviteModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        {...(variant === "invited" && member ? { groupContext: `${member.name}'s group` } : {})}
+        {...(!isCommunity && member ? { groupContext: `${member.name}'s group` } : {})}
       />
     </div>
   );

@@ -77,6 +77,20 @@ export const useRefreshToken = () => {
     mutationFn: authApi.refreshToken,
     onSuccess: (data) => {
       setAccessToken(data.access_token, data.expires_in);
+      // If server returned a rotated refresh token, update it
+      if (data.refresh_token) {
+        const currentTokens = useAuthStore.getState().tokens;
+        if (currentTokens) {
+          useAuthStore.setState({
+            tokens: {
+              ...currentTokens,
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+              expires_in: data.expires_in,
+            },
+          });
+        }
+      }
     },
   });
 };

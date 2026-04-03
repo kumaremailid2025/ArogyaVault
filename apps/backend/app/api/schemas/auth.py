@@ -62,7 +62,7 @@ class UserOut(BaseModel):
 class AuthTokens(BaseModel):
     access_token: str
     refresh_token: str
-    expires_in: int = Field(default=3600, description="Token expiry in seconds")
+    expires_in: int = Field(default=900, description="Access token expiry in seconds (15 min)")
 
 
 class VerifyOtpResponse(BaseModel):
@@ -84,7 +84,8 @@ class SendInviteResponse(BaseModel):
 
 class RefreshResponse(BaseModel):
     access_token: str
-    expires_in: int = 3600
+    refresh_token: str | None = None
+    expires_in: int = 900
 
 
 class ErrorResponse(BaseModel):

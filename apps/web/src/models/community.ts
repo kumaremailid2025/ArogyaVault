@@ -3,6 +3,7 @@
 ───────────────────────────────────────────────────── */
 
 export type PostReply = {
+  id?: number;
   initials: string;
   author: string;
   time: string;
@@ -11,6 +12,7 @@ export type PostReply = {
 
 export type CommunityPost = {
   id: number;
+  group_id?: string;
   author: string;
   initials: string;
   location: string;

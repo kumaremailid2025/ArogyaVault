@@ -83,15 +83,20 @@ export const useAuthStore = create<AuthStore>()(
         })),
 
       logout: () => {
+        // Grab refresh token before clearing state
+        const refreshToken = useAuthStore.getState().tokens?.refresh_token;
+
         // Clear client-side state immediately
         set(initialState);
 
-        // Call backend to clear the httpOnly cookie (fire-and-forget)
+        // Call backend to revoke refresh token + clear httpOnly cookie
         const apiBaseUrl =
           process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
         fetch(`${apiBaseUrl}/auth/logout`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
+          body: JSON.stringify({ refresh_token: refreshToken ?? "" }),
         }).catch(() => {
           // Ignore errors — client state is already cleared
         });
