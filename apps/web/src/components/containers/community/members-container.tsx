@@ -1,73 +1,142 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/core/ui/avatar";
-import { Badge } from "@/core/ui/badge";
+import * as React from "react";
+import { SearchIcon, UsersIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MemberCard } from "@/components/community/member-card";
+import { MEMBER_STATUS_FILTERS } from "@/data/community-members-data";
+import type { MemberStatusFilter } from "@/data/community-members-data";
+import type { CommunityMember } from "@/models/community";
 
-/* ── Types ──────────────────────────────────────────────────────── */
-
-export interface MemberItem {
-  name: string;
-  role: string;
-  initials: string;
-  status: string;
-}
+/* ── Props ─────────────────────────────────────────────────────── */
 
 interface MembersContainerProps {
-  /** Heading — e.g. "Community Members" or "Group Members" */
   title: string;
-  /** Total count shown on the right of the header */
   memberCount: number | string;
-  /** Members to display; falls back to placeholder data when omitted */
-  members?: MemberItem[];
+  members: CommunityMember[];
+  selectedMemberId: number | null;
+  onSelectMember: (memberId: number) => void;
 }
 
-/* ── Defaults ───────────────────────────────────────────────────── */
+/* ── Status filter → member.status mapping ─────────────────────── */
 
-const DEFAULT_COMMUNITY_MEMBERS: MemberItem[] = [
-  { name: "Dr. Anjali Mehta", role: "Moderator",     initials: "AM", status: "Active now" },
-  { name: "Ravi Kumar",       role: "Member",         initials: "RK", status: "Active 2h ago" },
-  { name: "Priya Singh",      role: "Member",         initials: "PS", status: "Active 5h ago" },
-  { name: "Dr. Sharma",       role: "Health Expert",  initials: "DS", status: "Active 1d ago" },
-  { name: "Neha Gupta",       role: "Member",         initials: "NG", status: "Active 1d ago" },
-  { name: "Arjun Patel",      role: "Member",         initials: "AP", status: "Active 3d ago" },
-];
+const STATUS_FILTER_MAP: Record<MemberStatusFilter, CommunityMember["status"][] | null> = {
+  All: null,
+  Online: ["online"],
+  "Recently Active": ["recently"],
+  Offline: ["offline"],
+};
 
-/* ── Component ──────────────────────────────────────────────────── */
+/* ── Component ─────────────────────────────────────────────────── */
 
-export function MembersContainer({ title, memberCount, members }: MembersContainerProps) {
-  const items = members ?? DEFAULT_COMMUNITY_MEMBERS;
+export function MembersContainer({
+  title,
+  memberCount,
+  members,
+  selectedMemberId,
+  onSelectMember,
+}: MembersContainerProps) {
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<MemberStatusFilter>("All");
+
+  /* ── Filtered members ── */
+  const filtered = React.useMemo(() => {
+    let result = members;
+    const allowed = STATUS_FILTER_MAP[statusFilter];
+    if (allowed) {
+      result = result.filter((m) => allowed.includes(m.status));
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      result = result.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.role.toLowerCase().includes(q) ||
+          (m.location?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    return result;
+  }, [members, statusFilter, search]);
+
+  /* ── Online count for badge ── */
+  const onlineCount = React.useMemo(
+    () => members.filter((m) => m.status === "online").length,
+    [members],
+  );
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 pb-5 lg:px-6 pt-4">
-      <div className="space-y-4">
-        {/* Header */}
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+
+      {/* ── Pinned header: title + search + status filter ── */}
+      <div className="shrink-0 px-5 pt-4 pb-2 lg:px-6 space-y-3">
+        {/* Title row */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{title}</h2>
-          <span className="text-xs text-muted-foreground">{memberCount} members</span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold">{title}</h2>
+            <span className="text-xs text-muted-foreground">
+              {memberCount} members
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-xs text-green-600">
+            <span className="size-2 rounded-full bg-green-500" />
+            {onlineCount} online
+          </span>
         </div>
 
-        {/* Member list */}
-        {items.map((m) => (
-          <div
-            key={m.name}
-            className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 hover:border-primary/20 hover:bg-muted/30 cursor-pointer transition-colors"
-          >
-            <Avatar className="size-9 shrink-0">
-              <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-                {m.initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium truncate">{m.name}</p>
-                <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                  {m.role}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{m.status}</p>
-            </div>
+        {/* Search bar */}
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search members by name, role, or location…"
+            className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+          />
+        </div>
+
+        {/* Status filter chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+          {MEMBER_STATUS_FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setStatusFilter(f)}
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors border",
+                statusFilter === f
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/30 hover:text-foreground",
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Scrollable member list ── */}
+      <div className="flex-1 overflow-y-auto px-5 pb-5 lg:px-6 min-h-0">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <UsersIcon className="size-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No members found</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
+              Try adjusting your search or filter.
+            </p>
           </div>
-        ))}
+        ) : (
+          <div className="space-y-2 pt-1">
+            {filtered.map((m) => (
+              <MemberCard
+                key={m.id}
+                member={m}
+                isActive={selectedMemberId === m.id}
+                onSelect={onSelectMember}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

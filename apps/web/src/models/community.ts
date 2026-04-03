@@ -46,3 +46,64 @@ export type LinkedMember = {
   memberCount?: number | string;
   members?: { name: string; role: string; initials: string; status: string }[];
 };
+
+/* ── Community File types ──────────────────────────────────────── */
+
+export type FileQA = {
+  id: number;
+  question: string;
+  askedBy: string;
+  askedByInitials: string;
+  askedAt: string;
+  answer: string;
+};
+
+export type CommunityFile = {
+  id: number;
+  name: string;
+  type: "pdf" | "xlsx" | "docx" | "jpg" | "png";
+  size: string;
+  uploadedBy: string;
+  uploadedByInitials: string;
+  uploadedAt: string;
+  category: string;
+  aiSummary: string;
+  qaCount: number;
+  questions: FileQA[];
+};
+
+/* ── Member Activity types ─────────────────────────────────────── */
+
+export type MemberActivityType = "post" | "reply" | "upload" | "question" | "like";
+
+export type MemberActivity = {
+  id: number;
+  type: MemberActivityType;
+  time: string;
+  /** Primary text — post text, reply text, question text, etc. */
+  text: string;
+  /** Optional context — e.g. "replied to Meena R.'s post", "uploaded CBC Report.pdf" */
+  context?: string;
+  /** Tag/category for the activity */
+  tag?: string;
+};
+
+export type CommunityMember = {
+  id: number;
+  name: string;
+  initials: string;
+  role: string;
+  status: "online" | "recently" | "offline";
+  statusLabel: string;
+  joinedAt: string;
+  location?: string;
+  /** Aggregate stats */
+  stats: {
+    posts: number;
+    replies: number;
+    uploads: number;
+    questions: number;
+    likes: number;
+  };
+  activities: MemberActivity[];
+};

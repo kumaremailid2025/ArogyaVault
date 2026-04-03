@@ -1,15 +1,13 @@
 "use client";
 /**
- * ComposeBox — lightweight wrapper around SmartInput.
+ * ComposeBox — fully self-contained compose input.
  *
- * Keeps the same external API (ComposeSubmitPayload, ComposeBoxProps) so
- * all existing call-sites work without changes, while the actual input
- * UI is now provided by SmartInput (growing textarea, mode toolbar, etc.)
+ * Manages ALL internal state (text, voice, attachments, images) autonomously.
+ * Parent only provides:
+ *  - onSubmit callback → receives the final ComposeSubmitPayload
+ *  - Optional display props: placeholder, submitLabel, modes
  *
- * Used in:
- *  - ArogyaTalk replies panel
- *  - LinkedMemberContent replies panel
- *  - Any other "reply / compose" context
+ * Parent does NOT pass any data to ComposeBox. It only gets data out on submit.
  */
 import * as React from "react";
 import { SmartInput } from "@/components/shared/smart-input";
@@ -28,59 +26,51 @@ export interface ComposeSubmitPayload {
 
 /** Props accepted by <ComposeBox /> */
 export interface ComposeBoxProps {
-  /** Called when the user submits composed content */
+  /** Called with the final payload when the user submits */
   onSubmit: (payload: ComposeSubmitPayload) => void;
-
-  /**
-   * Controlled text value — parent manages this string.
-   * Maps to SmartInput's `value` + `onChange`.
-   */
-  externalText?: string;
-  onExternalTextChange?: (t: string) => void;
-
   /** Disable the submit button */
   disabled?: boolean;
+  /** Input placeholder text */
   placeholder?: string;
+  /** Label on the submit button */
   submitLabel?: string;
-
-  /**
-   * Which input modes to expose.
-   * Defaults to text + voice + attach (no dedicated image tab, matching
-   * the original compose-box behaviour).
-   */
+  /** Which input modes to expose (default: text, voice, image, attach) */
   modes?: InputMode[];
-
-  /** Notified when the user switches input modes */
-  onTabChange?: (tab: InputMode) => void;
 }
 
 /* ── ComposeBox ────────────────────────────────────────────────────── */
 export function ComposeBox({
   onSubmit,
-  externalText = "",
-  onExternalTextChange,
   disabled = false,
   placeholder = "Write your reply…",
   submitLabel = "Send",
-  modes = ["text", "voice", "attach"],
-  onTabChange,
+  modes = ["text", "voice", "image", "attach"],
 }: ComposeBoxProps) {
+  /* All state lives here — parent never touches it */
+  const [text, setText] = React.useState("");
 
-  /* Bridge SmartInput's unified payload → ComposeSubmitPayload */
-  function handleSubmit(payload: SmartInputSubmitPayload) {
-    onSubmit({
-      text:           payload.text,
-      attachedDoc:    payload.attachedDoc,
-      voiceRecording: payload.voiceRecording,
-    });
-  }
+  const handleChange = React.useCallback((val: string) => {
+    setText(val);
+  }, []);
+
+  const handleSubmit = React.useCallback(
+    (payload: SmartInputSubmitPayload) => {
+      onSubmit({
+        text: payload.text,
+        attachedDoc: payload.attachedDoc,
+        voiceRecording: payload.voiceRecording,
+      });
+      /* Reset text after submit — voice/attach are reset by SmartInput internally */
+      setText("");
+    },
+    [onSubmit],
+  );
 
   return (
     <SmartInput
-      value={externalText}
-      onChange={onExternalTextChange}
+      value={text}
+      onChange={handleChange}
       onSubmit={handleSubmit}
-      onModeChange={onTabChange}
       placeholder={placeholder}
       submitLabel={submitLabel}
       disabled={disabled}

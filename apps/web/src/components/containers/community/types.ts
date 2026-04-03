@@ -17,7 +17,10 @@ export type PanelState =
   | { view: "default" }
   | { view: "summary"; postId: number }
   | { view: "replies"; postId: number }
-  | { view: "reply-preview"; postId: number; original: string; rephrasings: [string, string] };
+  | { view: "reply-preview"; postId: number; original: string; rephrasings: [string, string] }
+  | { view: "file-detail"; fileId: number }
+  | { view: "file-qa"; fileId: number }
+  | { view: "member-detail"; memberId: number };
 
 /** Banner configuration — built by the wrapper, rendered by CommunityBanner */
 export interface BannerConfig {

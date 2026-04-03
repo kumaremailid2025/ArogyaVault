@@ -15,8 +15,17 @@ import {
   LINKED_POST_SUMMARIES,
   LINKED_POST_AI_RESPONSES,
 } from "@/data/linked-member-data";
+import {
+  COMMUNITY_FILES,
+  INVITED_FILES,
+  RECENT_FILE_QA,
+} from "@/data/community-files-data";
+import {
+  COMMUNITY_MEMBERS,
+  INVITED_GROUP_MEMBERS,
+} from "@/data/community-members-data";
 import { generateRephrasings } from "@/lib/post-utils";
-import type { CommunityPost, LinkedPost } from "@/models/community";
+import type { CommunityPost, LinkedPost, CommunityFile, CommunityMember } from "@/models/community";
 
 import type {
   CommunityTab,
@@ -29,7 +38,9 @@ import { GROUP_SLUG_TO_UUID } from "./types";
 import { CommunityBanner } from "@/components/community/community-banner";
 import { ComposeArea } from "@/components/community/compose-area";
 import { PostCard } from "@/components/community/post-card";
-import { RightPanelContainer } from "./right-panel-container";
+import { FeedRightPanel } from "./feed-right-panel";
+import { FilesRightPanel } from "./files-right-panel";
+import { MembersRightPanel } from "./members-right-panel";
 import { FilesContainer } from "./files-container";
 import { MembersContainer } from "./members-container";
 
@@ -168,8 +179,23 @@ export const CommunityWrapperContainer = ({
       : (member?.posts.length ?? 0) + 100,
   );
 
+  /* ── File state ── */
+  const initialFiles = variant === "community"
+    ? COMMUNITY_FILES
+    : (INVITED_FILES[group] ?? []);
+  const [communityFiles, setCommunityFiles] = React.useState<CommunityFile[]>(initialFiles);
+  const [selectedFileId, setSelectedFileId] = React.useState<number | null>(null);
+
+  /* ── Member state ── */
+  const membersList: CommunityMember[] = variant === "community"
+    ? COMMUNITY_MEMBERS
+    : (INVITED_GROUP_MEMBERS[group] ?? []);
+  const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
+
   /* ── Derived ── */
-  const activePostId = panelState.view !== "default" ? panelState.postId : null;
+  const activePostId = (panelState.view === "summary" || panelState.view === "replies" || panelState.view === "reply-preview")
+    ? panelState.postId
+    : null;
   const activePost = activePostId !== null
     ? posts.find((p) => p.id === activePostId) ?? null
     : null;
@@ -186,6 +212,42 @@ export const CommunityWrapperContainer = ({
     variant === "invited" && activePostId !== null
       ? LINKED_POST_AI_RESPONSES[group]?.[activePostId] ?? ""
       : "";
+
+  /* ── File derived ── */
+  const activeFileId = (panelState.view === "file-detail" || panelState.view === "file-qa")
+    ? panelState.fileId
+    : selectedFileId;
+  const activeFile = activeFileId !== null
+    ? communityFiles.find((f) => f.id === activeFileId) ?? null
+    : null;
+
+  /* ── Member derived ── */
+  const activeMember = (panelState.view === "member-detail")
+    ? membersList.find((m) => m.id === panelState.memberId) ?? null
+    : selectedMemberId !== null
+      ? membersList.find((m) => m.id === selectedMemberId) ?? null
+      : null;
+
+  /* Filtered recent Q&A for current file set (community vs invited) */
+  const currentRecentQA = React.useMemo(() => {
+    if (variant === "invited") {
+      /* For invited, build from the invited files Q&A */
+      const invFiles = INVITED_FILES[group] ?? [];
+      return invFiles.flatMap((f) =>
+        f.questions.map((qa) => ({
+          fileId: f.id,
+          fileName: f.name,
+          fileCategory: f.category,
+          question: qa.question,
+          askedBy: qa.askedBy,
+          askedByInitials: qa.askedByInitials,
+          askedAt: qa.askedAt,
+          answer: qa.answer,
+        })),
+      ).slice(0, 5);
+    }
+    return RECENT_FILE_QA;
+  }, [variant, group]);
 
   /* ── Banner config ── */
   const bannerConfig = React.useMemo(
@@ -267,7 +329,8 @@ export const CommunityWrapperContainer = ({
         ),
       );
       setPendingReply(null);
-      return { view: "default" };
+      setSelectedVersion(0);
+      return { view: "replies", postId };
     });
   }, [selectedVersion, variant]);
 
@@ -305,6 +368,62 @@ export const CommunityWrapperContainer = ({
     [variant],
   );
 
+  /* ── File handlers ── */
+  const handleSelectFile = React.useCallback((fileId: number) => {
+    setSelectedFileId(fileId);
+    setPanelState({ view: "file-detail", fileId });
+  }, []);
+
+  const handleFileAiSummary = React.useCallback((fileId: number) => {
+    setSelectedFileId(fileId);
+    setPanelState({ view: "file-detail", fileId });
+  }, []);
+
+  const handleFileQA = React.useCallback((fileId: number) => {
+    setSelectedFileId(fileId);
+    setPanelState({ view: "file-qa", fileId });
+  }, []);
+
+  const handleAskFileQuestion = React.useCallback((payload: ComposeSubmitPayload) => {
+    const text = payload.text.trim();
+    if (!text) return;
+    const fId = (panelState.view === "file-detail" || panelState.view === "file-qa")
+      ? panelState.fileId
+      : selectedFileId;
+    if (fId === null) return;
+
+    /* Add new Q&A to the file */
+    setCommunityFiles((prev) =>
+      prev.map((f) => {
+        if (f.id !== fId) return f;
+        const newQA = {
+          id: f.questions.length + 1,
+          question: text,
+          askedBy: "Kumar",
+          askedByInitials: "KU",
+          askedAt: "Just now",
+          answer: "ArogyaAI is analysing the document to answer your question. This typically takes a few moments for thorough analysis of the uploaded file content.",
+        };
+        return {
+          ...f,
+          qaCount: f.qaCount + 1,
+          questions: [...f.questions, newQA],
+        };
+      }),
+    );
+  }, [panelState, selectedFileId]);
+
+  const handleSelectFileFromQA = React.useCallback((fileId: number) => {
+    setSelectedFileId(fileId);
+    setPanelState({ view: "file-detail", fileId });
+  }, []);
+
+  /* ── Member handlers ── */
+  const handleSelectMember = React.useCallback((memberId: number) => {
+    setSelectedMemberId(memberId);
+    setPanelState({ view: "member-detail", memberId });
+  }, []);
+
   /* ── Early return for missing invited member ── */
   if (variant === "invited" && !member) return null;
 
@@ -318,23 +437,7 @@ export const CommunityWrapperContainer = ({
   const filesTitle =
     variant === "community" ? "Community Files" : `${member?.name ?? ""}'s Shared Files`;
   const membersTitle = variant === "community" ? "Community Members" : "Group Members";
-  const memberCount = variant === "community" ? "12,847" : (member?.memberCount ?? 2);
-
-  /* ── Files / Members data for invited ── */
-  const invitedFiles = variant === "invited" && member
-    ? member.sharedFiles ?? [
-        { name: "Medical Report - Feb 2026.pdf", size: "1.8 MB", date: "Feb 15, 2026" },
-        { name: "Prescription Scan.jpg", size: "420 KB", date: "Mar 2, 2026" },
-        { name: "Lab Results - CBC.pdf", size: "310 KB", date: "Mar 10, 2026" },
-      ]
-    : undefined;
-
-  const invitedMembers = variant === "invited" && member
-    ? member.members ?? [
-        { name: "You", role: "Owner", initials: "KU", status: "Active now" },
-        { name: member.name, role: member.relation, initials: member.initials, status: "Active recently" },
-      ]
-    : undefined;
+  const memberCount = variant === "community" ? "12,847" : (member?.memberCount ?? membersList.length);
 
   /* ── Render ── */
   return (
@@ -343,21 +446,59 @@ export const CommunityWrapperContainer = ({
       {/* ── BANNER ── */}
       <CommunityBanner config={bannerConfig} />
 
-      {/* ── FILES tab ── */}
+      {/* ── FILES tab (two-column layout) ── */}
       {tab === "files" && (
-        <FilesContainer
-          title={filesTitle}
-          files={invitedFiles}
-        />
+        <div className="flex-1 overflow-hidden flex min-h-0">
+
+          {/* LEFT — Files list with search/filter */}
+          <FilesContainer
+            title={filesTitle}
+            files={communityFiles}
+            selectedFileId={selectedFileId}
+            onSelectFile={handleSelectFile}
+            onAiSummary={handleFileAiSummary}
+            onQA={handleFileQA}
+          />
+
+          {/* Vertical divider */}
+          <div className="w-px bg-border shrink-0" />
+
+          {/* RIGHT — File detail / Q&A / Recent Q&A */}
+          <FilesRightPanel
+            panelState={panelState}
+            activeFile={activeFile}
+            recentFileQA={currentRecentQA}
+            onClosePanel={() => { setPanelState({ view: "default" }); setSelectedFileId(null); }}
+            onAskFileQuestion={handleAskFileQuestion}
+            onSelectFileFromQA={handleSelectFileFromQA}
+          />
+        </div>
       )}
 
-      {/* ── MEMBERS tab ── */}
+      {/* ── MEMBERS tab (two-column layout) ── */}
       {tab === "members" && (
-        <MembersContainer
-          title={membersTitle}
-          memberCount={memberCount}
-          members={invitedMembers}
-        />
+        <div className="flex-1 overflow-hidden flex min-h-0">
+
+          {/* LEFT — Members list with search/filter */}
+          <MembersContainer
+            title={membersTitle}
+            memberCount={memberCount}
+            members={membersList}
+            selectedMemberId={selectedMemberId}
+            onSelectMember={handleSelectMember}
+          />
+
+          {/* Vertical divider */}
+          <div className="w-px bg-border shrink-0" />
+
+          {/* RIGHT — Member detail / default */}
+          <MembersRightPanel
+            variant={variant}
+            panelState={panelState}
+            activeMember={activeMember}
+            onClosePanel={() => { setPanelState({ view: "default" }); setSelectedMemberId(null); }}
+          />
+        </div>
       )}
 
       {/* ── FEED tab (two-column layout) ── */}
@@ -398,7 +539,7 @@ export const CommunityWrapperContainer = ({
           <div className="w-px bg-border shrink-0" />
 
           {/* RIGHT — State-driven panel */}
-          <RightPanelContainer
+          <FeedRightPanel
             variant={variant}
             panelState={panelState}
             activePost={activePost}
