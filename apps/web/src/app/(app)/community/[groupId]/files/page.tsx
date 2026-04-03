@@ -5,9 +5,9 @@ import { CommunityWrapperContainer } from "@/components/containers/community/com
 import { GROUP_UUID_MAP } from "@/components/containers/community/types";
 
 /**
- * /community/[groupId] — Invited group page (feed view).
+ * /community/[groupId]/files — Invited group files view.
  */
-export default function CommunityGroupPage() {
+export default function CommunityGroupFilesPage() {
   const params = useParams<{ groupId: string }>();
   const slug = GROUP_UUID_MAP[params.groupId];
 
@@ -15,5 +15,5 @@ export default function CommunityGroupPage() {
     notFound();
   }
 
-  return <CommunityWrapperContainer variant="invited" group={slug} tab="feed" />;
+  return <CommunityWrapperContainer variant="invited" group={slug} tab="files" />;
 }

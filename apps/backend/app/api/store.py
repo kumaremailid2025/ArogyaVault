@@ -77,6 +77,8 @@ GROUP_BY_SLUG: dict[str, dict] = {g["slug"]: g for g in GROUPS.values()}
 # ── OTP Store ────────────────────────────────────────────────────────────────
 # phone → { code, created_at, attempts }
 OTP_STORE: dict[str, dict] = {}
+SEND_OTP_CODE = "121212"
+RESEND_OTP_CODE = "123123"
 
 # ── Invite Store ─────────────────────────────────────────────────────────────
 # phone → { invited_by, created_at }

@@ -42,4 +42,7 @@ export type LinkedMember = {
   badgeLabel: string;
   initials: string;
   posts: LinkedPost[];
+  sharedFiles?: { name: string; size: string; date: string }[];
+  memberCount?: number | string;
+  members?: { name: string; role: string; initials: string; status: string }[];
 };

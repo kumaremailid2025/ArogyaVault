@@ -23,6 +23,11 @@ export function AppBottomBar() {
   const router   = useRouter();
   const isAskAI  = pathname === "/ask-ai";
 
+  /* Hide on community & learn pages — they have their own input areas */
+  const isCommunity = pathname.startsWith("/community");
+  const isLearn     = pathname.startsWith("/learn");
+  if (isCommunity || isLearn) return null;
+
   const [query, setQuery] = React.useState("");
   const [uploads, setUploads] = React.useState<UploadFile[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);

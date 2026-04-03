@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { MessageCircleIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GROUP_SLUG_TO_UUID } from "@/app/(app)/community/page";
+import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
 /* ─── ArogyaCommunity section header ────────────────────────────── */
 const COMMUNITY_GROUP = {
@@ -46,10 +46,10 @@ export function AppSidebar() {
 
   /* Determine which group is active based on the URL */
   const activeGroupId = params.groupId ?? "";
-  const isDefaultCommunity = pathname === "/community";
+  const isDefaultCommunity = pathname === "/community" || pathname === "/community/files" || pathname === "/community/members";
 
   return (
-    <aside className="hidden lg:flex w-52 shrink-0 flex-col border-r border-border bg-background overflow-y-auto">
+    <aside className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border bg-background overflow-y-auto">
       <div className="flex flex-col py-3">
 
         {/* ── Community section header ──────────────────────── */}
