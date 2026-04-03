@@ -7,6 +7,11 @@
  * the sign-in flow: form state, Zod validation, country-aware schema,
  * background registration check, and the Send OTP / Invite action.
  *
+ * Uses TanStack React Query:
+ *   - useCheckRegistration (query)  — debounced background phone lookup
+ *   - useSendOtp (mutation)         — send OTP to registered number
+ *   - useSendInvite (mutation)      — invite unregistered number
+ *
  * Validation UX:
  *   - Invalid → error shown only after blur (not while typing)
  *   - Valid   → error cleared instantly on change (no need to blur again)
@@ -44,11 +49,10 @@ import {
   buildPhoneSchema,
 } from "@/lib/countries";
 import { InputGroup } from "@/components/shared/input-group";
-import { authApi, type ApiError } from "@/lib/api";
+import { useCheckRegistration, useSendOtp, useSendInvite } from "@/hooks/api";
+import type { ApiError } from "@/lib/api";
 
 /* ── Types ────────────────────────────────────────────────────────── */
-
-type RegistrationStatus = "idle" | "checking" | "registered" | "not_registered";
 
 export interface MobileNumberContainerProps {
   /** Called when OTP is successfully sent. Receives the confirmed phone and dial code. */
@@ -62,14 +66,6 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
   const [countryCode, _setCountryCode] = React.useState<CountryCode>(DEFAULT_COUNTRY_CODE);
   const country = getCountry(countryCode);
 
-  // Loading
-  const [sendingOtp, setSendingOtp] = React.useState(false);
-  const [apiError, setApiError] = React.useState<string | undefined>(undefined);
-
-  // Registration check
-  const [regStatus, setRegStatus] = React.useState<RegistrationStatus>("idle");
-  const checkTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // ── Form (always validates on change so we know the true state) ──
   const phoneSchema = React.useMemo(() => buildPhoneSchema(countryCode), [countryCode]);
 
@@ -82,26 +78,62 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
   const phoneValue = form.watch("phone");
   const isPhoneValid = country.phoneRule.pattern.test(phoneValue);
 
-  // ── Custom error visibility ──
-  //
-  // Rules:
-  //   1. While typing (onChange)  — NEVER show a new error
-  //   2. While typing (onChange)  — if value becomes VALID, clear any visible error
-  //   3. On blur                  — if value is INVALID, show the error
-  //
-  // We do our own Zod check for display purposes so we don't depend
-  // on react-hook-form's async error timing at all.
+  // ── Debounced phone for TanStack query ──
+  const [debouncedPhone, setDebouncedPhone] = React.useState("");
 
+  React.useEffect(() => {
+    if (!isPhoneValid) {
+      setDebouncedPhone("");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setDebouncedPhone(`${country.dialCode}${phoneValue}`);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [phoneValue, isPhoneValid, country.dialCode]);
+
+  // ── TanStack Query: registration check ──
+  const {
+    data: regData,
+    isFetching: isChecking,
+  } = useCheckRegistration(debouncedPhone, !!debouncedPhone);
+
+  const isRegistered = regData?.registered === true;
+  const isNotRegistered = regData?.registered === false;
+
+  // ── TanStack Mutations ──
+  const sendOtpMutation = useSendOtp();
+  const sendInviteMutation = useSendInvite();
+
+  const isMutating = sendOtpMutation.isPending || sendInviteMutation.isPending;
+
+  // Derive API error from mutations
+  const apiError = (() => {
+    const err = sendOtpMutation.error ?? sendInviteMutation.error;
+    if (!err) return undefined;
+    return (err as ApiError).detail ?? "Something went wrong";
+  })();
+
+  // Reset mutations when phone changes
+  React.useEffect(() => {
+    sendOtpMutation.reset();
+    sendInviteMutation.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneValue]);
+
+  // ── Custom error visibility ──
   const [blurError, setBlurError] = React.useState<string | undefined>(undefined);
 
-  // Rule 2: valid on change → clear error instantly
+  // valid on change → clear error instantly
   React.useEffect(() => {
     if (isPhoneValid) {
       setBlurError(undefined);
     }
   }, [isPhoneValid]);
 
-  // Rule 3: invalid on blur → show error (skip if empty)
+  // invalid on blur → show error (skip if empty)
   const handleBlur = () => {
     if (!phoneValue) return;
     const result = phoneSchema.safeParse({ phone: phoneValue });
@@ -117,90 +149,44 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryCode]);
 
-  // Debounced background registration check via API
-  React.useEffect(() => {
-    if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
-
-    if (!isPhoneValid) {
-      setRegStatus("idle");
-      return;
-    }
-
-    setRegStatus("checking");
-
-    checkTimerRef.current = setTimeout(() => {
-      const fullPhone = `${country.dialCode}${phoneValue}`;
-      authApi
-        .checkRegistration({ phone: fullPhone })
-        .then((res) => {
-          setRegStatus(res.registered ? "registered" : "not_registered");
-        })
-        .catch(() => {
-          // Silently fall back — don't block the user
-          setRegStatus("idle");
-        });
-    }, 400);
-
-    return () => {
-      if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
-    };
-  }, [phoneValue, isPhoneValid, country.dialCode]);
-
-  // Clear API error when phone changes
-  React.useEffect(() => {
-    setApiError(undefined);
-  }, [phoneValue]);
-
   // ── Handlers ──
 
-  const onSubmit = async (data: PhoneFormValues) => {
+  const onSubmit = (data: PhoneFormValues) => {
     const fullPhone = `${country.dialCode}${data.phone}`;
-    setApiError(undefined);
 
-    if (regStatus === "not_registered") {
-      // Send invite
-      try {
-        setSendingOtp(true);
-        await authApi.sendInvite({ phone: fullPhone });
-        setApiError(undefined);
-        // Show success feedback — keep on same page
-        alert(`Invitation sent to ${fullPhone}`);
-      } catch (err) {
-        const apiErr = err as ApiError;
-        setApiError(apiErr.detail ?? "Failed to send invite");
-      } finally {
-        setSendingOtp(false);
-      }
+    if (isNotRegistered) {
+      sendInviteMutation.mutate(
+        { phone: fullPhone },
+        {
+          onSuccess: () => {
+            alert(`Invitation sent to ${fullPhone}`);
+          },
+        },
+      );
       return;
     }
 
-    // Send OTP
-    try {
-      setSendingOtp(true);
-      await authApi.sendOtp({ phone: fullPhone });
-      onOtpSent(data.phone, country.dialCode);
-    } catch (err) {
-      const apiErr = err as ApiError;
-      setApiError(apiErr.detail ?? "Failed to send OTP");
-    } finally {
-      setSendingOtp(false);
-    }
+    sendOtpMutation.mutate(
+      { phone: fullPhone },
+      {
+        onSuccess: () => {
+          onOtpSent(data.phone, country.dialCode);
+        },
+      },
+    );
   };
 
   // ── Derived UI ──
 
-  const isNotRegistered = regStatus === "not_registered";
-  const isChecking = regStatus === "checking";
-
   const buttonLabel = (() => {
-    if (sendingOtp) return "Sending OTP\u2026";
+    if (isMutating) return "Sending OTP\u2026";
     if (isChecking) return "Checking\u2026";
     if (isNotRegistered) return "Invite to ArogyaVault";
     return "Send OTP";
   })();
 
   const ButtonIcon = (() => {
-    if (sendingOtp || isChecking) return <Loader2Icon className="size-4 animate-spin" />;
+    if (isMutating || isChecking) return <Loader2Icon className="size-4 animate-spin" />;
     if (isNotRegistered) return <SendIcon className="size-4" />;
     return <ChevronRightIcon className="size-4" />;
   })();
@@ -248,7 +234,7 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
                     placeholder={country.phoneRule.placeholder}
                     className="h-11 text-base"
                     autoFocus
-                    disabled={sendingOtp}
+                    disabled={isMutating}
                     onChange={(e) => {
                       const digits = e.target.value
                         .replace(/\D/g, "")
@@ -292,7 +278,7 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
                 </p>
               )}
 
-              {!blurError && !apiError && regStatus === "registered" && (
+              {!blurError && !apiError && isRegistered && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2Icon className="size-3" />
                   Number verified
@@ -315,7 +301,7 @@ export const MobileNumberContainer = ({ onOtpSent }: MobileNumberContainerProps)
             isNotRegistered &&
               "bg-secondary text-secondary-foreground hover:bg-secondary/80",
           )}
-          disabled={sendingOtp || isChecking || !isPhoneValid}
+          disabled={isMutating || isChecking || !isPhoneValid}
         >
           <span className="flex items-center gap-2">
             {buttonLabel} {ButtonIcon}

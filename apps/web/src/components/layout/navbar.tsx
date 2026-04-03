@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   MenuIcon, XIcon, MoonIcon, SunIcon, HeartPulseIcon,
@@ -18,6 +18,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/core/ui/dropdown-menu";
 import { useAuthStore } from "@/stores";
+import { useLogout } from "@/hooks/api";
 
 const NAV_LINKS = [
   { label: "Home",         href: "/" },
@@ -50,12 +51,11 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
-  const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const logoutMutation = useLogout();
 
   const displayName = user?.name ?? "User";
   const initials = displayName
@@ -66,8 +66,7 @@ export function Navbar() {
     .toUpperCase();
 
   const handleSignOut = () => {
-    logout();
-    router.push("/sign-in");
+    logoutMutation.mutate();
   };
 
   return (

@@ -7,11 +7,14 @@
  * of the sign-in flow: form state, Zod validation, verify action, and
  * the resend / change-number interactions.
  *
+ * Uses TanStack React Query:
+ *   - useVerifyOtp (mutation)  — verify OTP → stores JWT + redirects
+ *   - useResendOtp (mutation)  — resend with a new OTP code
+ *
  * Architecture ref: ARCHITECTURE.md — Page → **Container** → Component → Core UI
  */
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,8 +29,8 @@ import {
   FormControl,
   FormMessage,
 } from "@/core/ui/form";
-import { authApi, type ApiError } from "@/lib/api";
-import { useAuthStore } from "@/stores";
+import { useVerifyOtp, useResendOtp } from "@/hooks/api";
+import type { ApiError } from "@/lib/api";
 
 /* ── Zod schema ───────────────────────────────────────────────────── */
 
@@ -58,22 +61,42 @@ const RESEND_COOLDOWN_SECONDS = 30;
 
 /* ── Container ────────────────────────────────────────────────────── */
 
-export const OtpContainer = ({ phone, dialCode, onChangeNumber }: OtpContainerProps) => {
-  const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const [verifying, setVerifying] = React.useState(false);
-  const [apiError, setApiError] = React.useState<string | undefined>(undefined);
+export const OtpContainer = ({
+  phone,
+  dialCode,
+  onChangeNumber,
+}: OtpContainerProps) => {
+  // ── TanStack mutations ──
+  const verifyOtpMutation = useVerifyOtp();
+  const resendOtpMutation = useResendOtp();
 
-  // Resend state
-  const [resending, setResending] = React.useState(false);
+  // Resend cooldown
   const [resendCooldown, setResendCooldown] = React.useState(0);
-  const [resendMessage, setResendMessage] = React.useState<string | undefined>(undefined);
+
+  // Local error & success state — decoupled from mutation lifecycle
+  // so clearing OTP programmatically doesn't wipe the error message
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
+  const [successMessage, setSuccessMessage] = React.useState<
+    string | undefined
+  >();
+
+  // Ref for InputOTP to manage focus programmatically
+  const otpRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
     defaultValues: { otp: "" },
     mode: "onChange",
   });
+
+  // ── Focus on mount (robust fallback for autoFocus) ──
+  React.useEffect(() => {
+    // Small delay ensures the input-otp hidden input is rendered and ready
+    const timer = setTimeout(() => {
+      otpRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ── Cooldown timer ──
   React.useEffect(() => {
@@ -92,57 +115,73 @@ export const OtpContainer = ({ phone, dialCode, onChangeNumber }: OtpContainerPr
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // Clear API error when OTP changes
+  // Clear error & success messages when user starts typing again
   const otpValue = form.watch("otp");
   React.useEffect(() => {
-    setApiError(undefined);
-    setResendMessage(undefined);
+    if (otpValue.length > 0) {
+      setErrorMessage(undefined);
+      setSuccessMessage(undefined);
+    }
+  }, [otpValue]);
+
+  // ── Helpers ──
+
+  /** Clear all OTP slots and move focus back to the first slot. */
+  const clearAndRefocus = React.useCallback(() => {
+    form.setValue("otp", "", { shouldValidate: false });
+    // Allow the controlled value to propagate before refocusing
+    requestAnimationFrame(() => {
+      otpRef.current?.focus();
+    });
+  }, [form]);
+
+  // ── Auto-submit when all 6 digits are entered ──
+  React.useEffect(() => {
+    if (otpValue.length === 6 && !verifyOtpMutation.isPending) {
+      form.handleSubmit(onSubmit)();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpValue]);
 
   // ── Handlers ──
 
-  const onSubmit = async (data: OtpFormValues) => {
+  const onSubmit = (data: OtpFormValues) => {
     const fullPhone = `${dialCode}${phone}`;
-    setApiError(undefined);
-
-    try {
-      setVerifying(true);
-      const res = await authApi.verifyOtp({
-        phone: fullPhone,
-        code: data.otp,
-      });
-
-      // Store user & tokens in zustand (persisted to sessionStorage)
-      setAuth(res.user, res.tokens);
-
-      router.push("/liveboard");
-    } catch (err) {
-      const apiErr = err as ApiError;
-      setApiError(apiErr.detail ?? "Verification failed");
-      setVerifying(false);
-    }
+    verifyOtpMutation.mutate(
+      { phone: fullPhone, code: data.otp },
+      {
+        onError: (err) => {
+          const message =
+            (err as ApiError).detail ?? "Invalid OTP. Please try again.";
+          setErrorMessage(message);
+          setSuccessMessage(undefined);
+          clearAndRefocus();
+        },
+      },
+    );
   };
 
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0 || resending) return;
+  const handleResendOtp = () => {
+    if (resendCooldown > 0 || resendOtpMutation.isPending) return;
 
     const fullPhone = `${dialCode}${phone}`;
-    setApiError(undefined);
-    setResendMessage(undefined);
-
-    try {
-      setResending(true);
-      await authApi.resendOtp({ phone: fullPhone });
-      setResendMessage("New OTP sent successfully");
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      // Clear the OTP input so user enters the new code
-      form.setValue("otp", "");
-    } catch (err) {
-      const apiErr = err as ApiError;
-      setApiError(apiErr.detail ?? "Failed to resend OTP");
-    } finally {
-      setResending(false);
-    }
+    resendOtpMutation.mutate(
+      { phone: fullPhone },
+      {
+        onSuccess: () => {
+          setResendCooldown(RESEND_COOLDOWN_SECONDS);
+          setSuccessMessage("New OTP sent successfully");
+          setErrorMessage(undefined);
+          clearAndRefocus();
+        },
+        onError: (err) => {
+          const message =
+            (err as ApiError).detail ?? "Failed to resend OTP";
+          setErrorMessage(message);
+          setSuccessMessage(undefined);
+        },
+      },
+    );
   };
 
   // ── Render ──
@@ -179,37 +218,54 @@ export const OtpContainer = ({ phone, dialCode, onChangeNumber }: OtpContainerPr
             <FormItem>
               <FormLabel className="text-sm font-medium">6-digit OTP</FormLabel>
               <FormControl>
-                <InputOTP
-                  maxLength={6}
-                  value={field.value}
-                  onChange={field.onChange}
+                {/* Wrapper ensures click-to-focus works reliably.
+                    input-otp sets pointer-events:none on its container;
+                    this outer div intercepts clicks and forwards focus. */}
+                <div
+                  className="cursor-text"
+                  onClick={() => otpRef.current?.focus()}
+                  onMouseDown={(e) => {
+                    // Prevent the mousedown from stealing focus from the input
+                    // if the hidden input is already focused
+                    if (document.activeElement === otpRef.current) {
+                      e.preventDefault();
+                    }
+                  }}
                 >
-                  <InputOTPGroup className="gap-1.5 sm:gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <InputOTPSlot
-                        key={i}
-                        index={i}
-                        className="size-10 text-base rounded-md border-border sm:h-12 sm:w-12 sm:text-lg"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+                  <InputOTP
+                    ref={otpRef}
+                    maxLength={6}
+                    value={field.value}
+                    onChange={field.onChange}
+                    autoFocus
+                  >
+                    <InputOTPGroup className="gap-1.5 sm:gap-2">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <InputOTPSlot
+                          key={i}
+                          index={i}
+                          className="size-10 text-base rounded-md border border-border sm:h-12 sm:w-12 sm:text-lg"
+                        />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
               </FormControl>
               <FormMessage />
 
-              {/* API error feedback */}
-              {apiError && (
+              {/* Error feedback */}
+              {errorMessage && (
                 <p className="flex items-center gap-1.5 text-sm text-destructive">
                   <AlertCircleIcon className="size-3" />
-                  {apiError}
+                  {errorMessage}
                 </p>
               )}
 
               {/* Resend success feedback */}
-              {resendMessage && !apiError && (
+              {successMessage && !errorMessage && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2Icon className="size-3" />
-                  {resendMessage}
+                  {successMessage}
                 </p>
               )}
 
@@ -225,10 +281,10 @@ export const OtpContainer = ({ phone, dialCode, onChangeNumber }: OtpContainerPr
                     size="sm"
                     type="button"
                     onClick={handleResendOtp}
-                    disabled={resending}
+                    disabled={resendOtpMutation.isPending}
                     className="h-auto p-0 text-primary underline underline-offset-4"
                   >
-                    {resending ? "Resending…" : "Resend OTP"}
+                    {resendOtpMutation.isPending ? "Resending..." : "Resend OTP"}
                   </Button>
                 )}
               </p>
@@ -239,11 +295,11 @@ export const OtpContainer = ({ phone, dialCode, onChangeNumber }: OtpContainerPr
         <Button
           type="submit"
           className="w-full h-11"
-          disabled={verifying || form.watch("otp").length < 6}
+          disabled={verifyOtpMutation.isPending || otpValue.length < 6}
         >
-          {verifying ? (
+          {verifyOtpMutation.isPending ? (
             <span className="flex items-center gap-2">
-              Verifying… <Loader2Icon className="size-4 animate-spin" />
+              Verifying... <Loader2Icon className="size-4 animate-spin" />
             </span>
           ) : (
             <span className="flex items-center gap-2">

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
@@ -19,6 +19,7 @@ import { Badge } from "@/core/ui/badge";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores";
+import { useLogout } from "@/hooks/api";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -92,7 +93,6 @@ const INITIAL_NOTIFICATIONS: Notif[] = [
 ];
 
 export function AppHeader() {
-  const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
   const activeG      = searchParams.get("g") ?? "";
@@ -143,7 +143,7 @@ export function AppHeader() {
   }
 
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const logoutMutation = useLogout();
 
   const displayName = user?.name ?? "User";
   const displayPhone = user?.phone
@@ -157,8 +157,7 @@ export function AppHeader() {
     .toUpperCase();
 
   const handleSignOut = () => {
-    logout();
-    router.push("/sign-in");
+    logoutMutation.mutate();
   };
 
   return (
