@@ -97,7 +97,7 @@ export default function ArogyaTalkPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a
-              href="/liveboard?g=community"
+              href="/community"
               className="inline-flex items-center gap-2 rounded-xl bg-white text-primary font-semibold px-5 py-2.5 text-sm hover:bg-white/90 transition-colors"
             >
               <MessageSquareIcon className="size-4" />
@@ -156,7 +156,7 @@ export default function ArogyaTalkPage() {
             {TOPICS.map((t) => (
               <a
                 key={t.label}
-                href="/liveboard?g=community"
+                href="/community"
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${t.color} hover:opacity-80 transition-opacity`}
               >
                 {t.label}
@@ -201,7 +201,7 @@ export default function ArogyaTalkPage() {
             someone else on their journey.
           </p>
           <a
-            href="/liveboard?g=community"
+            href="/community"
             className="inline-flex items-center gap-2 rounded-xl bg-white text-primary font-semibold px-6 py-3 text-sm hover:bg-white/90 transition-colors"
           >
             <MessageSquareIcon className="size-4" />

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import {
   ThumbsUpIcon, MessageSquareIcon,
   ArrowRightLeftIcon,
@@ -29,8 +29,8 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
 /* ── New module imports ─────────────────────────────────────────── */
-import { YoursContent } from "@/components/liveboard/yours-content";
-import { ArogyaAIContent } from "@/components/liveboard/arogyaai-content";
+import { YoursContent } from "@/components/community/yours-content";
+import { ArogyaAIContent } from "@/components/community/arogyaai-content";
 import { SmartInput } from "@/components/shared/smart-input";
 import { ComposeBox } from "@/components/shared/compose-box";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
@@ -73,7 +73,7 @@ const InviteModal = dynamic(
 /* ═══════════════════════════════════════════════════════════════════
    AROGYALEARN — evidence-based medical knowledge hub
 ═══════════════════════════════════════════════════════════════════ */
-function ArogyaLearnContent() {
+export function ArogyaLearnContent() {
   type LearnTab = "browse" | "systems" | "departments" | "pdf";
   const [activeTab, setActiveTab] = React.useState<LearnTab>("browse");
 
@@ -2101,21 +2101,33 @@ function LinkedMemberContent({ id }: { id: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PAGE
+   GROUP UUID → SLUG MAP (matches backend GROUPS store)
+   Used by both /community (default) and /community/[groupId] pages.
 ═══════════════════════════════════════════════════════════════════ */
-export default function LiveboardPage() {
-  const searchParams = useSearchParams();
-  const group = searchParams.get("g") ?? "yours";
+export const GROUP_UUID_MAP: Record<string, string> = {
+  "b3a1f5d2-7e4c-4a8b-9f6e-1c2d3e4f5a6b": "community",
+  "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a": "ravi",
+  "a1b2c3d4-5e6f-7a8b-9c0d-e1f2a3b4c5d6": "sharma",
+  "f9e8d7c6-5b4a-3210-fedc-ba9876543210": "priya",
+};
 
-  const isLinked = group === "ravi" || group === "sharma" || group === "priya";
+export const GROUP_SLUG_TO_UUID: Record<string, string> = Object.fromEntries(
+  Object.entries(GROUP_UUID_MAP).map(([uuid, slug]) => [slug, uuid]),
+);
 
-  const isSystem = !isLinked; // yours, arogyaai, community
+const LINKED_SLUGS = new Set(["ravi", "sharma", "priya"]);
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHARED CONTENT — rendered by /community and /community/[groupId]
+═══════════════════════════════════════════════════════════════════ */
+export function CommunityPageContent({ group }: { group: string }) {
+  const isLinked = LINKED_SLUGS.has(group);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Sticky ContentTabs — never scrolls away */}
       <div className="shrink-0 px-5 pt-5 lg:px-6 lg:pt-6">
-        {isSystem && <ContentTabs active="home" showGroupSettings={false} />}
+        {!isLinked && <ContentTabs active="home" showGroupSettings={false} />}
         {isLinked && <ContentTabs active="home" showGroupSettings={true} />}
       </div>
 
@@ -2126,29 +2138,19 @@ export default function LiveboardPage() {
         </div>
       )}
 
-      {/* ArogyaLearn: full-height two-column layout */}
-      {group === "learn" && (
-        <div className="flex-1 overflow-hidden min-h-0">
-          <ArogyaLearnContent />
-        </div>
-      )}
-
       {/* Linked member groups: full-height two-column layout */}
       {isLinked && (
         <div className="flex-1 overflow-hidden min-h-0">
           <LinkedMemberContent id={group} />
         </div>
       )}
-
-      {/* Yours / ArogyaAI: standard single-column scroll */}
-      {!isLinked && group !== "community" && group !== "learn" && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-5 pb-5 pt-4 lg:px-6 lg:pb-6 max-w-4xl space-y-4">
-            {group === "yours"     && <YoursContent />}
-            {group === "arogyaai"  && <ArogyaAIContent />}
-          </div>
-        </div>
-      )}
     </div>
   );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE — /community (default community view)
+═══════════════════════════════════════════════════════════════════ */
+export default function CommunityPage() {
+  return <CommunityPageContent group="community" />;
 }

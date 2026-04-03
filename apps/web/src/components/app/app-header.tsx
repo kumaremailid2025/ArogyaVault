@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
@@ -29,10 +29,10 @@ const InviteModal = dynamic(
 
 /* ── Top-nav items ───────────────────────────────────────────────── */
 const TOP_NAV = [
-  { id: "yours",     label: "My Vault",    href: "/liveboard?g=yours",     icon: VaultIcon },
-  { id: "community", label: "Community",   href: "/liveboard?g=community", icon: MessageCircleIcon },
-  { id: "arogyaai",  label: "ArogyaAI",    href: "/ask-ai",                icon: BotIcon },
-  { id: "learn",     label: "ArogyaLearn", href: "/liveboard?g=learn",     icon: GraduationCapIcon },
+  { id: "yours",     label: "My Vault",    href: "/vault",       icon: VaultIcon },
+  { id: "community", label: "Community",   href: "/community",   icon: MessageCircleIcon },
+  { id: "arogyaai",  label: "ArogyaAI",    href: "/ask-ai",      icon: BotIcon },
+  { id: "learn",     label: "ArogyaLearn", href: "/learn",        icon: GraduationCapIcon },
 ] as const;
 
 /* ── Groups available for targeted invites ───────────────────────── */
@@ -94,8 +94,6 @@ const INITIAL_NOTIFICATIONS: Notif[] = [
 
 export function AppHeader() {
   const pathname     = usePathname();
-  const searchParams = useSearchParams();
-  const activeG      = searchParams.get("g") ?? "";
 
   const [inviteOpen,    setInviteOpen]    = React.useState(false);
   const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);
@@ -111,14 +109,11 @@ export function AppHeader() {
     setInviteOpen(true);
   }
 
-  /* Carry the current group context into the profile page so the sidebar
-     stays visible when navigating there from a community section */
-  const profileHref = activeG ? `/profile?g=${activeG}` : "/profile";
+  const profileHref = "/profile";
 
   /* ── Active top-nav detection ────────────────────────────────── */
   function isNavActive(item: (typeof TOP_NAV)[number]) {
-    if (item.href === "/ask-ai") return pathname === "/ask-ai";
-    return pathname.startsWith("/liveboard") && activeG === item.id;
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
 
   /* Close notification panel on outside click */
@@ -165,7 +160,7 @@ export function AppHeader() {
       <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 relative">
 
         {/* ── Logo ─────────────────────────────────────────────── */}
-        <Link href="/liveboard" className="flex items-center gap-2 font-bold text-primary cursor-pointer shrink-0">
+        <Link href="/community" className="flex items-center gap-2 font-bold text-primary cursor-pointer shrink-0">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <HeartPulseIcon className="size-3.5" />
           </div>

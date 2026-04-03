@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "home",    label: "Liveboard",      href: "/liveboard" },
+  { key: "home",    label: "Community",      href: "/community" },
   { key: "records", label: "Documents",      href: "/records"   },
   { key: "groups",  label: "Group Settings", href: "/groups"    },
 ];
@@ -18,11 +18,23 @@ export function ContentTabs({
   /** When true, adds the Group Settings tab (only for linked/invited users) */
   showGroupSettings?: boolean;
 }) {
-  const searchParams = useSearchParams();
-  const g = searchParams.get("g") ?? "";
+  const pathname = usePathname();
+  const params = useParams<{ groupId?: string }>();
 
-  /* Preserve the ?g= param so the sidebar keeps its selection */
-  const href = (base: string) => (g ? `${base}?g=${g}` : base);
+  /* Preserve the /community/[groupId] segment across tab navigation */
+  const groupId = params.groupId;
+
+  const href = (base: string) => {
+    // For community tab, preserve the groupId in the path
+    if (base === "/community" && groupId) {
+      return `/community/${groupId}`;
+    }
+    // For other tabs (records, groups), pass groupId as query param for context
+    if (groupId && base !== "/community") {
+      return `${base}?groupId=${groupId}`;
+    }
+    return base;
+  };
 
   const visibleTabs = showGroupSettings ? TABS : TABS.filter(t => t.key !== "groups");
 

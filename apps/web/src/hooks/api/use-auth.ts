@@ -49,7 +49,7 @@ export const useVerifyOtp = () => {
     mutationFn: authApi.verifyOtp,
     onSuccess: (data) => {
       setAuth(data.user, data.tokens);
-      router.push("/liveboard");
+      router.push("/community");
     },
   });
 };

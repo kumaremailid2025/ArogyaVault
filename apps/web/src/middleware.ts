@@ -4,12 +4,12 @@
  * Runs on the edge for every matched route BEFORE the page renders.
  * Reads the httpOnly cookie set by the backend to determine auth status.
  *
- * Protected routes (app group):  /liveboard, /records, /profile, /groups, /ask-ai
+ * Protected routes (app group):  /community, /vault, /learn, /records, /profile, /groups, /ask-ai
  * Public routes:                 /sign-in, /, /about, /features, etc.
  *
  * Logic:
  *   - If user is NOT authenticated and visits a protected route → redirect to /sign-in
- *   - If user IS authenticated and visits /sign-in → redirect to /liveboard
+ *   - If user IS authenticated and visits /sign-in → redirect to /community
  */
 
 import { NextResponse } from "next/server";
@@ -22,7 +22,9 @@ const AUTH_COOKIE_NAME = "arogyavault-auth-token";
 /* ── Route definitions ───────────────────────────────────────────── */
 
 const PROTECTED_ROUTES = [
-  "/liveboard",
+  "/community",
+  "/vault",
+  "/learn",
   "/records",
   "/profile",
   "/groups",
@@ -49,13 +51,13 @@ export const middleware = (request: NextRequest) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Auth route with active session → redirect to liveboard
+  // Auth route with active session → redirect to community
   const isAuthRoute = AUTH_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
   if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/liveboard", request.url));
+    return NextResponse.redirect(new URL("/community", request.url));
   }
 
   return NextResponse.next();

@@ -118,7 +118,7 @@ export function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/liveboard" className="flex items-center gap-2 cursor-pointer">
+                    <Link href="/community" className="flex items-center gap-2 cursor-pointer">
                       <LayoutDashboardIcon className="size-4" /> Dashboard
                     </Link>
                   </DropdownMenuItem>
@@ -185,7 +185,7 @@ export function Navbar() {
                     {isAuthenticated ? (
                       <div className="flex flex-col gap-2">
                         <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
-                          <Link href="/liveboard" className="flex items-center gap-2">
+                          <Link href="/community" className="flex items-center gap-2">
                             <LayoutDashboardIcon className="size-4" /> Dashboard
                           </Link>
                         </Button>

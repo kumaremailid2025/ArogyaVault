@@ -4,7 +4,7 @@
  * GuestGuard
  * ----------
  * Opposite of AuthGuard — redirects authenticated users away from
- * guest-only pages (like /sign-in) to /liveboard.
+ * guest-only pages (like /sign-in) to /community.
  *
  * Usage: Wrap the children of the (auth) layout.
  *
@@ -45,7 +45,7 @@ export const GuestGuard = ({ children }: GuestGuardProps) => {
     if (!isReady) return;
 
     if (isAuthenticated) {
-      router.replace("/liveboard");
+      router.replace("/community");
     }
   }, [isReady, isAuthenticated, router]);
 
