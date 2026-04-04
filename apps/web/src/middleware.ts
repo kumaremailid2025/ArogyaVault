@@ -4,7 +4,7 @@
  * Runs on the edge for every matched route BEFORE the page renders.
  * Reads the httpOnly cookie set by the backend to determine auth status.
  *
- * Protected routes (app group):  /community, /vault, /learn, /records, /profile, /groups, /ask-ai
+ * Protected routes (app group):  /community, /vault, /learn, /records, /profile, /groups, /arogya-ai
  * Public routes:                 /sign-in, /, /about, /features, etc.
  *
  * Logic:
@@ -28,7 +28,7 @@ const PROTECTED_ROUTES = [
   "/records",
   "/profile",
   "/groups",
-  "/ask-ai",
+  "/arogya-ai",
 ];
 
 const AUTH_ROUTES = ["/sign-in"];

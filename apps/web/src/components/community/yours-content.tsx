@@ -29,7 +29,7 @@ export function YoursContent() {
             </Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
-            <Link href="/ask-ai" className="flex items-center gap-1.5">
+            <Link href="/arogya-ai" className="flex items-center gap-1.5">
               <BrainCircuitIcon className="size-3.5" /> Ask AI
             </Link>
           </Button>

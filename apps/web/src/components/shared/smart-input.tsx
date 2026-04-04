@@ -417,12 +417,7 @@ export function SmartInput({
       )}
 
       {/* ── BOTTOM TOOLBAR ───────────────────────────────────────── */}
-      <div
-        className={cn(
-          "flex items-center gap-1 px-2 py-1.5 border-t border-border/50",
-          layout === "compose" && "flex-col"
-        )}
-      >
+      <div className="flex items-center gap-1 px-2 py-1.5 border-t border-border/50">
         {/* Mode switcher */}
         <div className="flex items-center gap-0.5 flex-1">
           {modes.map((m) => (
@@ -447,27 +442,16 @@ export function SmartInput({
         </div>
 
         {/* Submit button */}
-        {layout === "chat" ? (
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            aria-label={submitLabel}
-            className="gap-1.5 rounded-lg px-3 h-7"
-          >
-            <SendIcon className="size-3.5" />
-            <span className="hidden sm:inline">{submitLabel}</span>
-          </Button>
-        ) : (
-          <Button
-            className="w-full mt-1 gap-1.5"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
-            <SendIcon className="size-4" />
-            {submitLabel}
-          </Button>
-        )}
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          aria-label={submitLabel}
+          className="gap-1.5 rounded-lg px-3 h-7"
+        >
+          <SendIcon className="size-3.5" />
+          <span className="hidden sm:inline">{submitLabel}</span>
+        </Button>
       </div>
     </div>
   );

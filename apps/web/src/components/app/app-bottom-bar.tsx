@@ -21,12 +21,13 @@ function formatSize(bytes: number): string {
 export function AppBottomBar() {
   const pathname = usePathname();
   const router   = useRouter();
-  const isAskAI  = pathname === "/ask-ai";
+  const isAskAI  = pathname === "/arogya-ai";
 
-  /* Hide on community & learn pages — they have their own input areas */
+  /* Hide on pages that have their own input areas */
   const isCommunity = pathname.startsWith("/community");
   const isLearn     = pathname.startsWith("/learn");
-  if (isCommunity || isLearn) return null;
+  const isArogyaAi  = pathname.startsWith("/arogya-ai");
+  if (isCommunity || isLearn || isArogyaAi) return null;
 
   const [query, setQuery] = React.useState("");
   const [uploads, setUploads] = React.useState<UploadFile[]>([]);
@@ -38,8 +39,8 @@ export function AppBottomBar() {
     const q = query.trim();
     if (!q) return;
     setQuery("");
-    /* Navigate to ask-ai with the query as a param */
-    router.push("/ask-ai?q=" + encodeURIComponent(q));
+    /* Navigate to arogya-ai with the query as a param */
+    router.push("/arogya-ai?q=" + encodeURIComponent(q));
   }
 
   /* ── Upload ───────────────────────────────────────────────────── */

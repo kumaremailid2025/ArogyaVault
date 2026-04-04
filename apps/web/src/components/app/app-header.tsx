@@ -31,7 +31,7 @@ const InviteModal = dynamic(
 const TOP_NAV = [
   { id: "yours",     label: "My Vault",    href: "/vault",       icon: VaultIcon },
   { id: "community", label: "Community",   href: "/community",   icon: MessageCircleIcon },
-  { id: "arogyaai",  label: "ArogyaAI",    href: "/ask-ai",      icon: BotIcon },
+  { id: "arogyaai",  label: "ArogyaAI",    href: "/arogya-ai",   icon: BotIcon },
   { id: "learn",     label: "ArogyaLearn", href: "/learn",        icon: GraduationCapIcon },
 ] as const;
 
