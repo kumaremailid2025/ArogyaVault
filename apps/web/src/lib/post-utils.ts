@@ -1,16 +1,16 @@
 /** Returns "Good morning" / "Good afternoon" / "Good evening" based on current hour */
-export function getGreeting(): string {
+export const getGreeting = (): string => {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   return "Good evening";
-}
+};
 
 /**
  * Given a reply text, returns two AI-rephrased variants.
  * Returns a tuple: [formal rephrasing, concise rephrasing]
  */
-export function generateRephrasings(text: string): [string, string] {
+export const generateRephrasings = (text: string): [string, string] => {
   const trimmed = text.trim();
   const sentence =
     trimmed.endsWith(".") || trimmed.endsWith("!") || trimmed.endsWith("?")
@@ -22,4 +22,4 @@ export function generateRephrasings(text: string): [string, string] {
   const endsWithPunct = [".", "!", "?", "…"].some((p) => shortText.endsWith(p));
   const r2 = `${shortText}${endsWithPunct ? "" : "."} Hope this helps the community!`;
   return [r1, r2];
-}
+};

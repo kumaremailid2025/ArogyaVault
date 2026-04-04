@@ -18,7 +18,7 @@ const AppBottomBar = dynamic(
   { loading: () => <div className="shrink-0 h-[62px] border-t border-border bg-background" /> }
 );
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+const AppLayout = ({ children }: { children: ReactNode }) => {
   return (
     <AuthGuard>
       <div className="flex h-screen flex-col overflow-hidden">
@@ -42,4 +42,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
     </AuthGuard>
   );
-}
+};
+
+export default AppLayout;

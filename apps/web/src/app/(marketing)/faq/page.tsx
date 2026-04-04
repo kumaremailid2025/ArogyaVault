@@ -64,7 +64,7 @@ const ADDITIONAL_FAQS = [
 
 /* ─── Page ──────────────────────────────────────────────────────────────────── */
 
-export default function FaqPage() {
+const FaqPage = () => {
   return (
     <>
       <PageHero
@@ -193,4 +193,6 @@ export default function FaqPage() {
       />
     </>
   );
-}
+};
+
+export default FaqPage;

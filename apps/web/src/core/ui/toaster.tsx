@@ -3,11 +3,11 @@
 import { useToast } from "@/core/ui/use-toast";
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/core/ui/toast";
 
-export function Toaster() {
+export const Toaster = () => {
   const { toasts } = useToast();
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(({ id, title, description, action, ...props }) => {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
@@ -22,4 +22,4 @@ export function Toaster() {
       <ToastViewport />
     </ToastProvider>
   );
-}
+};

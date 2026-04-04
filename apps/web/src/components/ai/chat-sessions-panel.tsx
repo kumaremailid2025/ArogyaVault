@@ -19,7 +19,7 @@ interface ChatSessionsPanelProps {
   onNewChat: () => void;
 }
 
-function timeAgo(iso: string) {
+const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 60) return `${mins}m ago`;
@@ -29,13 +29,13 @@ function timeAgo(iso: string) {
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
+};
 
-export function ChatSessionsPanel({
+export const ChatSessionsPanel = ({
   activeSessionId,
   onSelectSession,
   onNewChat,
-}: ChatSessionsPanelProps) {
+}: ChatSessionsPanelProps) => {
   const [search, setSearch] = React.useState("");
 
   const filtered = React.useMemo(() => {
@@ -125,4 +125,4 @@ export function ChatSessionsPanel({
       </div>
     </div>
   );
-}
+};

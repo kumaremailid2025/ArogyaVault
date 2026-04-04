@@ -9,7 +9,7 @@ const STATS = [
   { value: "∞",      label: "Storage",            sublabel: "Unlimited records per family" },
 ];
 
-export function StatsSection() {
+export const StatsSection = () => {
   return (
     <div className="border-y border-border bg-muted/30">
       <Container>
@@ -25,4 +25,4 @@ export function StatsSection() {
       </Container>
     </div>
   );
-}
+};

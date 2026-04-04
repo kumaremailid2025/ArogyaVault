@@ -30,7 +30,7 @@ const TESTIMONIALS = [
   },
 ];
 
-export function TestimonialsSection() {
+export const TestimonialsSection = () => {
   return (
     <Section>
       <Container>
@@ -49,4 +49,4 @@ export function TestimonialsSection() {
       </Container>
     </Section>
   );
-}
+};

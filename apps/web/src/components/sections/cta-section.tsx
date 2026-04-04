@@ -14,14 +14,14 @@ interface CtaSectionProps {
   secondaryHref?: string;
 }
 
-export function CtaSection({
+export const CtaSection = ({
   title = "Ready to secure your family's health records?",
   description = "Join thousands of Indian families who've already moved their medical records to ArogyaVault. It takes less than 2 minutes to get started.",
   primaryLabel = "Get Started Free",
   primaryHref = "/contact",
   secondaryLabel = "Learn More",
   secondaryHref = "/how-it-works",
-}: CtaSectionProps) {
+}: CtaSectionProps) => {
   return (
     <Section className="bg-primary text-primary-foreground">
       <Container>
@@ -56,4 +56,4 @@ export function CtaSection({
       </Container>
     </Section>
   );
-}
+};

@@ -24,7 +24,7 @@ export interface UseVoiceRecorderReturn {
  *
  * @param lang  BCP-47 language code, e.g. "en-IN", "hi-IN"
  */
-export function useVoiceRecorder(lang: string): UseVoiceRecorderReturn {
+export const useVoiceRecorder = (lang: string): UseVoiceRecorderReturn => {
   const [voiceState, setVoiceState]             = React.useState<VoiceState>("idle");
   const [liveTranscript, setLiveTranscript]     = React.useState("");
   const [recordingSeconds, setRecordingSeconds] = React.useState(0);
@@ -43,32 +43,32 @@ export function useVoiceRecorder(lang: string): UseVoiceRecorderReturn {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function formatSeconds(s: number): string {
+  const formatSeconds = (s: number): string => {
     return `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
-  }
+  };
 
-  function stopTimer() {
+  const stopTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }
+  };
 
-  function stopRecording() {
+  const stopRecording = () => {
     recognitionRef.current?.stop();
     stopTimer();
     setVoiceState("idle");
     setLiveTranscript("");
     setRecordingSeconds(0);
     finalTranscriptRef.current = "";
-  }
+  };
 
-  function reset() {
+  const reset = () => {
     stopRecording();
     setVoiceRecording(null);
-  }
+  };
 
-  async function startRecording() {
+  const startRecording = async () => {
     const SpeechRecognition =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -135,7 +135,7 @@ export function useVoiceRecorder(lang: string): UseVoiceRecorderReturn {
     };
 
     recognition.start();
-  }
+  };
 
   return {
     voiceState,
@@ -147,4 +147,4 @@ export function useVoiceRecorder(lang: string): UseVoiceRecorderReturn {
     stopRecording,
     reset,
   };
-}
+};

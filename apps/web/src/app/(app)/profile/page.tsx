@@ -26,7 +26,7 @@ const NOTIFICATIONS = [
   { label: "Weekly health digest",    sub: "Summary of your health activity",      on: false },
 ];
 
-export default function ProfilePage() {
+const ProfilePage = () => {
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-5 lg:p-7 space-y-6 max-w-2xl">
@@ -146,15 +146,15 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-}
+};
 
-function SettingRow({
+const SettingRow = ({
   icon: Icon, title, desc, action,
   actionVariant = "outline",
 }: {
   icon: React.ElementType; title: string; desc: string;
   action: string; actionVariant?: "default" | "outline" | "ghost";
-}) {
+}) => {
   return (
     <div className="flex items-center justify-between px-4 py-3 gap-3">
       <div className="flex items-center gap-3 min-w-0">
@@ -173,4 +173,6 @@ function SettingRow({
       </Button>
     </div>
   );
-}
+};
+
+export default ProfilePage;

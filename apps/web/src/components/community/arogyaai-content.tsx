@@ -6,7 +6,7 @@ import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { AI_MESSAGES, AI_FEATURES, AI_SUGGESTIONS } from "@/data/dashboard-data";
 
-export function ArogyaAIContent() {
+export const ArogyaAIContent = () => {
   const [, setQuery] = React.useState("");
 
   return (
@@ -95,4 +95,4 @@ export function ArogyaAIContent() {
       </p>
     </div>
   );
-}
+};

@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 // ─── Page-level wrappers ─────────────────────────────────────────────────────
 
 /** Constrains content to max-width with horizontal padding */
-export function Container({
+export const Container = ({
   className,
   size = "default",
   children,
   ...props
-}: React.ComponentProps<"div"> & { size?: "sm" | "default" | "lg" | "full" }) {
+}: React.ComponentProps<"div"> & { size?: "sm" | "default" | "lg" | "full" }) => {
   return (
     <div
       className={cn(
@@ -25,15 +25,15 @@ export function Container({
       {children}
     </div>
   );
-}
+};
 
 /** Semantic section with consistent vertical padding */
-export function Section({
+export const Section = ({
   className,
   size = "default",
   children,
   ...props
-}: React.ComponentProps<"section"> & { size?: "sm" | "default" | "lg" }) {
+}: React.ComponentProps<"section"> & { size?: "sm" | "default" | "lg" }) => {
   return (
     <section
       className={cn(
@@ -47,10 +47,10 @@ export function Section({
       {children}
     </section>
   );
-}
+};
 
 /** Vertical flex stack */
-export function Stack({
+export const Stack = ({
   className,
   gap = "md",
   align,
@@ -59,7 +59,7 @@ export function Stack({
 }: React.ComponentProps<"div"> & {
   gap?: "xs" | "sm" | "md" | "lg" | "xl";
   align?: "start" | "center" | "end";
-}) {
+}) => {
   return (
     <div
       className={cn(
@@ -79,10 +79,10 @@ export function Stack({
       {children}
     </div>
   );
-}
+};
 
 /** Horizontal flex row */
-export function Row({
+export const Row = ({
   className,
   gap = "md",
   align = "center",
@@ -93,7 +93,7 @@ export function Row({
   gap?: "xs" | "sm" | "md" | "lg" | "xl";
   align?: "start" | "center" | "end" | "stretch";
   wrap?: boolean;
-}) {
+}) => {
   return (
     <div
       className={cn(
@@ -115,10 +115,10 @@ export function Row({
       {children}
     </div>
   );
-}
+};
 
 /** Responsive CSS grid */
-export function Grid({
+export const Grid = ({
   className,
   cols = 3,
   gap = "md",
@@ -127,7 +127,7 @@ export function Grid({
 }: React.ComponentProps<"div"> & {
   cols?: 1 | 2 | 3 | 4 | 6;
   gap?: "sm" | "md" | "lg";
-}) {
+}) => {
   return (
     <div
       className={cn(
@@ -147,27 +147,27 @@ export function Grid({
       {children}
     </div>
   );
-}
+};
 
 /** Generic flex container */
-export function Flex({
+export const Flex = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div">) => {
   return (
     <div className={cn("flex", className)} {...props}>
       {children}
     </div>
   );
-}
+};
 
 /** Full-bleed banner/hero area */
-export function Banner({
+export const Banner = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div">) => {
   return (
     <div
       className={cn("relative w-full overflow-hidden", className)}
@@ -176,9 +176,9 @@ export function Banner({
       {children}
     </div>
   );
-}
+};
 
 /** Divider */
-export function Divider({ className, ...props }: React.ComponentProps<"hr">) {
+export const Divider = ({ className, ...props }: React.ComponentProps<"hr">) => {
   return <hr className={cn("border-border my-8", className)} {...props} />;
-}
+};

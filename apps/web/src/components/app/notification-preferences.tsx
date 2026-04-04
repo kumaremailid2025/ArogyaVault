@@ -5,14 +5,14 @@ import { Switch } from "@/core/ui/switch";
 
 type NotificationItem = { label: string; sub: string; on: boolean };
 
-export function NotificationPreferences({ items }: { items: NotificationItem[] }) {
+export const NotificationPreferences = ({ items }: { items: NotificationItem[] }) => {
   const [prefs, setPrefs] = React.useState(items);
 
-  function toggle(index: number) {
+  const toggle = (index: number) => {
     setPrefs((prev) =>
       prev.map((item, i) => (i === index ? { ...item, on: !item.on } : item))
     );
-  }
+  };
 
   return (
     <div className="rounded-xl border border-border divide-y divide-border bg-background">
@@ -31,4 +31,4 @@ export function NotificationPreferences({ items }: { items: NotificationItem[] }
       ))}
     </div>
   );
-}
+};

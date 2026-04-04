@@ -28,7 +28,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   other: <FileIcon className="size-3 text-muted-foreground" />,
 };
 
-function timeAgo(iso: string) {
+const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 60) return `${mins}m ago`;
@@ -38,9 +38,9 @@ function timeAgo(iso: string) {
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
+};
 
-function QACard({
+const QACard = ({
   entry,
   expanded,
   onToggle,
@@ -50,7 +50,7 @@ function QACard({
   expanded: boolean;
   onToggle: () => void;
   onFileClick: () => void;
-}) {
+}) => {
   return (
     <div className={cn(
       "rounded-xl border transition-all",
@@ -106,9 +106,9 @@ function QACard({
       )}
     </div>
   );
-}
+};
 
-export function FileQAHistoryPanel({ onFileClick }: FileQAHistoryPanelProps) {
+export const FileQAHistoryPanel = ({ onFileClick }: FileQAHistoryPanelProps) => {
   // First entry expanded by default
   const [expandedId, setExpandedId] = React.useState<number | null>(
     FILE_QA_HISTORY.length > 0 ? FILE_QA_HISTORY[0].id : null
@@ -156,4 +156,4 @@ export function FileQAHistoryPanel({ onFileClick }: FileQAHistoryPanelProps) {
       </div>
     </div>
   );
-}
+};

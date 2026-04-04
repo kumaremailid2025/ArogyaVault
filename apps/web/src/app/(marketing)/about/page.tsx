@@ -121,7 +121,7 @@ const TEAM_PILLARS = [
 
 /* ─── Page ──────────────────────────────────────────────────────────────────── */
 
-export default function AboutPage() {
+const AboutPage = () => {
   return (
     <>
       <PageHero
@@ -324,4 +324,6 @@ export default function AboutPage() {
       />
     </>
   );
-}
+};
+
+export default AboutPage;

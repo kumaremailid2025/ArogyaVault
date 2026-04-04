@@ -20,7 +20,7 @@ import type { SmartInputSubmitPayload } from "@/models/input";
    BUBBLE — conversation message
 ═══════════════════════════════════════════════════════════════════ */
 
-function Bubble({ msg }: { msg: ConversationMessage }) {
+const Bubble = ({ msg }: { msg: ConversationMessage }) => {
   const isUser = msg.role === "user";
   return (
     <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
@@ -73,13 +73,13 @@ function Bubble({ msg }: { msg: ConversationMessage }) {
       )}
     </div>
   );
-}
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    HISTORY VIEW — full-width list of past conversations
 ═══════════════════════════════════════════════════════════════════ */
 
-function HistoryView({ onSelectSession }: { onSelectSession: (id: string) => void }) {
+const HistoryView = ({ onSelectSession }: { onSelectSession: (id: string) => void }) => {
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-2">
       <h2 className="text-sm font-semibold px-1 mb-3">All Conversations</h2>
@@ -112,13 +112,13 @@ function HistoryView({ onSelectSession }: { onSelectSession: (id: string) => voi
       ))}
     </div>
   );
-}
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    MAIN CONTAINER — orchestrates banner, three-column layout
 ═══════════════════════════════════════════════════════════════════ */
 
-export function ArogyaAiContainer() {
+export const ArogyaAiContainer = () => {
   const searchParams = useSearchParams();
   const router       = useRouter();
 
@@ -151,7 +151,7 @@ export function ArogyaAiContainer() {
   }, [messages, isTyping]);
 
   /* ── Conversation logic ──────────────────────────────────────────── */
-  function addToConversation(text: string) {
+  const addToConversation = (text: string) => {
     const userMsg: ConversationMessage = { role: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
@@ -159,24 +159,24 @@ export function ArogyaAiContainer() {
       setMessages((prev) => [...prev, mockAiResponse(text)]);
       setIsTyping(false);
     }, 1400);
-  }
+  };
 
-  function handleInputSubmit(payload: SmartInputSubmitPayload) {
+  const handleInputSubmit = (payload: SmartInputSubmitPayload) => {
     const text = payload.text.trim();
     if (!text) return;
     addToConversation(text);
     setInputText("");
-  }
+  };
 
-  function handleNewChat() {
+  const handleNewChat = () => {
     setMessages([]);
     setIsTyping(false);
     setInputText("");
     setActiveSessionId(null);
     setActiveTab("chat");
-  }
+  };
 
-  function handleSelectSession(sessionId: string) {
+  const handleSelectSession = (sessionId: string) => {
     // In production this would load the session's messages from the backend
     const session = CHAT_SESSIONS.find((s) => s.id === sessionId);
     if (!session) return;
@@ -187,11 +187,11 @@ export function ArogyaAiContainer() {
       { role: "user", text: session.preview },
       mockAiResponse(session.preview),
     ]);
-  }
+  };
 
-  function handleTabChange(tab: AiTab) {
+  const handleTabChange = (tab: AiTab) => {
     setActiveTab(tab);
-  }
+  };
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
@@ -314,4 +314,4 @@ export function ArogyaAiContainer() {
       </div>
     </div>
   );
-}
+};

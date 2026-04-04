@@ -8,7 +8,7 @@ import { TestimonialsSection } from "@/components/sections/testimonials-section"
 import { FaqSection }         from "@/components/sections/faq-section";
 import { CtaSection }         from "@/components/sections/cta-section";
 
-export default function HomePage() {
+const HomePage = () => {
   return (
     <>
       <HeroSection />
@@ -22,4 +22,6 @@ export default function HomePage() {
       <CtaSection />
     </>
   );
-}
+};
+
+export default HomePage;

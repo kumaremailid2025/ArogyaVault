@@ -41,7 +41,7 @@ const PRIVACY_PRINCIPLES = [
   },
 ];
 
-export default function SecurityPage() {
+const SecurityPage = () => {
   return (
     <>
       <PageHero
@@ -104,4 +104,6 @@ export default function SecurityPage() {
       />
     </>
   );
-}
+};
+
+export default SecurityPage;

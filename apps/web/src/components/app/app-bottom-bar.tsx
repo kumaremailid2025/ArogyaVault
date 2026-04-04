@@ -12,16 +12,22 @@ import { cn } from "@/lib/utils";
 
 type UploadFile = { name: string; size: string; status: "uploading" | "done" };
 
-function formatSize(bytes: number): string {
+const formatSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-}
+};
 
-export function AppBottomBar() {
+export const AppBottomBar = () => {
   const pathname = usePathname();
   const router   = useRouter();
   const isAskAI  = pathname === "/arogya-ai";
+
+  /* All hooks must be called before any conditional return */
+  const [query, setQuery] = React.useState("");
+  const [uploads, setUploads] = React.useState<UploadFile[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef     = React.useRef<HTMLInputElement>(null);
 
   /* Hide on pages that have their own input areas */
   const isCommunity = pathname.startsWith("/community");
@@ -29,26 +35,21 @@ export function AppBottomBar() {
   const isArogyaAi  = pathname.startsWith("/arogya-ai");
   if (isCommunity || isLearn || isArogyaAi) return null;
 
-  const [query, setQuery] = React.useState("");
-  const [uploads, setUploads] = React.useState<UploadFile[]>([]);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const inputRef     = React.useRef<HTMLInputElement>(null);
-
   /* ── Send query ───────────────────────────────────────────────── */
-  function handleSend() {
+  const handleSend = () => {
     const q = query.trim();
     if (!q) return;
     setQuery("");
     /* Navigate to arogya-ai with the query as a param */
     router.push("/arogya-ai?q=" + encodeURIComponent(q));
-  }
+  };
 
   /* ── Upload ───────────────────────────────────────────────────── */
-  function handleUploadClick() {
+  const handleUploadClick = () => {
     fileInputRef.current?.click();
-  }
+  };
 
-  function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
 
@@ -75,11 +76,11 @@ export function AppBottomBar() {
 
     /* Clear input so the same file can be re-selected */
     e.target.value = "";
-  }
+  };
 
-  function dismissUpload(name: string) {
+  const dismissUpload = (name: string) => {
     setUploads((prev) => prev.filter((u) => u.name !== name));
-  }
+  };
 
   return (
     <div className="shrink-0 border-t border-border bg-background">

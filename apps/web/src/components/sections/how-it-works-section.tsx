@@ -45,10 +45,10 @@ interface HowItWorksSectionProps {
   align?: "left" | "center";
 }
 
-export function HowItWorksSection({
+export const HowItWorksSection = ({
   showCta = true,
   align = "center",
-}: HowItWorksSectionProps) {
+}: HowItWorksSectionProps) => {
   return (
     <Section className="bg-muted/30">
       <Container>
@@ -80,4 +80,4 @@ export function HowItWorksSection({
       </Container>
     </Section>
   );
-}
+};

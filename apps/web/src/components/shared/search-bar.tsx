@@ -16,7 +16,7 @@ interface SearchBarProps {
  * Reusable search input with magnifier icon and one-click clear button.
  * Used in ArogyaLearn Browse, Systems, and Departments tabs.
  */
-export function SearchBar({ value, onChange, placeholder = "Search…", className }: SearchBarProps) {
+export const SearchBar = ({ value, onChange, placeholder = "Search…", className }: SearchBarProps) => {
   return (
     <div className={cn("relative", className)}>
       <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none z-10" />
@@ -40,4 +40,4 @@ export function SearchBar({ value, onChange, placeholder = "Search…", classNam
       )}
     </div>
   );
-}
+};

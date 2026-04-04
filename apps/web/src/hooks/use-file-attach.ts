@@ -21,25 +21,25 @@ export interface UseFileAttachReturn {
  * Calls POST /api/analyze-image with { filename, mimeType }.
  * In production this should call a real Vision / OCR API.
  */
-export function useFileAttach(): UseFileAttachReturn {
+export const useFileAttach = (): UseFileAttachReturn => {
   const [attachState, setAttachState] = React.useState<AttachStep>({ step: "select" });
   const [attachedDoc, setAttachedDoc] = React.useState<AttachedDoc>(null);
 
-  function handleFileSelect(file: File) {
+  const handleFileSelect = (file: File) => {
     const previewUrl = URL.createObjectURL(file);
     setAttachState({ step: "preview", file, previewUrl, caption: "" });
-  }
+  };
 
-  function resetAttach() {
+  const resetAttach = () => {
     /* Revoke any object URL to prevent memory leaks */
     if (attachState.step === "preview" || attachState.step === "analyzed") {
       URL.revokeObjectURL(attachState.previewUrl);
     }
     setAttachState({ step: "select" });
     setAttachedDoc(null);
-  }
+  };
 
-  async function handleAnalyze(file: File, previewUrl: string, caption: string) {
+  const handleAnalyze = async (file: File, previewUrl: string, caption: string) => {
     setAttachState({ step: "analyzing" });
     try {
       const res  = await fetch("/api/analyze-image", {
@@ -52,16 +52,16 @@ export function useFileAttach(): UseFileAttachReturn {
     } catch {
       setAttachState({ step: "preview", file, previewUrl, caption });
     }
-  }
+  };
 
-  function handleUseAttachment(file: File, previewUrl: string, docType: string) {
+  const handleUseAttachment = (file: File, previewUrl: string, docType: string) => {
     setAttachedDoc({
       filename:   file.name,
       previewUrl,
       docType,
       isPdf: file.type === "application/pdf",
     });
-  }
+  };
 
   return {
     attachState,
@@ -73,4 +73,4 @@ export function useFileAttach(): UseFileAttachReturn {
     handleAnalyze,
     handleUseAttachment,
   };
-}
+};

@@ -19,7 +19,7 @@ const GROUP_FEATURES = [
   "Direction indicators show who can see what",
 ];
 
-export function GroupsSection({ compact = false }: { compact?: boolean }) {
+export const GroupsSection = ({ compact = false }: { compact?: boolean }) => {
   return (
     <Section>
       <Container>
@@ -100,4 +100,4 @@ export function GroupsSection({ compact = false }: { compact?: boolean }) {
       </Container>
     </Section>
   );
-}
+};

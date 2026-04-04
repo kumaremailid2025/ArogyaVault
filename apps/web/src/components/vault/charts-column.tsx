@@ -23,7 +23,7 @@ interface ChartsColumnProps {
 
 /* ── Single chart card ─────────────────────────────────────────── */
 
-function ChartCard({
+const ChartCard = ({
   config,
   onClick,
   highlighted,
@@ -31,7 +31,7 @@ function ChartCard({
   config: ChartConfig;
   onClick: () => void;
   highlighted: boolean;
-}) {
+}) => {
   const sharedXAxis = (
     <XAxis
       dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false}
@@ -55,7 +55,7 @@ function ChartCard({
     <Legend wrapperStyle={{ fontSize: 10 }} iconType="circle" iconSize={6} />
   );
 
-  function renderRefLines() {
+  const renderRefLines = () => {
     return config.series
       .filter((s) => s.refLine !== undefined)
       .map((s) => (
@@ -68,9 +68,9 @@ function ChartCard({
           label={{ value: s.refLabel || "", fontSize: 9, fill: s.color, position: "right" }}
         />
       ));
-  }
+  };
 
-  function renderIdealRange() {
+  const renderIdealRange = () => {
     if (!config.idealRange) return null;
     return (
       <ReferenceArea
@@ -81,9 +81,9 @@ function ChartCard({
         strokeOpacity={0}
       />
     );
-  }
+  };
 
-  function renderChart() {
+  const renderChart = () => {
     switch (config.type) {
       case "line":
         return (
@@ -196,7 +196,7 @@ function ChartCard({
       default:
         return null;
     }
-  }
+  };
 
   return (
     <button
@@ -222,11 +222,11 @@ function ChartCard({
       </div>
     </button>
   );
-}
+};
 
 /* ── Main component ────────────────────────────────────────────── */
 
-export function ChartsColumn({ onChartClick, highlightCategory }: ChartsColumnProps) {
+export const ChartsColumn = ({ onChartClick, highlightCategory }: ChartsColumnProps) => {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 pb-4">
       {CHART_CONFIGS.map((cfg) => (
@@ -239,4 +239,4 @@ export function ChartsColumn({ onChartClick, highlightCategory }: ChartsColumnPr
       ))}
     </div>
   );
-}
+};

@@ -5,7 +5,7 @@ import type { PdfMessage } from "@/models/learn";
  * In production this would call a real RAG / vector-search pipeline.
  * Responses include page-level citations and related external research links.
  */
-export function getPdfAiResponse(question: string, docName: string): PdfMessage {
+export const getPdfAiResponse = (question: string, docName: string): PdfMessage => {
   const q = question.toLowerCase();
 
   if (q.includes("dose") || q.includes("dosage") || q.includes("mg")) {
@@ -50,4 +50,4 @@ export function getPdfAiResponse(question: string, docName: string): PdfMessage 
     citations: ["Page 5: Introduction & background", "Page 24: Clinical evidence summary", "Page 31: Recommendations & conclusions"],
     related: [`PubMed search: ${question}`, "WHO Guidelines repository", "Cochrane Library: Systematic reviews"],
   };
-}
+};

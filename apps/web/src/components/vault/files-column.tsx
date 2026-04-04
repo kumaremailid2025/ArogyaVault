@@ -27,12 +27,12 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   other: <FileIcon className="size-3.5 text-muted-foreground" />,
 };
 
-function formatDate(iso: string) {
+const formatDate = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
+};
 
-export function FilesColumn({ onFileClick }: FilesColumnProps) {
+export const FilesColumn = ({ onFileClick }: FilesColumnProps) => {
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
 
@@ -122,4 +122,4 @@ export function FilesColumn({ onFileClick }: FilesColumnProps) {
       </div>
     </div>
   );
-}
+};

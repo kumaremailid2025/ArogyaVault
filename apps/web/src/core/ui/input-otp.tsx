@@ -5,7 +5,7 @@ import { OTPInput, OTPInputContext } from "input-otp";
 import { MinusIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function InputOTP({ className, containerClassName, ...props }: React.ComponentProps<typeof OTPInput> & { containerClassName?: string }) {
+const InputOTP = ({ className, containerClassName, ...props }: React.ComponentProps<typeof OTPInput> & { containerClassName?: string }) => {
   return (
     <OTPInput
       data-slot="input-otp"
@@ -14,13 +14,13 @@ function InputOTP({ className, containerClassName, ...props }: React.ComponentPr
       {...props}
     />
   );
-}
+};
 
-function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
+const InputOTPGroup = ({ className, ...props }: React.ComponentProps<"div">) => {
   return <div data-slot="input-otp-group" className={cn("flex items-center", className)} {...props} />;
-}
+};
 
-function InputOTPSlot({ index, className, ...props }: React.ComponentProps<"div"> & { index: number }) {
+const InputOTPSlot = ({ index, className, ...props }: React.ComponentProps<"div"> & { index: number }) => {
   const inputOTPContext = React.useContext(OTPInputContext);
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
   return (
@@ -42,14 +42,14 @@ function InputOTPSlot({ index, className, ...props }: React.ComponentProps<"div"
       )}
     </div>
   );
-}
+};
 
-function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
+const InputOTPSeparator = ({ ...props }: React.ComponentProps<"div">) => {
   return (
     <div data-slot="input-otp-separator" role="separator" {...props}>
       <MinusIcon />
     </div>
   );
-}
+};
 
 export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };

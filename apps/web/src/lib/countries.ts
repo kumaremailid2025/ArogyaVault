@@ -105,15 +105,15 @@ export const DEFAULT_COUNTRY_CODE: CountryCode = CountryCode.IN;
 /* ── Helpers ──────────────────────────────────────────────────────── */
 
 /** Look up a country by its code. */
-export function getCountry(code: CountryCode): Country {
+export const getCountry = (code: CountryCode): Country => {
   return COUNTRIES[code];
-}
+};
 
 /**
  * Build a Zod schema for the phone field that adapts to the
  * selected country's validation rules.
  */
-export function buildPhoneSchema(countryCode: CountryCode) {
+export const buildPhoneSchema = (countryCode: CountryCode) => {
   const { phoneRule } = getCountry(countryCode);
 
   return z.object({
@@ -122,6 +122,6 @@ export function buildPhoneSchema(countryCode: CountryCode) {
       .min(1, "Mobile number is required")
       .regex(phoneRule.pattern, phoneRule.errorMessage),
   });
-}
+};
 
 export type PhoneFormValues = z.infer<ReturnType<typeof buildPhoneSchema>>;

@@ -12,7 +12,7 @@ interface PageHeroProps {
 }
 
 /** Compact hero banner used on inner pages (Features, About, etc.) */
-export function PageHero({ eyebrow, title, description, className, children }: PageHeroProps) {
+export const PageHero = ({ eyebrow, title, description, className, children }: PageHeroProps) => {
   return (
     <div className={cn("bg-muted/40 border-b border-border", className)}>
       <Container>
@@ -27,4 +27,4 @@ export function PageHero({ eyebrow, title, description, className, children }: P
       </Container>
     </div>
   );
-}
+};

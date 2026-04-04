@@ -30,7 +30,7 @@ const NAV_LINKS = [
   { label: "Contact",      href: "/contact" },
 ];
 
-function NavLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {
+const NavLink = ({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) => {
   const pathname = usePathname();
   const isActive = pathname === href;
   return (
@@ -47,9 +47,9 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
       {label}
     </Link>
   );
-}
+};
 
-export function Navbar() {
+export const Navbar = () => {
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
@@ -214,4 +214,4 @@ export function Navbar() {
       </Container>
     </header>
   );
-}
+};

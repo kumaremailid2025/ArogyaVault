@@ -25,7 +25,7 @@ interface AiContextPanelProps {
 
 /* ── Mini score ────────────────────────────────────────────────── */
 
-function MiniScore({ score }: { score: number }) {
+const MiniScore = ({ score }: { score: number }) => {
   const color = score >= 80 ? "text-emerald-500" : score >= 60 ? "text-amber-500" : "text-red-500";
   return (
     <div className="flex items-center gap-1.5">
@@ -33,11 +33,11 @@ function MiniScore({ score }: { score: number }) {
       <span className="text-[10px] text-muted-foreground">/100</span>
     </div>
   );
-}
+};
 
 /* ── Context card ──────────────────────────────────────────────── */
 
-function ContextCard({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) => void }) {
+const ContextCard = ({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) => void }) => {
   const iconMap = {
     alert: <AlertTriangleIcon className={cn("size-3.5",
       card.severity === "critical" ? "text-red-500" :
@@ -71,11 +71,11 @@ function ContextCard({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) 
       </div>
     </button>
   );
-}
+};
 
 /* ── Main panel ────────────────────────────────────────────────── */
 
-export function AiContextPanel({ onAsk }: AiContextPanelProps) {
+export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
   return (
@@ -194,4 +194,4 @@ export function AiContextPanel({ onAsk }: AiContextPanelProps) {
       </div>
     </div>
   );
-}
+};

@@ -45,7 +45,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 /** Mock AI answers based on file content */
-function getMockAnswer(question: string, file: MedFile): string {
+const getMockAnswer = (question: string, file: MedFile): string => {
   const q = question.toLowerCase();
   if (q.includes("normal") || q.includes("range")) {
     return `Based on "${file.name}", most values fall within or near normal ranges. ${file.aiSummary || "No additional AI analysis available."}`;
@@ -60,13 +60,13 @@ function getMockAnswer(question: string, file: MedFile): string {
     return `This document ${file.category === "prescription" ? "contains medication details" : "may reference medications related to the findings"}. Please consult your physician for medication-related decisions.`;
   }
   return `Based on my analysis of "${file.name}": ${file.aiSummary || "This document has been uploaded to your vault. I can help answer specific questions about its contents."}`;
-}
+};
 
-function formatDate(iso: string) {
+const formatDate = (iso: string) => {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
+};
 
-export function FileDetailPanel({ fileId, onClose }: FileDetailPanelProps) {
+export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
   const file = VAULT_FILES.find((f) => f.id === fileId);
   const [question, setQuestion] = React.useState("");
   const [messages, setMessages] = React.useState<QAMessage[]>([]);
@@ -252,4 +252,4 @@ export function FileDetailPanel({ fileId, onClose }: FileDetailPanelProps) {
       </div>
     </div>
   );
-}
+};

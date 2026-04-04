@@ -23,7 +23,7 @@ interface DrilldownPanelProps {
   onClose: () => void;
 }
 
-function StatusDot({ status }: { status: "normal" | "warning" | "critical" }) {
+const StatusDot = ({ status }: { status: "normal" | "warning" | "critical" }) => {
   return (
     <span
       className={cn(
@@ -34,11 +34,11 @@ function StatusDot({ status }: { status: "normal" | "warning" | "critical" }) {
       )}
     />
   );
-}
+};
 
 /* ── Metric Drilldown ──────────────────────────────────────────── */
 
-function MetricDrilldown({ data, onClose }: { data: DrilldownData; onClose: () => void }) {
+const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () => void }) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -144,11 +144,11 @@ function MetricDrilldown({ data, onClose }: { data: DrilldownData; onClose: () =
       </div>
     </div>
   );
-}
+};
 
 /* ── Chart Drilldown (when clicking a chart directly) ──────────── */
 
-function ChartDrilldown({ config, onClose }: { config: ChartConfig; onClose: () => void }) {
+const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () => void }) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-start justify-between p-3 border-b border-border">
@@ -212,11 +212,11 @@ function ChartDrilldown({ config, onClose }: { config: ChartConfig; onClose: () 
       </div>
     </div>
   );
-}
+};
 
 /* ── Main export ───────────────────────────────────────────────── */
 
-export function DrilldownPanel({ targetId, onClose }: DrilldownPanelProps) {
+export const DrilldownPanel = ({ targetId, onClose }: DrilldownPanelProps) => {
   // Try metric drilldown first
   const metricData = DRILLDOWN_MAP[targetId];
   if (metricData) {
@@ -239,4 +239,4 @@ export function DrilldownPanel({ targetId, onClose }: DrilldownPanelProps) {
       </button>
     </div>
   );
-}
+};

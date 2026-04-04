@@ -59,10 +59,10 @@ interface SecuritySectionProps {
   showHeader?: boolean;
 }
 
-export function SecuritySection({
+export const SecuritySection = ({
   compact = false,
   showHeader = true,
-}: SecuritySectionProps) {
+}: SecuritySectionProps) => {
   const pillars = compact ? SECURITY_PILLARS.slice(0, 3) : SECURITY_PILLARS;
   return (
     <Section className="bg-muted/30">
@@ -104,4 +104,4 @@ export function SecuritySection({
       </Container>
     </Section>
   );
-}
+};

@@ -29,13 +29,13 @@ const STATUS_FILTER_MAP: Record<MemberStatusFilter, CommunityMember["status"][] 
 
 /* ── Component ─────────────────────────────────────────────────── */
 
-export function MembersContainer({
+export const MembersContainer = ({
   title,
   memberCount,
   members,
   selectedMemberId,
   onSelectMember,
-}: MembersContainerProps) {
+}: MembersContainerProps) => {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<MemberStatusFilter>("All");
 
@@ -140,4 +140,4 @@ export function MembersContainer({
       </div>
     </div>
   );
-}
+};

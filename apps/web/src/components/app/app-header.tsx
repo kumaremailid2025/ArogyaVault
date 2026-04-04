@@ -92,7 +92,7 @@ const INITIAL_NOTIFICATIONS: Notif[] = [
   },
 ];
 
-export function AppHeader() {
+export const AppHeader = () => {
   const pathname     = usePathname();
 
   const [inviteOpen,    setInviteOpen]    = React.useState(false);
@@ -104,38 +104,38 @@ export function AppHeader() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   /* ── Invite helpers ──────────────────────────────────────────── */
-  function openInvite(groupId?: string) {
+  const openInvite = (groupId?: string) => {
     setInviteContext(groupId);
     setInviteOpen(true);
-  }
+  };
 
   const profileHref = "/profile";
 
   /* ── Active top-nav detection ────────────────────────────────── */
-  function isNavActive(item: (typeof TOP_NAV)[number]) {
+  const isNavActive = (item: (typeof TOP_NAV)[number]) => {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
-  }
+  };
 
   /* Close notification panel on outside click */
   React.useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    const handleClick = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setNotifOpen(false);
       }
-    }
+    };
     if (notifOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [notifOpen]);
 
-  function markAllRead() {
+  const markAllRead = () => {
     setNotifications((n) => n.map((x) => ({ ...x, read: true })));
-  }
+  };
 
-  function markRead(id: string) {
+  const markRead = (id: string) => {
     setNotifications((n) =>
       n.map((x) => (x.id === id ? { ...x, read: true } : x))
     );
-  }
+  };
 
   const user = useAuthStore((s) => s.user);
   const logoutMutation = useLogout();
@@ -370,4 +370,4 @@ export function AppHeader() {
       />
     </>
   );
-}
+};

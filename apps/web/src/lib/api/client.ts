@@ -26,7 +26,7 @@ export interface ApiError {
 // Prevent multiple concurrent refresh calls
 let refreshPromise: Promise<boolean> | null = null;
 
-async function refreshAccessToken(): Promise<boolean> {
+const refreshAccessToken = async (): Promise<boolean> => {
   const { tokens, setAccessToken, logout } = useAuthStore.getState();
   const refreshToken = tokens?.refresh_token;
 
@@ -77,7 +77,7 @@ async function refreshAccessToken(): Promise<boolean> {
     logout();
     return false;
   }
-}
+};
 
 /* ── Client ───────────────────────────────────────────────────────── */
 

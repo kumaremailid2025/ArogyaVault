@@ -39,7 +39,7 @@ import { CommunityWrapperContainer } from "@/components/containers/community/com
 /* ═══════════════════════════════════════════════════════════════════
    AROGYALEARN — evidence-based medical knowledge hub
 ═══════════════════════════════════════════════════════════════════ */
-export function ArogyaLearnContent() {
+export const ArogyaLearnContent = () => {
   type LearnTab = "browse" | "systems" | "departments" | "pdf";
   const [activeTab, setActiveTab] = React.useState<LearnTab>("browse");
 
@@ -96,7 +96,7 @@ export function ArogyaLearnContent() {
     ? (EDU_TOPICS.find((t) => t.id === panel.id) ?? null)
     : null;
 
-  function runDrugCheck() {
+  const runDrugCheck = () => {
     const filled = drugs.filter((d) => d.trim());
     const pairs: typeof interactionResults = [];
     for (let i = 0; i < filled.length; i++) {
@@ -116,7 +116,7 @@ export function ArogyaLearnContent() {
   };
 
   /* ── Drug checker panel (shared between overview mini + full panel) ── */
-  function DrugCheckerUI({ full = false }: { full?: boolean }) {
+  const DrugCheckerUI = ({ full = false }: { full?: boolean }) => {
     return (
       <div className="space-y-2.5">
         {drugs.map((d, i) => (
@@ -178,13 +178,13 @@ export function ArogyaLearnContent() {
   }
 
   /* ── PDF handlers ── */
-  function handlePdfFile(file: File) {
+  const handlePdfFile = (file: File) => {
     setPdfSource({ type: "file", name: file.name });
     setPdfMessages([{ role: "ai", text: `Document "${file.name}" loaded. I've indexed the content. Ask me any question about it.`, citations: [] }]);
     setPanel({ view: "pdf-chat" });
   }
 
-  function handlePdfUrl() {
+  const handlePdfUrl = () => {
     const url = pdfUrlInput.trim();
     if (!url) return;
     const name = url.split("/").pop() || "document.pdf";
@@ -194,7 +194,7 @@ export function ArogyaLearnContent() {
     setPanel({ view: "pdf-chat" });
   }
 
-  function handlePdfAsk() {
+  const handlePdfAsk = () => {
     const q = pdfQuestion.trim();
     if (!q || !pdfSource) return;
     const docName = pdfSource.type === "file" ? pdfSource.name : (pdfSource.url.split("/").pop() || "document");
@@ -985,6 +985,8 @@ export function ArogyaLearnContent() {
 /* ═══════════════════════════════════════════════════════════════════
    PAGE — /community (default community view)
 ═══════════════════════════════════════════════════════════════════ */
-export default function CommunityPage() {
+const CommunityPage = () => {
   return <CommunityWrapperContainer variant="community" group="community" tab="feed" />;
-}
+};
+
+export default CommunityPage;

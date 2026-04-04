@@ -65,7 +65,7 @@ const GROUP_PERMISSIONS: Record<string, Permission[]> = {
 };
 
 // Placeholder icon since we can't dynamically require it
-function FileIconPlaceholder(props: React.SVGProps<SVGSVGElement>) {
+const FileIconPlaceholder = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -73,7 +73,7 @@ function FileIconPlaceholder(props: React.SVGProps<SVGSVGElement>) {
       <polyline points="14 2 14 8 20 8"/>
     </svg>
   );
-}
+};
 
 const GROUP_NAMES: Record<string, string> = {
   ravi:   "Ravi Kumar",
@@ -82,7 +82,7 @@ const GROUP_NAMES: Record<string, string> = {
 };
 
 /* ── Permission row ─────────────────────────────────────────────── */
-function PermissionRow({ perm }: { perm: PermissionType }) {
+const PermissionRow = ({ perm }: { perm: PermissionType }) => {
   const [enabled, setEnabled] = React.useState(perm.enabled);
   return (
     <div className="flex items-center justify-between px-4 py-3.5 gap-3">
@@ -103,12 +103,12 @@ function PermissionRow({ perm }: { perm: PermissionType }) {
       />
     </div>
   );
-}
+};
 
 type PermissionType = { icon: React.ElementType; label: string; desc: string; enabled: boolean };
 
 /* ── Group Settings view (single group) ────────────────────────── */
-function GroupSettingsView({ groupId }: { groupId: string }) {
+const GroupSettingsView = ({ groupId }: { groupId: string }) => {
   const group = ALL_GROUPS.find(g => g.id === groupId);
   const permissions = GROUP_PERMISSIONS[groupId] ?? [];
   if (!group) return null;
@@ -177,10 +177,10 @@ function GroupSettingsView({ groupId }: { groupId: string }) {
       </section>
     </div>
   );
-}
+};
 
 /* ── All groups list (default view) ─────────────────────────────── */
-function AllGroupsView() {
+const AllGroupsView = () => {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -248,10 +248,10 @@ function AllGroupsView() {
       </div>
     </div>
   );
-}
+};
 
 /* ── Page ───────────────────────────────────────────────────────── */
-export default function GroupsPage() {
+const GroupsPage = () => {
   const searchParams = useSearchParams();
   const g = searchParams.get("g") ?? "";
   const isLinked = g === "ravi" || g === "sharma" || g === "priya";
@@ -290,4 +290,6 @@ export default function GroupsPage() {
       </div>
     </div>
   );
-}
+};
+
+export default GroupsPage;

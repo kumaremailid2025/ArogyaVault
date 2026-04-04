@@ -11,14 +11,14 @@ interface SectionHeaderProps {
   titleClassName?: string;
 }
 
-export function SectionHeader({
+export const SectionHeader = ({
   eyebrow,
   title,
   description,
   align = "center",
   className,
   titleClassName,
-}: SectionHeaderProps) {
+}: SectionHeaderProps) => {
   return (
     <div
       className={cn(
@@ -35,4 +35,4 @@ export function SectionHeader({
       )}
     </div>
   );
-}
+};

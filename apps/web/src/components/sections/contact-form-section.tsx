@@ -61,7 +61,7 @@ const CONTACT_INFO = [
   },
 ];
 
-export function ContactFormSection() {
+export const ContactFormSection = () => {
   const [submitted, setSubmitted] = React.useState(false);
 
   const form = useForm<FormValues>({
@@ -75,11 +75,11 @@ export function ContactFormSection() {
     },
   });
 
-  function onSubmit(values: FormValues) {
+  const onSubmit = (values: FormValues) => {
     // Static site — simulate submission
     console.log("Contact form values:", values);
     setSubmitted(true);
-  }
+  };
 
   return (
     <Section>
@@ -220,4 +220,4 @@ export function ContactFormSection() {
       </Container>
     </Section>
   );
-}
+};

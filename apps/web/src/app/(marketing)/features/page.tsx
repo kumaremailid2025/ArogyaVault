@@ -20,7 +20,7 @@ const DOCUMENT_TYPES = [
   "Surgery Notes", "Physiotherapy", "Mental Health",
 ];
 
-export default function FeaturesPage() {
+const FeaturesPage = () => {
   return (
     <>
       <PageHero
@@ -61,4 +61,6 @@ export default function FeaturesPage() {
       />
     </>
   );
-}
+};
+
+export default FeaturesPage;

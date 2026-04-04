@@ -10,14 +10,14 @@ const TABS = [
   { key: "groups",  label: "Group Settings", href: "/groups"    },
 ];
 
-export function ContentTabs({
+export const ContentTabs = ({
   active,
   showGroupSettings = false,
 }: {
   active: "home" | "records" | "groups";
   /** When true, adds the Group Settings tab (only for linked/invited users) */
   showGroupSettings?: boolean;
-}) {
+}) => {
   const pathname = usePathname();
   const params = useParams<{ groupId?: string }>();
 
@@ -56,4 +56,4 @@ export function ContentTabs({
       ))}
     </div>
   );
-}
+};

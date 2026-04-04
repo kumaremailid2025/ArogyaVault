@@ -5,6 +5,8 @@ import { CommunityWrapperContainer } from "@/components/containers/community/com
 /**
  * /community/files — Community files view.
  */
-export default function CommunityFilesPage() {
+const CommunityFilesPage = () => {
   return <CommunityWrapperContainer variant="community" group="community" tab="files" />;
-}
+};
+
+export default CommunityFilesPage;

@@ -34,7 +34,7 @@ const THEME_OPTIONS: ThemeOption[] = [
   },
 ];
 
-export function ThemeSwitcher() {
+export const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
   /* Avoid hydration mismatch — render only after mount */
   const [mounted, setMounted] = React.useState(false);
@@ -91,4 +91,4 @@ export function ThemeSwitcher() {
       })}
     </div>
   );
-}
+};

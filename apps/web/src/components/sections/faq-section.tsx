@@ -60,7 +60,7 @@ interface FaqSectionProps {
   showHeader?: boolean;
 }
 
-export function FaqSection({ limit, showHeader = true }: FaqSectionProps) {
+export const FaqSection = ({ limit, showHeader = true }: FaqSectionProps) => {
   const faqs = limit ? ALL_FAQS.slice(0, limit) : ALL_FAQS;
   return (
     <Section>
@@ -82,4 +82,4 @@ export function FaqSection({ limit, showHeader = true }: FaqSectionProps) {
       </Container>
     </Section>
   );
-}
+};

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const ToastProvider = ToastPrimitives.Provider;
 
-function ToastViewport({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Viewport>) {
+const ToastViewport = ({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Viewport>) => {
   return (
     <ToastPrimitives.Viewport
       data-slot="toast-viewport"
@@ -16,7 +16,7 @@ function ToastViewport({ className, ...props }: React.ComponentProps<typeof Toas
       {...props}
     />
   );
-}
+};
 
 const toastVariants = cva(
   "group data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none",
@@ -31,11 +31,11 @@ const toastVariants = cva(
   }
 );
 
-function Toast({ className, variant, ...props }: React.ComponentProps<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>) {
+const Toast = ({ className, variant, ...props }: React.ComponentProps<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>) => {
   return <ToastPrimitives.Root data-slot="toast" className={cn(toastVariants({ variant }), className)} {...props} />;
-}
+};
 
-function ToastAction({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Action>) {
+const ToastAction = ({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Action>) => {
   return (
     <ToastPrimitives.Action
       data-slot="toast-action"
@@ -43,9 +43,9 @@ function ToastAction({ className, ...props }: React.ComponentProps<typeof ToastP
       {...props}
     />
   );
-}
+};
 
-function ToastClose({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Close>) {
+const ToastClose = ({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Close>) => {
   return (
     <ToastPrimitives.Close
       data-slot="toast-close"
@@ -55,15 +55,15 @@ function ToastClose({ className, ...props }: React.ComponentProps<typeof ToastPr
       <XIcon className="size-4" />
     </ToastPrimitives.Close>
   );
-}
+};
 
-function ToastTitle({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Title>) {
+const ToastTitle = ({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Title>) => {
   return <ToastPrimitives.Title data-slot="toast-title" className={cn("text-sm font-semibold [&+div]:text-xs", className)} {...props} />;
-}
+};
 
-function ToastDescription({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Description>) {
+const ToastDescription = ({ className, ...props }: React.ComponentProps<typeof ToastPrimitives.Description>) => {
   return <ToastPrimitives.Description data-slot="toast-description" className={cn("text-sm opacity-90", className)} {...props} />;
-}
+};
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
 type ToastActionElement = React.ReactElement<typeof ToastAction>;

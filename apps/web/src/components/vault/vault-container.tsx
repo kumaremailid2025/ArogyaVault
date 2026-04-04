@@ -16,7 +16,7 @@ import { VAULT_FILES, HEALTH_ALERTS, VITALS, CHART_CONFIGS } from "@/data/vault-
    drilldown state, and tab switching between Vault / Files views.
 ═══════════════════════════════════════════════════════════════════ */
 
-export function VaultContainer() {
+export const VaultContainer = () => {
   const [activeTab, setActiveTab] = React.useState<VaultTab>("vault");
   /** null = no drilldown (show FilesColumn), string = metricId or chartId */
   const [drilldownTarget, setDrilldownTarget] = React.useState<string | null>(null);
@@ -126,4 +126,4 @@ export function VaultContainer() {
       </div>
     </div>
   );
-}
+};

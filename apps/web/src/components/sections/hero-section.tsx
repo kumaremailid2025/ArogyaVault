@@ -16,7 +16,7 @@ const TRUST_BADGES = [
   { icon: UsersIcon,        label: "Family Groups" },
 ];
 
-export function HeroSection() {
+export const HeroSection = () => {
   return (
     <Banner className="bg-gradient-to-b from-background via-secondary/30 to-background">
       <Container>
@@ -112,4 +112,4 @@ export function HeroSection() {
       </Container>
     </Banner>
   );
-}
+};

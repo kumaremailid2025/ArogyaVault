@@ -31,12 +31,12 @@ const SUB_ON  = "text-primary-foreground/70";
 const SUB_OFF = "text-muted-foreground";
 
 /** Build the community route for a given slug */
-function communityHref(slug: string): string {
+const communityHref = (slug: string): string => {
   const uuid = GROUP_SLUG_TO_UUID[slug];
   return uuid ? `/community/${uuid}` : "/community";
-}
+};
 
-export function AppSidebar() {
+export const AppSidebar = () => {
   const pathname = usePathname();
   const params = useParams<{ groupId?: string }>();
 
@@ -114,4 +114,4 @@ export function AppSidebar() {
       </div>
     </aside>
   );
-}
+};

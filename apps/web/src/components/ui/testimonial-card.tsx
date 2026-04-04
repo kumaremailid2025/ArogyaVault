@@ -13,14 +13,14 @@ interface TestimonialCardProps {
   className?: string;
 }
 
-export function TestimonialCard({
+export const TestimonialCard = ({
   quote,
   name,
   role,
   location,
   rating = 5,
   className,
-}: TestimonialCardProps) {
+}: TestimonialCardProps) => {
   return (
     <Surface
       variant="bordered"
@@ -50,4 +50,4 @@ export function TestimonialCard({
       </div>
     </Surface>
   );
-}
+};

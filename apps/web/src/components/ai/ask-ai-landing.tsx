@@ -24,7 +24,7 @@ interface AskAiLandingProps {
 
 /* ── Health score mini ring ─────────────────────────────────────── */
 
-function MiniScoreRing({ score }: { score: number }) {
+const MiniScoreRing = ({ score }: { score: number }) => {
   const r = 18;
   const circ = 2 * Math.PI * r;
   const offset = circ - (score / 100) * circ;
@@ -42,11 +42,11 @@ function MiniScoreRing({ score }: { score: number }) {
       </span>
     </div>
   );
-}
+};
 
 /* ── Context card ──────────────────────────────────────────────── */
 
-function ContextCard({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) => void }) {
+const ContextCard = ({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) => void }) => {
   const iconMap = {
     alert: <AlertTriangleIcon className={cn("size-4",
       card.severity === "critical" ? "text-red-500" :
@@ -86,11 +86,11 @@ function ContextCard({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) 
       </div>
     </button>
   );
-}
+};
 
 /* ── Capability card ───────────────────────────────────────────── */
 
-function CapabilityCard({ cap, onAsk }: { cap: AiCapability; onAsk: (q: string) => void }) {
+const CapabilityCard = ({ cap, onAsk }: { cap: AiCapability; onAsk: (q: string) => void }) => {
   return (
     <button
       onClick={() => onAsk(cap.exampleQuestion)}
@@ -109,11 +109,11 @@ function CapabilityCard({ cap, onAsk }: { cap: AiCapability; onAsk: (q: string) 
       </div>
     </button>
   );
-}
+};
 
 /* ── Main landing ──────────────────────────────────────────────── */
 
-export function AskAiLanding({ onAsk }: AskAiLandingProps) {
+export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
   return (
@@ -185,4 +185,4 @@ export function AskAiLanding({ onAsk }: AskAiLandingProps) {
       </div>
     </div>
   );
-}
+};

@@ -22,14 +22,14 @@ interface FilesContainerProps {
 
 /* ── Component ─────────────────────────────────────────────────── */
 
-export function FilesContainer({
+export const FilesContainer = ({
   title,
   files,
   selectedFileId,
   onSelectFile,
   onAiSummary,
   onQA,
-}: FilesContainerProps) {
+}: FilesContainerProps) => {
   const [search, setSearch] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<FileCategory>("All");
 
@@ -138,4 +138,4 @@ export function FilesContainer({
       </div>
     </div>
   );
-}
+};

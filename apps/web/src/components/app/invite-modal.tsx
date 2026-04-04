@@ -46,21 +46,21 @@ const INVITE_LEVELS: InviteLevel[] = [
   { id: "priya",     label: "Priya Singh",          sub: "Caregiver group" },
 ];
 
-function inviteLevelLabel(id: string): string {
+const inviteLevelLabel = (id: string): string => {
   return INVITE_LEVELS.find((l) => l.id === id)?.label ?? id;
-}
+};
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
-function simulateLookup(phone: string): "existing" | "new" {
+const simulateLookup = (phone: string): "existing" | "new" => {
   const digits = phone.replace(/\D/g, "");
   const last = parseInt(digits[digits.length - 1] ?? "1", 10);
   return last % 2 === 0 ? "existing" : "new";
-}
+};
 
 const VALID_OTP = "123456";
 
 /* ── Component ───────────────────────────────────────────────────── */
-export function InviteModal({ open, onClose, groupContext }: InviteModalProps) {
+export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) => {
   const [step,        setStep]        = React.useState<Step>("phone");
   const [phone,       setPhone]       = React.useState("");
   const [otp,         setOtp]         = React.useState("");
@@ -85,22 +85,22 @@ export function InviteModal({ open, onClose, groupContext }: InviteModalProps) {
   }, [open]);
 
   /* ── Actions ─────────────────────────────────────────────────── */
-  function handleContinue() {
+  const handleContinue = () => {
     if (phone.replace(/\D/g, "").length < 10) return;
     setStep("checking");
     setTimeout(() => setStep(simulateLookup(phone)), 900);
-  }
+  };
 
-  function handleSendApp()       { setStep("sent"); }
-  function handleSendWhatsApp()  { setStep("sent"); }
+  const handleSendApp = () => { setStep("sent"); };
+  const handleSendWhatsApp = () => { setStep("sent"); };
 
-  function handleSendOtp() {
+  const handleSendOtp = () => {
     setOtp("");
     setOtpError(false);
     setStep("otp");
-  }
+  };
 
-  function handleVerifyOtp() {
+  const handleVerifyOtp = () => {
     setStep("verifying");
     setTimeout(() => {
       if (otp === VALID_OTP) {
@@ -110,7 +110,7 @@ export function InviteModal({ open, onClose, groupContext }: InviteModalProps) {
         setStep("otp");
       }
     }, 900);
-  }
+  };
 
   if (!open) return null;
 
@@ -408,4 +408,4 @@ export function InviteModal({ open, onClose, groupContext }: InviteModalProps) {
       </div>
     </>
   );
-}
+};

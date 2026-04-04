@@ -70,7 +70,7 @@ const OFFICE_INFO = {
 
 /* ─── Page ──────────────────────────────────────────────────────────────────── */
 
-export default function ContactPage() {
+const ContactPage = () => {
   return (
     <>
       <PageHero
@@ -166,4 +166,6 @@ export default function ContactPage() {
       </Section>
     </>
   );
-}
+};
+
+export default ContactPage;

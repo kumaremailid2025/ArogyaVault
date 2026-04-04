@@ -78,11 +78,11 @@ interface FeaturesSectionProps {
   align?: "left" | "center";
 }
 
-export function FeaturesSection({
+export const FeaturesSection = ({
   limit,
   showHeader = true,
   align = "center",
-}: FeaturesSectionProps) {
+}: FeaturesSectionProps) => {
   const features = limit ? ALL_FEATURES.slice(0, limit) : ALL_FEATURES;
   return (
     <Section>
@@ -111,4 +111,4 @@ export function FeaturesSection({
       </Container>
     </Section>
   );
-}
+};

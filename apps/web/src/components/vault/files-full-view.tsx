@@ -29,11 +29,11 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   other: <FileIcon className="size-4 text-muted-foreground" />,
 };
 
-function formatDate(iso: string) {
+const formatDate = (iso: string) => {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
+};
 
-export function FilesFullView({ onFileClick, selectedFileId }: FilesFullViewProps) {
+export const FilesFullView = ({ onFileClick, selectedFileId }: FilesFullViewProps) => {
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
 
@@ -135,4 +135,4 @@ export function FilesFullView({ onFileClick, selectedFileId }: FilesFullViewProp
       </div>
     </div>
   );
-}
+};

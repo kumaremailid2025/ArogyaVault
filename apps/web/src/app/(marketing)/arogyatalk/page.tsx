@@ -77,7 +77,7 @@ const TOPICS = [
   { label: "Mental Wellness",     count: 98,  color: "bg-cyan-100 text-cyan-700" },
 ];
 
-export default function ArogyaTalkPage() {
+const ArogyaTalkPage = () => {
   return (
     <main className="flex-1">
 
@@ -212,4 +212,6 @@ export default function ArogyaTalkPage() {
 
     </main>
   );
-}
+};
+
+export default ArogyaTalkPage;

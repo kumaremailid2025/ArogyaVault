@@ -12,14 +12,14 @@ interface StepCardProps {
   className?: string;
 }
 
-export function StepCard({
+export const StepCard = ({
   step,
   icon: Icon,
   title,
   description,
   isLast = false,
   className,
-}: StepCardProps) {
+}: StepCardProps) => {
   return (
     <div className={cn("relative flex flex-col items-center text-center gap-4", className)}>
       {/* Connector line */}
@@ -41,4 +41,4 @@ export function StepCard({
       </div>
     </div>
   );
-}
+};

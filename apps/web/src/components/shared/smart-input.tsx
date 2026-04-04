@@ -60,7 +60,7 @@ const MODE_META: Record<InputMode, { icon: React.ReactNode; label: string }> = {
 };
 
 /* ── SmartInput ────────────────────────────────────────────────────── */
-export function SmartInput({
+export const SmartInput = ({
   onSubmit,
   value = "",
   onChange,
@@ -73,7 +73,7 @@ export function SmartInput({
   maxRows = 6,
   layout = "chat",
   className,
-}: SmartInputProps) {
+}: SmartInputProps) => {
   const [mode, setMode]         = React.useState<InputMode>("text");
   const [voiceLang, setVoiceLang] = React.useState("en-IN");
 
@@ -85,7 +85,7 @@ export function SmartInput({
   const attach = useFileAttach();
 
   /* ── Auto-grow logic ──────────────────────────────────────────────── */
-  function autoGrow() {
+  const autoGrow = () => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
@@ -93,7 +93,7 @@ export function SmartInput({
     const newHeight = Math.min(el.scrollHeight, maxHeight);
     el.style.height = `${newHeight}px`;
     el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
-  }
+  };
 
   /* Re-run auto-grow whenever value changes externally */
   React.useEffect(() => {
@@ -102,7 +102,7 @@ export function SmartInput({
   }, [value]);
 
   /* ── Mode switching ───────────────────────────────────────────────── */
-  function switchMode(next: InputMode) {
+  const switchMode = (next: InputMode) => {
     if (next === mode) return;
     /* Tear down the outgoing mode */
     if (mode === "voice")                         voice.reset();
@@ -113,15 +113,15 @@ export function SmartInput({
     if (next === "text") {
       setTimeout(() => textareaRef.current?.focus(), 0);
     }
-  }
+  };
 
   /* ── Submit ───────────────────────────────────────────────────────── */
-  function resolveText(): string {
+  const resolveText = (): string => {
     if (mode === "voice") return voice.liveTranscript.trim();
     return value.trim();
-  }
+  };
 
-  function handleSubmit() {
+  const handleSubmit = () => {
     const text = resolveText();
     if (!text && !attach.attachedDoc) return;
 
@@ -143,15 +143,15 @@ export function SmartInput({
         textareaRef.current.style.height = "auto";
       }
     }, 0);
-  }
+  };
 
   /* Enter = submit, Shift+Enter = newline */
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
-  }
+  };
 
   const canSubmit =
     !disabled && (resolveText().length > 0 || attach.attachedDoc !== null);
@@ -455,4 +455,4 @@ export function SmartInput({
       </div>
     </div>
   );
-}
+};

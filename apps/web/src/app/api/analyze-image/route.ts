@@ -17,7 +17,7 @@ type DocAnalysis = {
   summary: string;
 };
 
-function analyzeByFilename(filename: string, mimeType: string): DocAnalysis {
+const analyzeByFilename = (filename: string, mimeType: string): DocAnalysis => {
   const lower = filename.toLowerCase();
 
   if (lower.includes("prescription") || lower.includes("rx") || lower.includes("medicine") || lower.includes("tablet")) {
@@ -128,12 +128,12 @@ function analyzeByFilename(filename: string, mimeType: string): DocAnalysis {
       "Key sections including diagnosis, treatment plan, and follow-up recommendations have been identified. " +
       "Add a caption below to give the community context about what this document shows before sharing.",
   };
-}
+};
 
-export async function POST(request: NextRequest) {
+export const POST = async (request: NextRequest) => {
   const body = await request.json() as { filename?: string; mimeType?: string };
   // Simulate realistic AI processing time
   await new Promise((resolve) => setTimeout(resolve, 1800));
   const analysis = analyzeByFilename(body.filename ?? "", body.mimeType ?? "");
   return NextResponse.json(analysis);
-}
+};

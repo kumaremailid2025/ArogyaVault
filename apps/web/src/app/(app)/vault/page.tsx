@@ -7,6 +7,8 @@ import { VaultContainer } from "@/components/vault/vault-container";
  * Three-column dashboard: Vitals | Charts | Files
  * with drilldown capability and banner tab navigation.
  */
-export default function MyVaultPage() {
+const MyVaultPage = () => {
   return <VaultContainer />;
-}
+};
+
+export default MyVaultPage;

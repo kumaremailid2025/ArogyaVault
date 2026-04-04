@@ -12,13 +12,13 @@ interface FeatureCardProps {
   variant?: "default" | "highlighted";
 }
 
-export function FeatureCard({
+export const FeatureCard = ({
   icon: Icon,
   title,
   description,
   className,
   variant = "default",
-}: FeatureCardProps) {
+}: FeatureCardProps) => {
   return (
     <Surface
       variant={variant === "highlighted" ? "primary" : "bordered"}
@@ -60,4 +60,4 @@ export function FeatureCard({
       </div>
     </Surface>
   );
-}
+};

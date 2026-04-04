@@ -22,7 +22,7 @@ const UPLOAD_TIPS = [
   "Supported formats: JPG, PNG, PDF, HEIC, TIFF",
 ];
 
-export default function HowItWorksPage() {
+const HowItWorksPage = () => {
   return (
     <>
       <PageHero
@@ -66,4 +66,6 @@ export default function HowItWorksPage() {
       />
     </>
   );
-}
+};
+
+export default HowItWorksPage;

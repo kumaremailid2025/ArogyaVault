@@ -5,6 +5,8 @@ import { CommunityWrapperContainer } from "@/components/containers/community/com
 /**
  * /community/members — Community members view.
  */
-export default function CommunityMembersPage() {
+const CommunityMembersPage = () => {
   return <CommunityWrapperContainer variant="community" group="community" tab="members" />;
-}
+};
+
+export default CommunityMembersPage;

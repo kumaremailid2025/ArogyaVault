@@ -16,7 +16,7 @@ interface FaqItemProps {
   value: string;
 }
 
-export function FaqItem({ question, answer, value }: FaqItemProps) {
+export const FaqItem = ({ question, answer, value }: FaqItemProps) => {
   return (
     <AccordionItem value={value} className="border-border">
       <AccordionTrigger className="text-left text-base font-medium hover:text-primary hover:no-underline">
@@ -29,4 +29,4 @@ export function FaqItem({ question, answer, value }: FaqItemProps) {
       </AccordionContent>
     </AccordionItem>
   );
-}
+};

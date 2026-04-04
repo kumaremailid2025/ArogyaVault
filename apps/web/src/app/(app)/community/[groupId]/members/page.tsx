@@ -7,7 +7,7 @@ import { GROUP_UUID_MAP } from "@/components/containers/community/types";
 /**
  * /community/[groupId]/members — Invited group members view.
  */
-export default function CommunityGroupMembersPage() {
+const CommunityGroupMembersPage = () => {
   const params = useParams<{ groupId: string }>();
   const slug = GROUP_UUID_MAP[params.groupId];
 
@@ -16,4 +16,6 @@ export default function CommunityGroupMembersPage() {
   }
 
   return <CommunityWrapperContainer variant="invited" group={slug} tab="members" />;
-}
+};
+
+export default CommunityGroupMembersPage;

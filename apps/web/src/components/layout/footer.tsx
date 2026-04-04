@@ -25,7 +25,7 @@ const LEGAL_LINKS = [
   { label: "Cookie Settings", href: "/contact" },
 ];
 
-function FooterLink({ href, label }: { href: string; label: string }) {
+const FooterLink = ({ href, label }: { href: string; label: string }) => {
   return (
     <Link
       href={href}
@@ -34,9 +34,9 @@ function FooterLink({ href, label }: { href: string; label: string }) {
       {label}
     </Link>
   );
-}
+};
 
-export function Footer() {
+export const Footer = () => {
   return (
     <footer className="border-t border-border bg-muted/30">
       <Container>
@@ -110,4 +110,4 @@ export function Footer() {
       </Container>
     </footer>
   );
-}
+};

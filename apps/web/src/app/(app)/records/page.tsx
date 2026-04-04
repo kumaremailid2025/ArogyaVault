@@ -43,6 +43,33 @@ const CATEGORY_COLOR: Record<string, string> = {
 
 type Doc = { id: string; type: string; title: string; date: string; doctor: string; summary: string; flag: boolean };
 
+const DocCard = ({ doc }: { doc: Doc }) => {
+  return (
+    <div className="rounded-xl border border-border bg-background p-4 hover:border-primary/40 transition-colors cursor-pointer">
+      <div className="flex items-start gap-3">
+        <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg",
+          CATEGORY_COLOR[doc.type] ?? "bg-muted text-muted-foreground")}>
+          <FileTextIcon className="size-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm">{doc.title}</span>
+            <Badge variant="outline" className={cn("text-[10px]", CATEGORY_COLOR[doc.type])}>
+              {doc.type}
+            </Badge>
+            {doc.flag && <Badge className="text-[10px] bg-rose-100 text-rose-700 border-0">Warning Flagged</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{doc.summary}</p>
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><CalendarIcon className="size-3" />{doc.date}</span>
+            <span className="flex items-center gap-1"><UserIcon className="size-3" />{doc.doctor}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MY_DOCS: Doc[] = [
   { id: "d1", type: "Lab Report",   title: "Complete Blood Count (CBC)",        date: "15 Mar 2026", doctor: "Dr. Priya Nair",      summary: "Haemoglobin 11.2 g/dL (low), WBC normal, platelets normal. Mild anaemia flagged.",       flag: true  },
   { id: "d2", type: "Prescription", title: "Metformin + Amlodipine",            date: "10 Mar 2026", doctor: "Dr. Suresh Reddy",    summary: "Metformin 500mg twice daily, Amlodipine 5mg once daily. Review in 4 weeks.",            flag: false },
@@ -75,34 +102,7 @@ const GROUP_NAMES: Record<string, string> = {
   priya:  "Priya Singh",
 };
 
-function DocCard({ doc }: { doc: Doc }) {
-  return (
-    <div className="rounded-xl border border-border bg-background p-4 hover:border-primary/40 transition-colors cursor-pointer">
-      <div className="flex items-start gap-3">
-        <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg",
-          CATEGORY_COLOR[doc.type] ?? "bg-muted text-muted-foreground")}>
-          <FileTextIcon className="size-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm">{doc.title}</span>
-            <Badge variant="outline" className={cn("text-[10px]", CATEGORY_COLOR[doc.type])}>
-              {doc.type}
-            </Badge>
-            {doc.flag && <Badge className="text-[10px] bg-rose-100 text-rose-700 border-0">Warning Flagged</Badge>}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{doc.summary}</p>
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><CalendarIcon className="size-3" />{doc.date}</span>
-            <span className="flex items-center gap-1"><UserIcon className="size-3" />{doc.doctor}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function RecordsPage() {
+const RecordsPage = () => {
   const searchParams = useSearchParams();
   const g = searchParams.get("g") ?? "";
   const isLinked = g === "ravi" || g === "sharma" || g === "priya";
@@ -181,4 +181,6 @@ export default function RecordsPage() {
       </div>
     </div>
   );
-}
+};
+
+export default RecordsPage;

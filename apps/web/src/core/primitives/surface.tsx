@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Sits between a raw div and the full shadcn Card (which has opinions about padding/gap).
  * Use when you need a contained block but want to control layout yourself.
  */
-export function Surface({
+export const Surface = ({
   className,
   variant = "default",
   padding = "md",
@@ -15,7 +15,7 @@ export function Surface({
 }: React.ComponentProps<"div"> & {
   variant?: "default" | "muted" | "primary" | "bordered" | "ghost";
   padding?: "none" | "sm" | "md" | "lg";
-}) {
+}) => {
   return (
     <div
       className={cn(
@@ -36,16 +36,16 @@ export function Surface({
       {children}
     </div>
   );
-}
+};
 
 /**
  * GradientBadge — a small pill with a gradient background, used for eyebrow labels.
  */
-export function GradientBadge({
+export const GradientBadge = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"span">) {
+}: React.ComponentProps<"span">) => {
   return (
     <span
       className={cn(
@@ -57,16 +57,16 @@ export function GradientBadge({
       {children}
     </span>
   );
-}
+};
 
 /**
  * GlassCard — translucent card for use over coloured/image backgrounds.
  */
-export function GlassCard({
+export const GlassCard = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div">) => {
   return (
     <div
       className={cn(
@@ -78,4 +78,4 @@ export function GlassCard({
       {children}
     </div>
   );
-}
+};

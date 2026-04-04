@@ -84,7 +84,7 @@ export const SUGGESTED_QUESTIONS: string[] = [
  * Swap this with a real `apiFetch("/ai/ask", { method:"POST", body: ... })`
  * call once the backend RAG endpoint is live.
  */
-export function mockAiResponse(query: string): AiMessage {
+export const mockAiResponse = (query: string): AiMessage => {
   const q = query.toLowerCase();
 
   if (q.includes("medication") || q.includes("medicine") || q.includes("drug")) {
@@ -211,4 +211,4 @@ export function mockAiResponse(query: string): AiMessage {
     text: "I searched through your uploaded documents but didn't find a specific match for that question yet.",
     note: "Try uploading more records or rephrasing your question for a precise answer.",
   };
-}
+};

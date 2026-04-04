@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export const GET = async (request: NextRequest) => {
   const text = request.nextUrl.searchParams.get("text") ?? "";
   const from = request.nextUrl.searchParams.get("from") ?? "en-IN";
 
@@ -52,4 +52,4 @@ export async function GET(request: NextRequest) {
     // Graceful fallback: return the original transcript unchanged
     return NextResponse.json({ translated: text, original: text });
   }
-}
+};

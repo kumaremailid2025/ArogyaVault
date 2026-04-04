@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Headings ────────────────────────────────────────────────────────────────
 
-export function H1({ className, children, ...props }: React.ComponentProps<"h1">) {
+export const H1 = ({ className, children, ...props }: React.ComponentProps<"h1">) => {
   return (
     <h1
       className={cn(
@@ -15,9 +15,9 @@ export function H1({ className, children, ...props }: React.ComponentProps<"h1">
       {children}
     </h1>
   );
-}
+};
 
-export function H2({ className, children, ...props }: React.ComponentProps<"h2">) {
+export const H2 = ({ className, children, ...props }: React.ComponentProps<"h2">) => {
   return (
     <h2
       className={cn(
@@ -29,9 +29,9 @@ export function H2({ className, children, ...props }: React.ComponentProps<"h2">
       {children}
     </h2>
   );
-}
+};
 
-export function H3({ className, children, ...props }: React.ComponentProps<"h3">) {
+export const H3 = ({ className, children, ...props }: React.ComponentProps<"h3">) => {
   return (
     <h3
       className={cn(
@@ -43,9 +43,9 @@ export function H3({ className, children, ...props }: React.ComponentProps<"h3">
       {children}
     </h3>
   );
-}
+};
 
-export function H4({ className, children, ...props }: React.ComponentProps<"h4">) {
+export const H4 = ({ className, children, ...props }: React.ComponentProps<"h4">) => {
   return (
     <h4
       className={cn(
@@ -57,11 +57,11 @@ export function H4({ className, children, ...props }: React.ComponentProps<"h4">
       {children}
     </h4>
   );
-}
+};
 
 // ─── Body Text ───────────────────────────────────────────────────────────────
 
-export function Text({ className, children, ...props }: React.ComponentProps<"p">) {
+export const Text = ({ className, children, ...props }: React.ComponentProps<"p">) => {
   return (
     <p
       className={cn("leading-7 text-foreground", className)}
@@ -70,9 +70,9 @@ export function Text({ className, children, ...props }: React.ComponentProps<"p"
       {children}
     </p>
   );
-}
+};
 
-export function Lead({ className, children, ...props }: React.ComponentProps<"p">) {
+export const Lead = ({ className, children, ...props }: React.ComponentProps<"p">) => {
   return (
     <p
       className={cn("text-lg leading-8 text-muted-foreground md:text-xl", className)}
@@ -81,9 +81,9 @@ export function Lead({ className, children, ...props }: React.ComponentProps<"p"
       {children}
     </p>
   );
-}
+};
 
-export function Muted({ className, children, ...props }: React.ComponentProps<"p">) {
+export const Muted = ({ className, children, ...props }: React.ComponentProps<"p">) => {
   return (
     <p
       className={cn("text-sm text-muted-foreground", className)}
@@ -92,9 +92,9 @@ export function Muted({ className, children, ...props }: React.ComponentProps<"p
       {children}
     </p>
   );
-}
+};
 
-export function Small({ className, children, ...props }: React.ComponentProps<"small">) {
+export const Small = ({ className, children, ...props }: React.ComponentProps<"small">) => {
   return (
     <small
       className={cn("text-sm font-medium leading-none text-muted-foreground", className)}
@@ -103,17 +103,17 @@ export function Small({ className, children, ...props }: React.ComponentProps<"s
       {children}
     </small>
   );
-}
+};
 
-export function Large({ className, children, ...props }: React.ComponentProps<"div">) {
+export const Large = ({ className, children, ...props }: React.ComponentProps<"div">) => {
   return (
     <div className={cn("text-lg font-semibold text-foreground", className)} {...props}>
       {children}
     </div>
   );
-}
+};
 
-export function InlineCode({ className, children, ...props }: React.ComponentProps<"code">) {
+export const InlineCode = ({ className, children, ...props }: React.ComponentProps<"code">) => {
   return (
     <code
       className={cn(
@@ -125,9 +125,9 @@ export function InlineCode({ className, children, ...props }: React.ComponentPro
       {children}
     </code>
   );
-}
+};
 
-export function Highlight({ className, children, ...props }: React.ComponentProps<"span">) {
+export const Highlight = ({ className, children, ...props }: React.ComponentProps<"span">) => {
   return (
     <span
       className={cn("text-primary font-semibold", className)}
@@ -136,9 +136,9 @@ export function Highlight({ className, children, ...props }: React.ComponentProp
       {children}
     </span>
   );
-}
+};
 
-export function Eyebrow({ className, children, ...props }: React.ComponentProps<"span">) {
+export const Eyebrow = ({ className, children, ...props }: React.ComponentProps<"span">) => {
   return (
     <span
       className={cn(
@@ -150,4 +150,4 @@ export function Eyebrow({ className, children, ...props }: React.ComponentProps<
       {children}
     </span>
   );
-}
+};

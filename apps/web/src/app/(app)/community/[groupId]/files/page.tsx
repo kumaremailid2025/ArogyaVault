@@ -7,7 +7,7 @@ import { GROUP_UUID_MAP } from "@/components/containers/community/types";
 /**
  * /community/[groupId]/files — Invited group files view.
  */
-export default function CommunityGroupFilesPage() {
+const CommunityGroupFilesPage = () => {
   const params = useParams<{ groupId: string }>();
   const slug = GROUP_UUID_MAP[params.groupId];
 
@@ -16,4 +16,6 @@ export default function CommunityGroupFilesPage() {
   }
 
   return <CommunityWrapperContainer variant="invited" group={slug} tab="files" />;
-}
+};
+
+export default CommunityGroupFilesPage;

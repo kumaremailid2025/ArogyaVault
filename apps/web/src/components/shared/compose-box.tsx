@@ -39,13 +39,13 @@ export interface ComposeBoxProps {
 }
 
 /* ── ComposeBox ────────────────────────────────────────────────────── */
-export function ComposeBox({
+export const ComposeBox = ({
   onSubmit,
   disabled = false,
   placeholder = "Write your reply…",
   submitLabel = "Send",
   modes = ["text", "voice", "image", "attach"],
-}: ComposeBoxProps) {
+}: ComposeBoxProps) => {
   /* All state lives here — parent never touches it */
   const [text, setText] = React.useState("");
 
@@ -79,4 +79,4 @@ export function ComposeBox({
       layout="compose"
     />
   );
-}
+};

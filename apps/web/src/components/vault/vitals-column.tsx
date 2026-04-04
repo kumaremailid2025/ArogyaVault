@@ -24,7 +24,7 @@ interface VitalsColumnProps {
 
 /* ── Health Score Ring ─────────────────────────────────────────── */
 
-function HealthScoreRing({ score }: { score: number }) {
+const HealthScoreRing = ({ score }: { score: number }) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -62,25 +62,25 @@ function HealthScoreRing({ score }: { score: number }) {
       </div>
     </div>
   );
-}
+};
 
 /* ── Trend icon ────────────────────────────────────────────────── */
 
-function TrendIcon({ trend }: { trend?: "up" | "down" | "stable" }) {
+const TrendIcon = ({ trend }: { trend?: "up" | "down" | "stable" }) => {
   if (trend === "up") return <TrendingUpIcon className="size-3 text-red-500" />;
   if (trend === "down") return <TrendingDownIcon className="size-3 text-green-500" />;
   return <MinusIcon className="size-3 text-muted-foreground" />;
-}
+};
 
 /* ── Vital row ─────────────────────────────────────────────────── */
 
-function VitalRow({
+const VitalRow = ({
   metric, active, onClick,
 }: {
   metric: VitalMetric;
   active: boolean;
   onClick: () => void;
-}) {
+}) => {
   return (
     <button
       onClick={onClick}
@@ -113,11 +113,11 @@ function VitalRow({
       <ChevronRightIcon className="size-3.5 text-muted-foreground shrink-0" />
     </button>
   );
-}
+};
 
 /* ── Main component ────────────────────────────────────────────── */
 
-export function VitalsColumn({ onMetricClick, activeMetricId }: VitalsColumnProps) {
+export const VitalsColumn = ({ onMetricClick, activeMetricId }: VitalsColumnProps) => {
   const [category, setCategory] = React.useState("all");
 
   const filtered = category === "all"
@@ -227,4 +227,4 @@ export function VitalsColumn({ onMetricClick, activeMetricId }: VitalsColumnProp
       </div>
     </div>
   );
-}
+};

@@ -21,7 +21,7 @@ const actionTypes = {
 } as const;
 
 let count = 0;
-function genId() { count = (count + 1) % Number.MAX_SAFE_INTEGER; return count.toString(); }
+const genId = () => { count = (count + 1) % Number.MAX_SAFE_INTEGER; return count.toString(); };
 
 type ActionType = typeof actionTypes;
 type Action =
@@ -59,28 +59,28 @@ export const reducer = (state: State, action: Action): State => {
 const listeners: Array<(state: State) => void> = [];
 let memoryState: State = { toasts: [] };
 
-function dispatch(action: Action) {
+const dispatch = (action: Action) => {
   memoryState = reducer(memoryState, action);
   listeners.forEach((l) => l(memoryState));
-}
+};
 
 type Toast = Omit<ToasterToast, "id">;
 
-function toast({ ...props }: Toast) {
+const toast = ({ ...props }: Toast) => {
   const id = genId();
   const update = (props: ToasterToast) => dispatch({ type: "UPDATE_TOAST", toast: { ...props, id } });
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
   dispatch({ type: "ADD_TOAST", toast: { ...props, id, open: true, onOpenChange: (open) => { if (!open) dismiss(); } } });
   return { id, dismiss, update };
-}
+};
 
-function useToast() {
+const useToast = () => {
   const [state, setState] = React.useState<State>(memoryState);
   React.useEffect(() => {
     listeners.push(setState);
     return () => { const idx = listeners.indexOf(setState); if (idx > -1) listeners.splice(idx, 1); };
   }, [state]);
   return { ...state, toast, dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }) };
-}
+};
 
 export { useToast, toast };

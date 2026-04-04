@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { getGreeting } from "@/lib/post-utils";
 import { QUICK_STATS, ACTIVITY_FEED } from "@/data/dashboard-data";
 
-export function YoursContent() {
+export const YoursContent = () => {
   const greeting = getGreeting();
 
   return (
@@ -101,4 +101,4 @@ export function YoursContent() {
       </div>
     </div>
   );
-}
+};
