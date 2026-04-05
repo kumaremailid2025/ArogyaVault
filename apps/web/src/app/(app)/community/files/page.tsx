@@ -1,12 +1,10 @@
 "use client";
 
-import { CommunityWrapperContainer } from "@/components/containers/community/community-wrapper-container";
+import { FilesPageContainer } from "@/components/containers/community/files-page-container";
 
-/**
- * /community/files — Community files view.
- */
-const CommunityFilesPage = () => {
-  return <CommunityWrapperContainer variant="community" group="community" tab="files" />;
-};
+/** /community/files — Community files tab. */
+const CommunityFilesPage = () => (
+  <FilesPageContainer variant="community" group="community" />
+);
 
 export default CommunityFilesPage;

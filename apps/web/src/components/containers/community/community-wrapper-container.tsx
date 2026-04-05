@@ -55,11 +55,43 @@ import { GROUP_SLUG_TO_UUID } from "./types";
 import { CommunityBanner } from "@/components/community/community-banner";
 import { ComposeArea } from "@/components/community/compose-area";
 import { PostCard } from "@/components/community/post-card";
-import { FeedRightPanel } from "./feed-right-panel";
-import { FilesRightPanel } from "./files-right-panel";
-import { MembersRightPanel } from "./members-right-panel";
 import { FilesContainer } from "./files-container";
 import { MembersContainer } from "./members-container";
+
+/* ── Lazy-loaded: right panels only fetched when their tab is active ── */
+import { Loader2Icon } from "lucide-react";
+
+const PanelLoader = () => (
+  <div className="flex-1 flex items-center justify-center">
+    <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+  </div>
+);
+
+/* Feed panel: preloaded eagerly since "feed" is the default tab.
+   The chunk starts downloading in parallel with the /api/auth/me check
+   so it's ready by the time the container renders. */
+const feedPanelImport = () =>
+  import("./feed-right-panel").then((m) => ({ default: m.FeedRightPanel }));
+
+const FeedRightPanel = dynamic(feedPanelImport, {
+  ssr: false,
+  loading: () => <PanelLoader />,
+});
+
+/* Preload the feed panel chunk immediately (fire-and-forget) */
+if (typeof window !== "undefined") {
+  feedPanelImport();
+}
+
+const FilesRightPanel = dynamic(
+  () => import("./files-right-panel").then((m) => ({ default: m.FilesRightPanel })),
+  { ssr: false, loading: () => <PanelLoader /> },
+);
+
+const MembersRightPanel = dynamic(
+  () => import("./members-right-panel").then((m) => ({ default: m.MembersRightPanel })),
+  { ssr: false, loading: () => <PanelLoader /> },
+);
 
 /* Lazy-loaded: modal only fetched when Invite link is clicked */
 const InviteModal = dynamic(
@@ -188,13 +220,14 @@ export const CommunityWrapperContainer = ({
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
 
   /* ══════════════════════════════════════════════════════════════════
-     API HOOKS — always called (React rules), enabled only for community
+     API HOOKS — always called (React rules of hooks), but enabled
+     ONLY for the active tab to avoid unnecessary network requests.
      ══════════════════════════════════════════════════════════════════ */
 
-  const postsQuery = usePosts(groupId, isCommunity);
-  const filesQuery = useFiles(groupId, isCommunity);
-  const membersQuery = useMembers(groupId, isCommunity);
-  const recentQAQuery = useRecentFileQA(groupId, isCommunity);
+  const postsQuery = usePosts(groupId, isCommunity && tab === "feed");
+  const filesQuery = useFiles(groupId, isCommunity && (tab === "files"));
+  const membersQuery = useMembers(groupId, isCommunity && (tab === "members"));
+  const recentQAQuery = useRecentFileQA(groupId, isCommunity && (tab === "files"));
 
   const createPostMut = useCreatePost(groupId);
   const submitReplyMut = useSubmitReply(groupId);

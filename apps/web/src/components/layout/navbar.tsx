@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-  MenuIcon, XIcon, MoonIcon, SunIcon, HeartPulseIcon,
+  MenuIcon, MoonIcon, SunIcon, HeartPulseIcon,
   LogOutIcon, LayoutDashboardIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/core/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/core/ui/sheet";
+import { Sheet, SheetTrigger } from "@/core/ui/sheet";
 import { Container, Row } from "@/core/primitives";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import {
@@ -19,6 +19,13 @@ import {
 } from "@/core/ui/dropdown-menu";
 import { useAuthStore } from "@/stores";
 import { useLogout } from "@/hooks/api";
+import dynamic from "next/dynamic";
+
+/* Lazy-loaded: mobile sheet only fetched when hamburger is opened */
+const MobileNavSheet = dynamic(
+  () => import("@/components/layout/mobile-nav-sheet").then((m) => ({ default: m.MobileNavSheet })),
+  { ssr: false, loading: () => null }
+);
 
 const NAV_LINKS = [
   { label: "Home",         href: "/" },
@@ -155,59 +162,9 @@ export const Navbar = () => {
                   <MenuIcon className="size-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72 p-0">
-                <div className="flex flex-col h-full">
-                  {/* Mobile header */}
-                  <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                    <Link
-                      href="/"
-                      className="flex items-center gap-2 font-bold text-primary"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                        <HeartPulseIcon className="size-3.5" />
-                      </div>
-                      <span>ArogyaVault</span>
-                    </Link>
-                  </div>
-                  {/* Mobile links */}
-                  <nav className="flex flex-col gap-1 p-4 flex-1">
-                    {NAV_LINKS.map((link) => (
-                      <NavLink
-                        key={link.href}
-                        {...link}
-                        onClick={() => setMobileOpen(false)}
-                      />
-                    ))}
-                  </nav>
-                  {/* Mobile CTA */}
-                  <div className="border-t border-border p-4">
-                    {isAuthenticated ? (
-                      <div className="flex flex-col gap-2">
-                        <Button asChild variant="outline" className="w-full" onClick={() => setMobileOpen(false)}>
-                          <Link href="/community" className="flex items-center gap-2">
-                            <LayoutDashboardIcon className="size-4" /> Dashboard
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="w-full text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setMobileOpen(false);
-                            handleSignOut();
-                          }}
-                        >
-                          <LogOutIcon className="size-4 mr-2" /> Sign Out
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button asChild className="w-full" onClick={() => setMobileOpen(false)}>
-                        <Link href="/sign-in">Sign In</Link>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </SheetContent>
+              {mobileOpen && (
+                <MobileNavSheet onClose={() => setMobileOpen(false)} />
+              )}
             </Sheet>
           </Row>
         </Row>

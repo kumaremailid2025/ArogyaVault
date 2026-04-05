@@ -8,13 +8,15 @@ import {
 import { cn } from "@/lib/utils";
 import { SmartInput } from "@/components/shared/smart-input";
 import { ArogyaAiBanner, type AiTab } from "@/components/ai/arogya-ai-banner";
-import { ChatSessionsPanel } from "@/components/ai/chat-sessions-panel";
-import { AiContextPanel } from "@/components/ai/ai-context-panel";
 import { AskAiLanding } from "@/components/ai/ask-ai-landing";
 import { mockAiResponse } from "@/data/ai-conversations";
 import { CHAT_SESSIONS, SMART_SUGGESTIONS } from "@/data/ai-context-data";
 import type { ConversationMessage } from "@/data/ai-conversations";
 import type { SmartInputSubmitPayload } from "@/models/input";
+
+/* ── Sidebar panels — always visible in chat tab, static import ──── */
+import { ChatSessionsPanel } from "@/components/ai/chat-sessions-panel";
+import { AiContextPanel } from "@/components/ai/ai-context-panel";
 
 /* ═══════════════════════════════════════════════════════════════════
    BUBBLE — conversation message

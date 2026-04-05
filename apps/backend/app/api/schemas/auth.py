@@ -65,11 +65,16 @@ class UserOut(BaseModel):
 class VerifyOtpResponse(BaseModel):
     """
     OTP verification response.
-    NOTE: Tokens are NOT included in the body — they are set as httpOnly cookies.
-    The frontend stores only the user profile in Zustand (in-memory).
+    Tokens are set as httpOnly cookies AND returned in the body so the
+    Next.js proxy route can re-set them on the correct origin.
+    The frontend client ignores the token fields — it only reads `user`.
     """
     message: str
     user: UserOut
+    access_token: str = ""
+    refresh_token: str = ""
+    access_expires_in: int = 900
+    refresh_expires_in: int = 604800
 
 
 class MeResponse(BaseModel):

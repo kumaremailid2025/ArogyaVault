@@ -1,12 +1,10 @@
 "use client";
 
-import { CommunityWrapperContainer } from "@/components/containers/community/community-wrapper-container";
+import { MembersPageContainer } from "@/components/containers/community/members-page-container";
 
-/**
- * /community/members — Community members view.
- */
-const CommunityMembersPage = () => {
-  return <CommunityWrapperContainer variant="community" group="community" tab="members" />;
-};
+/** /community/members — Community members tab. */
+const CommunityMembersPage = () => (
+  <MembersPageContainer variant="community" group="community" />
+);
 
 export default CommunityMembersPage;

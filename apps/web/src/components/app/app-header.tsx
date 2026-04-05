@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
-  AlertTriangleIcon, UploadCloudIcon, UsersIcon, SparklesIcon, CheckIcon,
+  UsersIcon,
   VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
@@ -15,7 +15,6 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/core/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
-import { Badge } from "@/core/ui/badge";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores";
@@ -24,6 +23,12 @@ import { useLogout } from "@/hooks/api";
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
   () => import("@/components/app/invite-modal").then((m) => ({ default: m.InviteModal })),
+  { ssr: false, loading: () => null }
+);
+
+/* NotificationPanel only fetched when bell icon is clicked */
+const NotificationPanel = dynamic(
+  () => import("@/components/app/notification-panel").then((m) => ({ default: m.NotificationPanel })),
   { ssr: false, loading: () => null }
 );
 
@@ -42,66 +47,12 @@ const INVITE_GROUPS = [
   { id: "priya",  name: "Priya Singh" },
 ];
 
-/* ── Dummy notifications ─────────────────────────────────────────── */
-type Notif = {
-  id: string;
-  icon: React.ElementType;
-  iconBg: string;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
-};
-
-const INITIAL_NOTIFICATIONS: Notif[] = [
-  {
-    id: "n1",
-    icon: UploadCloudIcon,
-    iconBg: "bg-primary/10 text-primary",
-    title: "Dr. Sharma uploaded a file",
-    desc: "Discharge summary added to your shared group",
-    time: "10 min ago",
-    read: false,
-  },
-  {
-    id: "n2",
-    icon: AlertTriangleIcon,
-    iconBg: "bg-rose-100 text-rose-600",
-    title: "Lab value flagged",
-    desc: "CBC report — Haemoglobin 11.2 g/dL (low)",
-    time: "2 hrs ago",
-    read: false,
-  },
-  {
-    id: "n3",
-    icon: UsersIcon,
-    iconBg: "bg-primary/10 text-primary",
-    title: "Ravi Kumar viewed your group",
-    desc: "Ravi accessed the shared records",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "n4",
-    icon: SparklesIcon,
-    iconBg: "bg-amber-100 text-amber-600",
-    title: "ArogyaAI summary ready",
-    desc: "Your weekly health digest is prepared",
-    time: "2 days ago",
-    read: true,
-  },
-];
-
 export const AppHeader = () => {
   const pathname     = usePathname();
 
   const [inviteOpen,    setInviteOpen]    = React.useState(false);
   const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);
   const [notifOpen,     setNotifOpen]     = React.useState(false);
-  const [notifications, setNotifications] = React.useState(INITIAL_NOTIFICATIONS);
-  const notifRef = React.useRef<HTMLDivElement>(null);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   /* ── Invite helpers ──────────────────────────────────────────── */
   const openInvite = (groupId?: string) => {
@@ -114,27 +65,6 @@ export const AppHeader = () => {
   /* ── Active top-nav detection ────────────────────────────────── */
   const isNavActive = (item: (typeof TOP_NAV)[number]) => {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
-  };
-
-  /* Close notification panel on outside click */
-  React.useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    };
-    if (notifOpen) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen]);
-
-  const markAllRead = () => {
-    setNotifications((n) => n.map((x) => ({ ...x, read: true })));
-  };
-
-  const markRead = (id: string) => {
-    setNotifications((n) =>
-      n.map((x) => (x.id === id ? { ...x, read: true } : x))
-    );
   };
 
   const user = useAuthStore((s) => s.user);
@@ -240,82 +170,19 @@ export const AppHeader = () => {
             </DropdownMenu>
           </div>
 
-          {/* Notification bell + panel */}
-          <div className="relative" ref={notifRef}>
+          {/* Notification bell + lazy-loaded panel */}
+          <div className="relative">
             <Button
               variant="ghost"
               size="icon"
               className="relative size-9 cursor-pointer"
-              onClick={() => { setNotifOpen((v) => !v); if (!notifOpen) markAllRead(); }}
+              onClick={() => setNotifOpen((v) => !v)}
             >
               <BellIcon className="size-4" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-0.5 -right-0.5 size-4 p-0 flex items-center justify-center text-[10px]">
-                  {unreadCount}
-                </Badge>
-              )}
             </Button>
 
-            {/* Notification panel */}
             {notifOpen && (
-              <div className="absolute right-0 top-11 z-50 w-80 rounded-2xl border border-border bg-background shadow-xl overflow-hidden">
-                {/* Panel header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <span className="font-semibold text-sm">Notifications</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={markAllRead}
-                    className="h-auto p-0 text-xs text-primary gap-1"
-                  >
-                    <CheckIcon className="size-3" /> Mark all read
-                  </Button>
-                </div>
-
-                {/* Notification list */}
-                <div className="divide-y divide-border max-h-80 overflow-y-auto">
-                  {notifications.map((n) => (
-                    <Button
-                      key={n.id}
-                      variant="ghost"
-                      onClick={() => markRead(n.id)}
-                      className={cn(
-                        "w-full h-auto flex items-start gap-3 px-4 py-3 text-left rounded-none hover:bg-muted/50",
-                        !n.read && "bg-primary/5 hover:bg-primary/5"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex size-8 shrink-0 items-center justify-center rounded-full mt-0.5",
-                        n.iconBg
-                      )}>
-                        <n.icon className="size-3.5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className={cn(
-                            "text-xs leading-snug",
-                            !n.read ? "font-semibold" : "font-medium"
-                          )}>
-                            {n.title}
-                          </p>
-                          {!n.read && (
-                            <span className="size-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{n.desc}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">{n.time}</p>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-border px-4 py-2.5">
-                  <Button variant="link" size="sm" className="w-full h-auto p-0 text-xs text-primary">
-                    View all notifications
-                  </Button>
-                </div>
-              </div>
+              <NotificationPanel onClose={() => setNotifOpen(false)} />
             )}
           </div>
 

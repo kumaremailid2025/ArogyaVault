@@ -1,21 +1,15 @@
 "use client";
 
-import { useParams, notFound } from "next/navigation";
-import { CommunityWrapperContainer } from "@/components/containers/community/community-wrapper-container";
+import { useParams } from "next/navigation";
+import { FilesPageContainer } from "@/components/containers/community/files-page-container";
 import { GROUP_UUID_MAP } from "@/components/containers/community/types";
 
-/**
- * /community/[groupId]/files — Invited group files view.
- */
+/** /community/[groupId]/files — Invited group files tab. */
 const CommunityGroupFilesPage = () => {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = GROUP_UUID_MAP[params.groupId] ?? params.groupId;
 
-  if (!slug) {
-    notFound();
-  }
-
-  return <CommunityWrapperContainer variant="invited" group={slug} tab="files" />;
+  return <FilesPageContainer variant="invited" group={slug} />;
 };
 
 export default CommunityGroupFilesPage;

@@ -1,21 +1,15 @@
 "use client";
 
-import { useParams, notFound } from "next/navigation";
-import { CommunityWrapperContainer } from "@/components/containers/community/community-wrapper-container";
+import { useParams } from "next/navigation";
+import { MembersPageContainer } from "@/components/containers/community/members-page-container";
 import { GROUP_UUID_MAP } from "@/components/containers/community/types";
 
-/**
- * /community/[groupId]/members — Invited group members view.
- */
+/** /community/[groupId]/members — Invited group members tab. */
 const CommunityGroupMembersPage = () => {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = GROUP_UUID_MAP[params.groupId] ?? params.groupId;
 
-  if (!slug) {
-    notFound();
-  }
-
-  return <CommunityWrapperContainer variant="invited" group={slug} tab="members" />;
+  return <MembersPageContainer variant="invited" group={slug} />;
 };
 
 export default CommunityGroupMembersPage;

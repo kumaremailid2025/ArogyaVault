@@ -26,9 +26,10 @@ const REFRESH_TOKEN_COOKIE = "refresh_token";
 
 const proxyRequest = async (
   request: NextRequest,
-  params: { path: string[] },
+  params: { path: string[] } | Promise<{ path: string[] }>,
 ): Promise<NextResponse> => {
-  const backendPath = `/${params.path.join("/")}`;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const backendPath = `/${resolvedParams.path.join("/")}`;
   const url = new URL(backendPath, API_BASE_URL);
 
   // Preserve query params
@@ -109,7 +110,7 @@ const proxyRequest = async (
           response.cookies.set("access_token", newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            sameSite: "lax",
             path: "/",
             maxAge: refreshData.expires_in ?? 900,
           });
@@ -119,7 +120,7 @@ const proxyRequest = async (
             response.cookies.set("refresh_token", refreshData.refresh_token as string, {
               httpOnly: true,
               secure: process.env.NODE_ENV === "production",
-              sameSite: "strict",
+              sameSite: "lax",
               path: "/",
               maxAge: 7 * 24 * 60 * 60, // 7 days
             });
@@ -154,17 +155,19 @@ const proxyRequest = async (
 
 /* ── Route exports ───────────────────────────────────────────────── */
 
-export const GET = (req: NextRequest, ctx: { params: { path: string[] } }) =>
+type RouteCtx = { params: Promise<{ path: string[] }> };
+
+export const GET = (req: NextRequest, ctx: RouteCtx) =>
   proxyRequest(req, ctx.params);
 
-export const POST = (req: NextRequest, ctx: { params: { path: string[] } }) =>
+export const POST = (req: NextRequest, ctx: RouteCtx) =>
   proxyRequest(req, ctx.params);
 
-export const PUT = (req: NextRequest, ctx: { params: { path: string[] } }) =>
+export const PUT = (req: NextRequest, ctx: RouteCtx) =>
   proxyRequest(req, ctx.params);
 
-export const PATCH = (req: NextRequest, ctx: { params: { path: string[] } }) =>
+export const PATCH = (req: NextRequest, ctx: RouteCtx) =>
   proxyRequest(req, ctx.params);
 
-export const DELETE = (req: NextRequest, ctx: { params: { path: string[] } }) =>
+export const DELETE = (req: NextRequest, ctx: RouteCtx) =>
   proxyRequest(req, ctx.params);

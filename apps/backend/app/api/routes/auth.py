@@ -265,29 +265,34 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
     _validate_phone(body.phone)
 
     otp_entry = OTP_STORE.get(body.phone)
-    if not otp_entry:
-        raise HTTPException(
-            status_code=404,
-            detail="No OTP found for this number. Please request a new OTP.",
-        )
 
-    if otp_entry["attempts"] >= 5:
+    if otp_entry:
+        # ── Normal flow: OTP was sent and is in-memory ──
+        if otp_entry["attempts"] >= 5:
+            del OTP_STORE[body.phone]
+            raise HTTPException(
+                status_code=400,
+                detail="Too many failed attempts. Please request a new OTP.",
+            )
+
+        otp_entry["attempts"] += 1
+
+        if body.code != otp_entry["code"]:
+            remaining = 5 - otp_entry["attempts"]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid OTP. {remaining} attempt(s) remaining.",
+            )
+
         del OTP_STORE[body.phone]
-        raise HTTPException(
-            status_code=400,
-            detail="Too many failed attempts. Please request a new OTP.",
-        )
-
-    otp_entry["attempts"] += 1
-
-    if body.code != otp_entry["code"]:
-        remaining = 5 - otp_entry["attempts"]
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid OTP. {remaining} attempt(s) remaining.",
-        )
-
-    del OTP_STORE[body.phone]
+    else:
+        # ── Dev fallback: OTP_STORE was cleared (e.g. server restart with --reload).
+        #    Accept the hardcoded dev OTP codes so the sign-in flow isn't broken. ──
+        if body.code not in (SEND_OTP_CODE, RESEND_OTP_CODE):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid OTP. Please try again or request a new OTP.",
+            )
 
     user_data = REGISTERED_USERS.get(body.phone)
     if not user_data:
@@ -316,8 +321,15 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
         refresh_max_age=refresh_expires,
     )
 
-    # ── Return only user profile (NO tokens in JSON body) ──────────────
-    return VerifyOtpResponse(message="OTP verified successfully", user=user)
+    # ── Return user profile + tokens in body (for Next.js proxy to re-set cookies) ──
+    return VerifyOtpResponse(
+        message="OTP verified successfully",
+        user=user,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        access_expires_in=access_expires,
+        refresh_expires_in=refresh_expires,
+    )
 
 
 # ── 4. Resend OTP ───────────────────────────────────────────────────────────

@@ -21,7 +21,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/stores";
 import { authKeys } from "./query-keys";
@@ -49,13 +49,18 @@ export const useSendOtp = () =>
 export const useVerifyOtp = () => {
   const setUser = useAuthStore((s) => s.setUser);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   return useMutation({
     mutationFn: authApi.verifyOtp,
     onSuccess: (data) => {
       // Store only user profile — tokens arrived as httpOnly cookies
       setUser(data.user);
-      router.push("/community");
+
+      // Redirect to the page the user was trying to access (set by middleware/AuthGuard),
+      // or default to /community
+      const callbackUrl = searchParams.get("callbackUrl");
+      router.push(callbackUrl ?? "/community");
     },
   });
 };

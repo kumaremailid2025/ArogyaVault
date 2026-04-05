@@ -3,12 +3,13 @@
  * --------
  * Typed wrappers for all /auth endpoints.
  *
- * NOTE: Login (verify-otp) and refresh are called DIRECTLY to the backend
- * (not through the proxy) because:
- *   - verify-otp: user has no token yet — the backend returns Set-Cookie
- *   - refresh: handled automatically by the proxy on 401
+ * Cookie-setting endpoints (verify-otp) are routed through Next.js API
+ * routes (/api/auth/*) so cookies are set on the correct origin.
  *
- * All other authenticated endpoints go through apiClient (proxy).
+ * Non-cookie endpoints (check-registration, send-otp, resend-otp) call
+ * the backend directly since they don't need cookies.
+ *
+ * Authenticated endpoints go through apiClient (proxy at /api/proxy/*).
  */
 
 /* ── Backend URL (direct calls, not proxied) ─────────────────────── */
@@ -65,7 +66,8 @@ export interface UserOut {
 export interface VerifyOtpResponse {
   message: string;
   user: UserOut;
-  // NOTE: tokens are no longer in the JSON body — they arrive as httpOnly cookies
+  // Tokens are in the body for the proxy route to re-set as cookies.
+  // The client never reads these — it only uses `user`.
 }
 
 export interface ResendOtpResponse {
@@ -83,8 +85,7 @@ export interface SendInviteResponse {
 
 /**
  * Direct fetch to backend (not through proxy).
- * Used for unauthenticated endpoints like OTP flow.
- * credentials: "include" ensures the browser accepts Set-Cookie from backend.
+ * Used for unauthenticated endpoints that DON'T set cookies.
  */
 const directFetch = async <T>(
   path: string,
@@ -96,7 +97,36 @@ const directFetch = async <T>(
       "Content-Type": "application/json",
       ...(options.headers as Record<string, string>),
     },
-    credentials: "include", // accept httpOnly cookies from backend
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw {
+      status: res.status,
+      detail: body.detail ?? body.message ?? "Something went wrong",
+    };
+  }
+
+  return res.json() as Promise<T>;
+};
+
+/**
+ * Fetch through Next.js API route (same origin).
+ * Used for endpoints that SET httpOnly cookies (verify-otp).
+ * The Next.js route proxies to the backend and re-sets cookies on
+ * the correct origin so the middleware and other routes can read them.
+ */
+const localFetch = async <T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> => {
+  const res = await fetch(`/api/auth${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+    },
+    credentials: "include", // accept httpOnly cookies on same origin
   });
 
   if (!res.ok) {
@@ -126,11 +156,11 @@ export const authApi = {
     }),
 
   /**
-   * Verify OTP → backend sets httpOnly cookies (access_token, refresh_token)
-   * and returns user profile in JSON body.
+   * Verify OTP → Next.js API route proxies to backend, re-sets httpOnly
+   * cookies on the correct origin, and returns user profile in JSON body.
    */
   verifyOtp: (data: VerifyOtpRequest) =>
-    directFetch<VerifyOtpResponse>("/auth/verify-otp", {
+    localFetch<VerifyOtpResponse>("/verify-otp", {
       method: "POST",
       body: JSON.stringify(data),
     }),

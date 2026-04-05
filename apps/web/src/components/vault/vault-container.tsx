@@ -1,15 +1,51 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
+import { Loader2Icon } from "lucide-react";
 import { VaultBanner, type VaultTab } from "@/components/vault/vault-banner";
-import { VitalsColumn } from "@/components/vault/vitals-column";
-import { ChartsColumn } from "@/components/vault/charts-column";
 import { FilesColumn } from "@/components/vault/files-column";
-import { DrilldownPanel } from "@/components/vault/drilldown-panel";
-import { FilesFullView } from "@/components/vault/files-full-view";
-import { FileDetailPanel } from "@/components/vault/file-detail-panel";
-import { FileQAHistoryPanel } from "@/components/vault/file-qa-history-panel";
 import { VAULT_FILES, HEALTH_ALERTS, VITALS, CHART_CONFIGS } from "@/data/vault-health-data";
+
+/* ── Lazy-loaded column/panel components ─────────────────────────── */
+
+const ColumnLoader = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+  </div>
+);
+
+/** ChartsColumn imports the entire recharts library (~100KB) — lazy is critical */
+const ChartsColumn = dynamic(
+  () => import("@/components/vault/charts-column").then((m) => ({ default: m.ChartsColumn })),
+  { loading: ColumnLoader }
+);
+
+const VitalsColumn = dynamic(
+  () => import("@/components/vault/vitals-column").then((m) => ({ default: m.VitalsColumn })),
+  { loading: ColumnLoader }
+);
+
+const FilesFullView = dynamic(
+  () => import("@/components/vault/files-full-view").then((m) => ({ default: m.FilesFullView })),
+  { loading: ColumnLoader }
+);
+
+/** Detail panels — only rendered when a specific item is selected */
+const DrilldownPanel = dynamic(
+  () => import("@/components/vault/drilldown-panel").then((m) => ({ default: m.DrilldownPanel })),
+  { loading: ColumnLoader }
+);
+
+const FileDetailPanel = dynamic(
+  () => import("@/components/vault/file-detail-panel").then((m) => ({ default: m.FileDetailPanel })),
+  { loading: ColumnLoader }
+);
+
+const FileQAHistoryPanel = dynamic(
+  () => import("@/components/vault/file-qa-history-panel").then((m) => ({ default: m.FileQAHistoryPanel })),
+  { loading: ColumnLoader }
+);
 
 /* ═══════════════════════════════════════════════════════════════════
    VAULT CONTAINER — orchestrates banner, three-column layout,

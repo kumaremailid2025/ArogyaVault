@@ -188,48 +188,49 @@ export const SmartInput = ({
       {/* ── VOICE MODE ───────────────────────────────────────────── */}
       {mode === "voice" && (
         <div className="p-3 space-y-2">
-          {/* Language selector */}
-          <Select
-            value={voiceLang}
-            onValueChange={setVoiceLang}
-            disabled={voice.voiceState === "recording"}
-          >
-            <SelectTrigger size="sm" className="w-full text-xs" aria-label="Recording language">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {VOICE_LANGUAGES.map((l) => (
-                <SelectItem key={l.code} value={l.code} className="text-xs">
-                  {l.label} — {l.native}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Language selector + Record/Stop button — single row */}
+          <div className="flex items-center gap-2">
+            <Select
+              value={voiceLang}
+              onValueChange={setVoiceLang}
+              disabled={voice.voiceState === "recording"}
+            >
+              <SelectTrigger size="sm" className="w-[130px] shrink-0 text-xs" aria-label="Recording language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VOICE_LANGUAGES.map((l) => (
+                  <SelectItem key={l.code} value={l.code} className="text-xs">
+                    {l.label} — {l.native}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Record / Stop button */}
-          {voice.voiceState === "idle" || voice.voiceState === "done" ? (
-            <Button
-              variant="outline"
-              onClick={voice.startRecording}
-              aria-label="Start recording"
-              className="w-full h-auto flex items-center justify-center gap-2 rounded-lg border-dashed py-3 text-sm font-medium text-muted-foreground hover:border-primary/40 hover:text-primary"
-            >
-              <MicIcon className="size-4" />
-              {voice.voiceState === "done" ? "Record again" : "Tap to record"}
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              onClick={voice.stopRecording}
-              aria-label="Stop recording"
-              className="w-full h-auto flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 py-3 text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
-            >
-              <span className="size-2 rounded-full bg-red-500 animate-ping inline-block" />
-              {voice.voiceState === "translating"
-                ? "Translating…"
-                : `Recording ${voice.formatSeconds(voice.recordingSeconds)} — tap to stop`}
-            </Button>
-          )}
+            {voice.voiceState === "idle" || voice.voiceState === "done" ? (
+              <Button
+                variant="outline"
+                onClick={voice.startRecording}
+                aria-label="Start recording"
+                className="flex-1 h-8 flex items-center justify-center gap-2 rounded-lg border-dashed text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary"
+              >
+                <MicIcon className="size-3.5" />
+                {voice.voiceState === "done" ? "Record again" : "Tap to record"}
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={voice.stopRecording}
+                aria-label="Stop recording"
+                className="flex-1 h-8 flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 text-xs font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
+              >
+                <span className="size-2 rounded-full bg-red-500 animate-ping inline-block" />
+                {voice.voiceState === "translating"
+                  ? "Translating…"
+                  : `Recording ${voice.formatSeconds(voice.recordingSeconds)} — tap to stop`}
+              </Button>
+            )}
+          </div>
 
           {/* Live transcript */}
           {voice.liveTranscript && (

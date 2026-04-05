@@ -4,8 +4,9 @@
  * GuestGuard
  * ----------
  * Opposite of AuthGuard — protects guest-only pages (like /sign-in).
- * On mount, calls GET /api/auth/me to check if user is already
- * authenticated. If yes, redirects to /community.
+ * ALWAYS calls GET /api/auth/me on mount to verify the actual cookie
+ * state, regardless of the Zustand store. This prevents infinite
+ * redirects when the store says "authenticated" but the cookie is missing.
  *
  *   - 200 → user is logged in → redirect to /community
  *   - 401 → user is a guest → render children (sign-in form)
@@ -24,14 +25,13 @@ export interface GuestGuardProps {
 
 export const GuestGuard = ({ children }: GuestGuardProps) => {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isHydrated = useAuthStore((s) => s.isHydrated);
   const setUser = useAuthStore((s) => s.setUser);
   const clearUser = useAuthStore((s) => s.clearUser);
 
-  React.useEffect(() => {
-    if (isHydrated) return;
+  const [checked, setChecked] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
+  React.useEffect(() => {
     let cancelled = false;
 
     const checkAuth = async () => {
@@ -43,11 +43,19 @@ export const GuestGuard = ({ children }: GuestGuardProps) => {
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
+          setIsLoggedIn(true);
         } else {
+          // Cookie missing or invalid — clear any stale Zustand state
           clearUser();
+          setIsLoggedIn(false);
         }
       } catch {
-        if (!cancelled) clearUser();
+        if (!cancelled) {
+          clearUser();
+          setIsLoggedIn(false);
+        }
+      } finally {
+        if (!cancelled) setChecked(true);
       }
     };
 
@@ -56,19 +64,19 @@ export const GuestGuard = ({ children }: GuestGuardProps) => {
     return () => {
       cancelled = true;
     };
-  }, [isHydrated, setUser, clearUser]);
+  }, [setUser, clearUser]);
 
-  // Redirect when hydration confirms user IS authenticated
+  // Redirect when check confirms user IS authenticated
   React.useEffect(() => {
-    if (!isHydrated) return;
+    if (!checked) return;
 
-    if (isAuthenticated) {
+    if (isLoggedIn) {
       router.replace("/community");
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [checked, isLoggedIn, router]);
 
   // Show loader while checking or redirecting
-  if (!isHydrated || isAuthenticated) {
+  if (!checked || isLoggedIn) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2Icon className="size-8 animate-spin text-muted-foreground" />

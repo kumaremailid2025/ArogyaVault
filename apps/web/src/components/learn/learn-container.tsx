@@ -1,16 +1,42 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 import { LearnBanner, type LearnTab } from "@/components/learn/learn-banner";
 import { BrowseTopicsPanel } from "@/components/learn/browse-topics-panel";
 import { BrowseLanding } from "@/components/learn/browse-landing";
 import { TopicReader } from "@/components/learn/topic-reader";
 import { BrowseToolsPanel } from "@/components/learn/browse-tools-panel";
-import { SystemsTab } from "@/components/learn/systems-tab";
-import { DepartmentsTab } from "@/components/learn/departments-tab";
-import { DrugCheckTab } from "@/components/learn/drug-check-tab";
-import { PdfQaTab } from "@/components/learn/pdf-qa-tab";
+
+/* ── Lazy-loaded tab components (only one renders at a time) ────── */
+
+const LazyLoader = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+  </div>
+);
+
+const SystemsTab = dynamic(
+  () => import("@/components/learn/systems-tab").then((m) => ({ default: m.SystemsTab })),
+  { loading: LazyLoader }
+);
+
+const DepartmentsTab = dynamic(
+  () => import("@/components/learn/departments-tab").then((m) => ({ default: m.DepartmentsTab })),
+  { loading: LazyLoader }
+);
+
+const DrugCheckTab = dynamic(
+  () => import("@/components/learn/drug-check-tab").then((m) => ({ default: m.DrugCheckTab })),
+  { loading: LazyLoader }
+);
+
+const PdfQaTab = dynamic(
+  () => import("@/components/learn/pdf-qa-tab").then((m) => ({ default: m.PdfQaTab })),
+  { loading: LazyLoader }
+);
 
 /* ═══════════════════════════════════════════════════════════════════
    LEARN CONTAINER — orchestrates banner + tab content
