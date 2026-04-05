@@ -3,20 +3,25 @@
 /**
  * AuthGuard
  * ---------
- * Client-side route protection component.
- * Reads authentication state from the zustand store (sessionStorage-backed)
- * and redirects unauthenticated users to /sign-in.
+ * Protects authenticated routes. On mount, calls GET /api/auth/me
+ * (which reads the httpOnly cookie server-side) to determine if the
+ * user is authenticated.
  *
- * Usage: Wrap the children of any layout that requires authentication.
+ *   - 200 → populate Zustand store → render children
+ *   - 401 → redirect to /sign-in?callbackUrl=<current path>
  *
- *   <AuthGuard>
- *     {children}
- *   </AuthGuard>
+ * Also runs a lightweight heartbeat (every 4 min) that:
+ *   - Confirms the session is still alive in Redis
+ *   - Triggers proactive token refresh via the proxy
+ *   - Clears user + redirects if session is truly dead
+ *
+ * No sessionStorage, no hydration race, no token in JS.
  */
 
 import * as React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores";
+import { useHeartbeat } from "@/hooks/use-heartbeat";
 import { Loader2Icon } from "lucide-react";
 
 export interface AuthGuardProps {
@@ -27,36 +32,55 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const [isReady, setIsReady] = React.useState(false);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearUser = useAuthStore((s) => s.clearUser);
+
+  // ── Heartbeat: periodic session liveness check ──────────────────
+  useHeartbeat();
 
   React.useEffect(() => {
-    // Zustand persist hydrates async from sessionStorage.
-    // After hydration we know the true auth state.
-    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
-      setIsReady(true);
-    });
+    // If already hydrated (e.g. navigating between protected pages), skip fetch
+    if (isHydrated) return;
 
-    // If already hydrated (e.g. fast render), mark ready immediately
-    if (useAuthStore.persist.hasHydrated()) {
-      setIsReady(true);
-    }
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          clearUser();
+        }
+      } catch {
+        if (!cancelled) clearUser();
+      }
+    };
+
+    checkAuth();
 
     return () => {
-      unsubscribe();
+      cancelled = true;
     };
-  }, []);
+  }, [isHydrated, setUser, clearUser]);
 
+  // Redirect when hydration confirms user is NOT authenticated
   React.useEffect(() => {
-    if (!isReady) return;
+    if (!isHydrated) return;
 
     if (!isAuthenticated) {
       const callbackUrl = encodeURIComponent(pathname);
       router.replace(`/sign-in?callbackUrl=${callbackUrl}`);
     }
-  }, [isReady, isAuthenticated, pathname, router]);
+  }, [isHydrated, isAuthenticated, pathname, router]);
 
-  // Show loading spinner while hydrating or redirecting
-  if (!isReady || !isAuthenticated) {
+  // Show loader while checking auth or redirecting
+  if (!isHydrated || !isAuthenticated) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2Icon className="size-8 animate-spin text-muted-foreground" />

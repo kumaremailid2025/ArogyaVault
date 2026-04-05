@@ -2,10 +2,18 @@
  * Auth API
  * --------
  * Typed wrappers for all /auth endpoints.
- * Mirrors the Pydantic schemas from apps/backend/app/api/schemas/auth.py.
+ *
+ * NOTE: Login (verify-otp) and refresh are called DIRECTLY to the backend
+ * (not through the proxy) because:
+ *   - verify-otp: user has no token yet — the backend returns Set-Cookie
+ *   - refresh: handled automatically by the proxy on 401
+ *
+ * All other authenticated endpoints go through apiClient (proxy).
  */
 
-import { apiClient } from "./client";
+/* ── Backend URL (direct calls, not proxied) ─────────────────────── */
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 /* ── Request types ────────────────────────────────────────────────── */
 
@@ -33,10 +41,6 @@ export interface SendInviteRequest {
   invited_by?: string;
 }
 
-export interface RefreshRequest {
-  refresh_token: string;
-}
-
 /* ── Response types ───────────────────────────────────────────────── */
 
 export interface CheckRegistrationResponse {
@@ -58,16 +62,10 @@ export interface UserOut {
   created_at: string;
 }
 
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-}
-
 export interface VerifyOtpResponse {
   message: string;
   user: UserOut;
-  tokens: AuthTokens;
+  // NOTE: tokens are no longer in the JSON body — they arrive as httpOnly cookies
 }
 
 export interface ResendOtpResponse {
@@ -81,53 +79,73 @@ export interface SendInviteResponse {
   phone: string;
 }
 
-export interface RefreshResponse {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
-}
-
 /* ── API functions ────────────────────────────────────────────────── */
 
+/**
+ * Direct fetch to backend (not through proxy).
+ * Used for unauthenticated endpoints like OTP flow.
+ * credentials: "include" ensures the browser accepts Set-Cookie from backend.
+ */
+const directFetch = async <T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> => {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+    },
+    credentials: "include", // accept httpOnly cookies from backend
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw {
+      status: res.status,
+      detail: body.detail ?? body.message ?? "Something went wrong",
+    };
+  }
+
+  return res.json() as Promise<T>;
+};
+
 export const authApi = {
+  /** Check if a phone number is registered (unauthenticated). */
   checkRegistration: (data: CheckRegistrationRequest) =>
-    apiClient<CheckRegistrationResponse>("/auth/check-registration", {
+    directFetch<CheckRegistrationResponse>("/auth/check-registration", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
+  /** Send OTP to a registered phone (unauthenticated). */
   sendOtp: (data: SendOtpRequest) =>
-    apiClient<SendOtpResponse>("/auth/send-otp", {
+    directFetch<SendOtpResponse>("/auth/send-otp", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
+  /**
+   * Verify OTP → backend sets httpOnly cookies (access_token, refresh_token)
+   * and returns user profile in JSON body.
+   */
   verifyOtp: (data: VerifyOtpRequest) =>
-    apiClient<VerifyOtpResponse>("/auth/verify-otp", {
+    directFetch<VerifyOtpResponse>("/auth/verify-otp", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
+  /** Resend OTP code (unauthenticated). */
   resendOtp: (data: ResendOtpRequest) =>
-    apiClient<ResendOtpResponse>("/auth/resend-otp", {
+    directFetch<ResendOtpResponse>("/auth/resend-otp", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
+  /** Invite an unregistered phone number (uses proxy — authenticated). */
   sendInvite: (data: SendInviteRequest) =>
-    apiClient<SendInviteResponse>("/auth/send-invite", {
+    directFetch<SendInviteResponse>("/auth/send-invite", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
-
-  refreshToken: (data: RefreshRequest) =>
-    apiClient<RefreshResponse>("/auth/refresh", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-
-  logout: () =>
-    apiClient<{ message: string }>("/auth/logout", {
-      method: "POST",
     }),
 };

@@ -5,7 +5,6 @@ export {
   useVerifyOtp,
   useResendOtp,
   useSendInvite,
-  useRefreshToken,
   useLogout,
 } from "./use-auth";
 export {

@@ -3,14 +3,14 @@
 /**
  * GuestGuard
  * ----------
- * Opposite of AuthGuard — redirects authenticated users away from
- * guest-only pages (like /sign-in) to /community.
+ * Opposite of AuthGuard — protects guest-only pages (like /sign-in).
+ * On mount, calls GET /api/auth/me to check if user is already
+ * authenticated. If yes, redirects to /community.
  *
- * Usage: Wrap the children of the (auth) layout.
+ *   - 200 → user is logged in → redirect to /community
+ *   - 401 → user is a guest → render children (sign-in form)
  *
- *   <GuestGuard>
- *     {children}
- *   </GuestGuard>
+ * No sessionStorage, no hydration race.
  */
 
 import * as React from "react";
@@ -25,41 +25,50 @@ export interface GuestGuardProps {
 export const GuestGuard = ({ children }: GuestGuardProps) => {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const [isReady, setIsReady] = React.useState(false);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearUser = useAuthStore((s) => s.clearUser);
 
   React.useEffect(() => {
-    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
-      setIsReady(true);
-    });
+    if (isHydrated) return;
 
-    if (useAuthStore.persist.hasHydrated()) {
-      setIsReady(true);
-    }
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          clearUser();
+        }
+      } catch {
+        if (!cancelled) clearUser();
+      }
+    };
+
+    checkAuth();
 
     return () => {
-      unsubscribe();
+      cancelled = true;
     };
-  }, []);
+  }, [isHydrated, setUser, clearUser]);
 
+  // Redirect when hydration confirms user IS authenticated
   React.useEffect(() => {
-    if (!isReady) return;
+    if (!isHydrated) return;
 
     if (isAuthenticated) {
       router.replace("/community");
     }
-  }, [isReady, isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
-  // Show loading spinner while hydrating or redirecting
-  if (!isReady) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // If authenticated, show spinner while redirect happens
-  if (isAuthenticated) {
+  // Show loader while checking or redirecting
+  if (!isHydrated || isAuthenticated) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2Icon className="size-8 animate-spin text-muted-foreground" />

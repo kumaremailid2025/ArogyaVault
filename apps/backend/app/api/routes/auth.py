@@ -4,11 +4,18 @@ Authentication routes for ArogyaVault sign-in flow.
 Endpoints:
   POST /auth/check-registration  — Is this phone registered?
   POST /auth/send-otp            — Send OTP (hardcoded 121212 for dev)
-  POST /auth/verify-otp          — Verify OTP → JWT + user + httpOnly cookie
+  POST /auth/verify-otp          — Verify OTP → set httpOnly cookies + return user
   POST /auth/resend-otp          — Resend OTP (hardcoded 123123 for dev)
   POST /auth/send-invite         — Invite an unregistered number
-  POST /auth/refresh             — Refresh access token (rotate refresh token)
-  POST /auth/logout              — Revoke refresh token + clear cookie
+  POST /auth/refresh             — Refresh access token (reads refresh_token cookie)
+  POST /auth/logout              — Revoke session in Redis + clear cookies
+  GET  /auth/me                  — Return current user from Bearer token
+
+Security:
+  - access_token + refresh_token are httpOnly cookies (JS cannot read them)
+  - JWT access_token includes user claims (sub, phone, name, role, created_at)
+  - Refresh tokens tracked in Redis with TTL (auto-cleanup)
+  - Token rotation on refresh (old token revoked, new one issued)
 """
 
 import re
@@ -16,14 +23,14 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 import jwt
-from fastapi import APIRouter, HTTPException, Response, Request, Depends
+from fastapi import APIRouter, HTTPException, Response, Request
 
 from app.api.schemas.auth import (
-    AuthTokens,
     CheckRegistrationRequest,
     CheckRegistrationResponse,
     ErrorResponse,
-    RefreshRequest,
+    HeartbeatResponse,
+    MeResponse,
     RefreshResponse,
     ResendOtpRequest,
     ResendOtpResponse,
@@ -39,19 +46,22 @@ from app.api.store import (
     INVITE_STORE,
     OTP_STORE,
     REGISTERED_USERS,
-    REFRESH_TOKEN_STORE,
     RESEND_OTP_CODE,
     SEND_OTP_CODE,
     USERS_BY_ID,
 )
 from app.core.config import get_settings
+from app.core.redis import session_manager
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-AUTH_COOKIE_NAME = "arogyavault-auth-token"
 PHONE_REGEX = re.compile(r"^\+91[6-9]\d{9}$")
+
+# Cookie names — must match Next.js middleware + proxy expectations
+ACCESS_TOKEN_COOKIE = "access_token"
+REFRESH_TOKEN_COOKIE = "refresh_token"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,15 +75,24 @@ def _validate_phone(phone: str) -> None:
         )
 
 
-def _create_access_token(user_id: str, phone: str) -> tuple[str, int]:
-    """Create a signed JWT access token. Returns (token, expires_in_seconds)."""
+def _create_access_token(user: dict) -> tuple[str, int]:
+    """
+    Create a signed JWT access token with user claims.
+    Returns (token, expires_in_seconds).
+
+    Claims included: sub, phone, name, role, created_at
+    (so the frontend /api/auth/me can decode locally without a backend call)
+    """
     settings = get_settings()
     expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
     expire = datetime.now(timezone.utc) + expires_delta
 
     payload = {
-        "sub": user_id,
-        "phone": phone,
+        "sub": user["id"],
+        "phone": user["phone"],
+        "name": user.get("name"),
+        "role": user.get("role", "patient"),
+        "created_at": user.get("created_at", ""),
         "type": "access",
         "exp": expire,
         "iat": datetime.now(timezone.utc),
@@ -84,8 +103,12 @@ def _create_access_token(user_id: str, phone: str) -> tuple[str, int]:
     return token, int(expires_delta.total_seconds())
 
 
-def _create_refresh_token(user_id: str, phone: str) -> tuple[str, int]:
-    """Create a signed JWT refresh token + store it. Returns (token, expires_in_seconds)."""
+def _create_refresh_token(user_id: str, phone: str) -> tuple[str, int, str]:
+    """
+    Create a signed JWT refresh token.
+    Returns (token, expires_in_seconds, jti).
+    The jti is used as the Redis session key.
+    """
     settings = get_settings()
     expires_delta = timedelta(days=settings.refresh_token_expire_days)
     expire = datetime.now(timezone.utc) + expires_delta
@@ -101,16 +124,7 @@ def _create_refresh_token(user_id: str, phone: str) -> tuple[str, int]:
     }
 
     token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
-
-    # Store refresh token for revocation tracking
-    REFRESH_TOKEN_STORE[jti] = {
-        "user_id": user_id,
-        "phone": phone,
-        "expires_at": expire.isoformat(),
-        "revoked": False,
-    }
-
-    return token, int(expires_delta.total_seconds())
+    return token, int(expires_delta.total_seconds()), jti
 
 
 def _decode_token(token: str, expected_type: str = "access") -> dict:
@@ -136,42 +150,63 @@ def _decode_token(token: str, expected_type: str = "access") -> dict:
     return payload
 
 
-def _get_current_user(request: Request) -> dict:
-    """Extract and verify the current user from the Authorization header."""
+def _get_bearer_token(request: Request) -> str:
+    """Extract Bearer token from Authorization header."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header.")
-
-    token = auth_header[7:]  # strip "Bearer "
-    payload = _decode_token(token, expected_type="access")
-
-    user = USERS_BY_ID.get(payload["sub"])
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found.")
-
-    return user
+    return auth_header[7:]
 
 
-def _set_auth_cookie(response: Response, token: str, max_age: int) -> None:
-    """Set the httpOnly auth cookie on the response."""
+def _set_auth_cookies(
+    response: Response,
+    access_token: str,
+    access_max_age: int,
+    refresh_token: str,
+    refresh_max_age: int,
+) -> None:
+    """Set both httpOnly cookies on the response."""
+    # Determine secure flag from environment
+    is_production = False  # Set to True in production (HTTPS)
+
     response.set_cookie(
-        key=AUTH_COOKIE_NAME,
-        value=token,
+        key=ACCESS_TOKEN_COOKIE,
+        value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True in production (HTTPS)
+        secure=is_production,
         path="/",
-        max_age=max_age,
+        max_age=access_max_age,
+    )
+
+    response.set_cookie(
+        key=REFRESH_TOKEN_COOKIE,
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=is_production,
+        path="/",
+        max_age=refresh_max_age,
     )
 
 
-def _clear_auth_cookie(response: Response) -> None:
-    """Remove the auth cookie from the response."""
+def _clear_auth_cookies(response: Response) -> None:
+    """Remove both auth cookies from the response."""
+    is_production = False
+
     response.delete_cookie(
-        key=AUTH_COOKIE_NAME,
+        key=ACCESS_TOKEN_COOKIE,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=is_production,
+        path="/",
+    )
+
+    response.delete_cookie(
+        key=REFRESH_TOKEN_COOKIE,
+        httponly=True,
+        samesite="lax",
+        secure=is_production,
         path="/",
     )
 
@@ -222,7 +257,7 @@ async def send_otp(body: SendOtpRequest):
 
 @router.post(
     "/verify-otp",
-    summary="Verify OTP and return JWT tokens",
+    summary="Verify OTP → set httpOnly cookies + return user profile",
     response_model=VerifyOtpResponse,
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
@@ -260,20 +295,29 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
 
     user = UserOut(**user_data)
 
-    # Generate real JWT tokens
-    access_token, access_expires = _create_access_token(user.id, user.phone)
-    refresh_token, _ = _create_refresh_token(user.id, user.phone)
+    # ── Generate JWT tokens ────────────────────────────────────────────
+    access_token, access_expires = _create_access_token(user_data)
+    refresh_token, refresh_expires, jti = _create_refresh_token(user.id, user.phone)
 
-    tokens = AuthTokens(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=access_expires,
+    # ── Store refresh session in Redis ─────────────────────────────────
+    await session_manager.store_session(
+        jti=jti,
+        user_id=user.id,
+        phone=user.phone,
+        ttl_seconds=refresh_expires,
     )
 
-    # Set httpOnly cookie with access token (same expiry as token)
-    _set_auth_cookie(response, access_token, max_age=access_expires)
+    # ── Set BOTH httpOnly cookies ──────────────────────────────────────
+    _set_auth_cookies(
+        response,
+        access_token=access_token,
+        access_max_age=access_expires,
+        refresh_token=refresh_token,
+        refresh_max_age=refresh_expires,
+    )
 
-    return VerifyOtpResponse(message="OTP verified successfully", user=user, tokens=tokens)
+    # ── Return only user profile (NO tokens in JSON body) ──────────────
+    return VerifyOtpResponse(message="OTP verified successfully", user=user)
 
 
 # ── 4. Resend OTP ───────────────────────────────────────────────────────────
@@ -346,44 +390,79 @@ async def send_invite(body: SendInviteRequest):
     response_model=RefreshResponse,
     responses={401: {"model": ErrorResponse}},
 )
-async def refresh_token(body: RefreshRequest, response: Response):
+async def refresh_token(request: Request, response: Response):
     """
-    Validates the refresh token, revokes the old one,
-    issues a new access token + new refresh token (rotation).
+    Reads the refresh_token from:
+      1. Request body (for proxy calls: { refresh_token: "..." })
+      2. httpOnly cookie (fallback)
+
+    Validates in Redis, revokes old token, issues new pair.
     """
+    # Try body first (proxy sends it in JSON), then cookie
+    refresh_token_value: str | None = None
+
+    try:
+        body = await request.json()
+        refresh_token_value = body.get("refresh_token")
+    except Exception:
+        pass
+
+    if not refresh_token_value:
+        refresh_token_value = request.cookies.get(REFRESH_TOKEN_COOKIE)
+
+    if not refresh_token_value:
+        raise HTTPException(status_code=401, detail="No refresh token provided.")
+
     # Decode the refresh token
-    payload = _decode_token(body.refresh_token, expected_type="refresh")
+    payload = _decode_token(refresh_token_value, expected_type="refresh")
 
     jti = payload.get("jti")
     if not jti:
         raise HTTPException(status_code=401, detail="Invalid refresh token (no jti).")
 
-    # Check if token is in our store and not revoked
-    stored = REFRESH_TOKEN_STORE.get(jti)
-    if not stored:
-        raise HTTPException(status_code=401, detail="Refresh token not recognised.")
-    if stored["revoked"]:
-        # Possible token reuse attack — revoke all tokens for this user
-        for entry in REFRESH_TOKEN_STORE.values():
-            if entry["user_id"] == stored["user_id"]:
-                entry["revoked"] = True
+    # ── Validate in Redis ──────────────────────────────────────────────
+    is_valid = await session_manager.validate_session(jti)
+    if not is_valid:
+        # Possible token reuse — revoke ALL sessions for this user
+        user_id = payload.get("sub")
+        if user_id:
+            await session_manager.revoke_all_user_sessions(user_id)
         raise HTTPException(
             status_code=401,
             detail="Refresh token has been revoked. Please sign in again.",
         )
 
-    # Revoke the old refresh token (one-time use)
-    stored["revoked"] = True
+    # ── Revoke old session (one-time use) ──────────────────────────────
+    await session_manager.revoke_session(jti)
 
     user_id = payload["sub"]
     phone = payload["phone"]
 
-    # Issue new tokens
-    new_access_token, access_expires = _create_access_token(user_id, phone)
-    new_refresh_token, _ = _create_refresh_token(user_id, phone)
+    # Look up full user data for enriched JWT
+    user_data = USERS_BY_ID.get(user_id)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="User not found.")
 
-    # Update cookie with new access token
-    _set_auth_cookie(response, new_access_token, max_age=access_expires)
+    # ── Issue new token pair ───────────────────────────────────────────
+    new_access_token, access_expires = _create_access_token(user_data)
+    new_refresh_token, refresh_expires, new_jti = _create_refresh_token(user_id, phone)
+
+    # Store new session in Redis
+    await session_manager.store_session(
+        jti=new_jti,
+        user_id=user_id,
+        phone=phone,
+        ttl_seconds=refresh_expires,
+    )
+
+    # ── Set new cookies ────────────────────────────────────────────────
+    _set_auth_cookies(
+        response,
+        access_token=new_access_token,
+        access_max_age=access_expires,
+        refresh_token=new_refresh_token,
+        refresh_max_age=refresh_expires,
+    )
 
     return RefreshResponse(
         access_token=new_access_token,
@@ -397,27 +476,124 @@ async def refresh_token(body: RefreshRequest, response: Response):
 
 @router.post(
     "/logout",
-    summary="Sign out — revoke refresh token and clear cookie",
+    summary="Sign out — revoke Redis session and clear cookies",
 )
 async def logout(request: Request, response: Response):
     """
-    Revokes the refresh token (if provided in body) and clears the httpOnly cookie.
+    Revokes the refresh token session in Redis and clears both httpOnly cookies.
+    Accepts refresh_token from body or cookie.
     """
-    _clear_auth_cookie(response)
+    # ── Clear cookies first (always, even if revocation fails) ─────────
+    _clear_auth_cookies(response)
 
-    # Try to revoke refresh token from body
+    # ── Try to revoke refresh token in Redis ───────────────────────────
+    refresh_token_value: str | None = None
+
     try:
         body = await request.json()
-        refresh_token = body.get("refresh_token", "")
-        if refresh_token:
-            try:
-                payload = _decode_token(refresh_token, expected_type="refresh")
-                jti = payload.get("jti")
-                if jti and jti in REFRESH_TOKEN_STORE:
-                    REFRESH_TOKEN_STORE[jti]["revoked"] = True
-            except HTTPException:
-                pass  # Token already expired or invalid — that's fine
+        refresh_token_value = body.get("refresh_token", "")
     except Exception:
-        pass  # No body or invalid JSON — just clear the cookie
+        pass
+
+    if not refresh_token_value:
+        refresh_token_value = request.cookies.get(REFRESH_TOKEN_COOKIE)
+
+    if refresh_token_value:
+        try:
+            payload = _decode_token(refresh_token_value, expected_type="refresh")
+            jti = payload.get("jti")
+            if jti:
+                await session_manager.revoke_session(jti)
+        except HTTPException:
+            pass  # Token already expired or invalid — just clear cookies
 
     return {"message": "Logged out successfully"}
+
+
+# ── 8. Get Current User (GET /auth/me) ──────────────────────────────────────
+
+
+@router.get(
+    "/me",
+    summary="Get current authenticated user profile",
+    response_model=MeResponse,
+    responses={401: {"model": ErrorResponse}},
+)
+async def get_me(request: Request):
+    """
+    Reads the access_token from the Authorization: Bearer header.
+    Decodes the JWT and returns the user profile.
+
+    Called by the Next.js /api/auth/me route which reads the httpOnly cookie
+    and forwards it as a Bearer header.
+    """
+    token = _get_bearer_token(request)
+    payload = _decode_token(token, expected_type="access")
+
+    # Try to get fresh data from user store
+    user = USERS_BY_ID.get(payload["sub"])
+    if user:
+        return MeResponse(
+            id=user["id"],
+            phone=user["phone"],
+            name=user.get("name"),
+            role=user.get("role", "patient"),
+            created_at=user.get("created_at", ""),
+        )
+
+    # Fallback: use JWT claims (always available)
+    return MeResponse(
+        id=payload["sub"],
+        phone=payload["phone"],
+        name=payload.get("name"),
+        role=payload.get("role", "patient"),
+        created_at=payload.get("created_at", ""),
+    )
+
+
+# ── 9. Heartbeat ────────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/heartbeat",
+    summary="Lightweight session liveness check",
+    response_model=HeartbeatResponse,
+    responses={401: {"model": ErrorResponse}},
+)
+async def heartbeat(request: Request):
+    """
+    Lightweight endpoint called periodically by the frontend (every ~4 min).
+
+    Purpose:
+      - Validates the access_token is still valid (JWT signature + expiry)
+      - Confirms the user's refresh session still exists in Redis
+      - Returns time until access_token expires (so the frontend knows)
+
+    If the access_token is expired, the proxy will auto-refresh before this
+    reaches the backend, so a successful response means the session is healthy.
+
+    Cost: ~1 JWT decode + 1 Redis EXISTS check. No DB queries.
+    """
+    token = _get_bearer_token(request)
+    payload = _decode_token(token, expected_type="access")
+
+    user_id = payload["sub"]
+
+    # ── Check if user has at least one active session in Redis ─────────
+    active_sessions = await session_manager.client.scard(f"user_sessions:{user_id}")
+    if active_sessions == 0:
+        raise HTTPException(
+            status_code=401,
+            detail="No active session. Please sign in again.",
+        )
+
+    # ── Calculate time remaining on access_token ──────────────────────
+    exp_timestamp = payload.get("exp", 0)
+    now_timestamp = int(datetime.now(timezone.utc).timestamp())
+    expires_in = max(0, exp_timestamp - now_timestamp)
+
+    return HeartbeatResponse(
+        status="alive",
+        user_id=user_id,
+        expires_in=expires_in,
+    )

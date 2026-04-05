@@ -1,21 +1,21 @@
 /**
- * Auth Store (Zustand)
- * --------------------
- * Stores the authenticated user's JWT tokens and profile.
- * Persisted to sessionStorage so state survives page refreshes
- * but clears when the browser tab is closed.
+ * Auth Store (Zustand) — In-Memory Only
+ * --------------------------------------
+ * Stores the authenticated user's profile for client-side UI.
  *
- * The backend also sets an httpOnly cookie with the access token
- * (for Next.js middleware route protection). This store manages
- * the client-side state; the cookie is managed by the backend.
+ * KEY DESIGN:
+ *   - NO sessionStorage / localStorage / persist middleware
+ *   - NO tokens stored on the client (JWT lives in httpOnly cookies)
+ *   - On page refresh the store starts empty; AuthGuard/GuestGuard
+ *     call GET /api/auth/me which reads the httpOnly cookie server-side,
+ *     validates the JWT, and returns the user profile to repopulate this store.
  *
  * Usage:
  *   const user = useAuthStore((s) => s.user);
- *   const { setAuth, logout } = useAuthStore();
+ *   const { setUser, clearUser } = useAuthStore();
  */
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
 /* ── Types ────────────────────────────────────────────────────────── */
 
@@ -27,97 +27,46 @@ export interface AuthUser {
   created_at: string;
 }
 
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-}
-
 interface AuthState {
-  /** The currently authenticated user, or null if logged out. */
+  /** The currently authenticated user, or null. */
   user: AuthUser | null;
-  /** JWT access + refresh tokens. */
-  tokens: AuthTokens | null;
-  /** Whether the user is authenticated. */
+  /** Derived flag — true when user is populated. */
   isAuthenticated: boolean;
+  /** True once the initial /api/auth/me check has resolved. */
+  isHydrated: boolean;
 }
 
 interface AuthActions {
-  /** Store user and tokens after successful OTP verification. */
-  setAuth: (user: AuthUser, tokens: AuthTokens) => void;
-  /** Update only the access token (after a refresh). */
-  setAccessToken: (accessToken: string, expiresIn: number) => void;
-  /** Clear all auth state and call backend to clear httpOnly cookie. */
-  logout: () => void;
+  /** Populate user after login or /api/auth/me check. */
+  setUser: (user: AuthUser) => void;
+  /** Clear user on logout or when /api/auth/me returns 401. */
+  clearUser: () => void;
+  /** Mark hydration complete (called by guards after /api/auth/me). */
+  setHydrated: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-/* ── Initial state ────────────────────────────────────────────────── */
+/* ── Store (pure in-memory — no persist) ─────────────────────────── */
 
-const initialState: AuthState = {
+export const useAuthStore = create<AuthStore>()((set) => ({
   user: null,
-  tokens: null,
   isAuthenticated: false,
-};
+  isHydrated: false,
 
-/* ── Store ────────────────────────────────────────────────────────── */
-
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      ...initialState,
-
-      setAuth: (user, tokens) =>
-        set({
-          user,
-          tokens,
-          isAuthenticated: true,
-        }),
-
-      setAccessToken: (accessToken, expiresIn) =>
-        set((state) => ({
-          tokens: state.tokens
-            ? { ...state.tokens, access_token: accessToken, expires_in: expiresIn }
-            : null,
-        })),
-
-      logout: () => {
-        // Grab refresh token before clearing state
-        const refreshToken = useAuthStore.getState().tokens?.refresh_token;
-
-        // Clear client-side state immediately
-        set(initialState);
-
-        // Call backend to revoke refresh token + clear httpOnly cookie
-        const apiBaseUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-        fetch(`${apiBaseUrl}/auth/logout`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ refresh_token: refreshToken ?? "" }),
-        }).catch(() => {
-          // Ignore errors — client state is already cleared
-        });
-      },
+  setUser: (user) =>
+    set({
+      user,
+      isAuthenticated: true,
+      isHydrated: true,
     }),
-    {
-      name: "arogyavault-auth",
-      storage: createJSONStorage(() =>
-        typeof window !== "undefined"
-          ? sessionStorage
-          : {
-              getItem: () => null,
-              setItem: () => {},
-              removeItem: () => {},
-            },
-      ),
-      partialize: (state) => ({
-        user: state.user,
-        tokens: state.tokens,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    },
-  ),
-);
+
+  clearUser: () =>
+    set({
+      user: null,
+      isAuthenticated: false,
+      isHydrated: true,
+    }),
+
+  setHydrated: () => set({ isHydrated: true }),
+}));

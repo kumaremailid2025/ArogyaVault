@@ -1,6 +1,9 @@
 """
 In-memory store for development.
-Replace with PostgreSQL + Redis once infrastructure is ready.
+Replace with PostgreSQL once infrastructure is ready.
+
+NOTE: Refresh token sessions are now in Redis (see app/core/redis.py).
+Only user data, OTPs, invites, and community data remain in-memory.
 """
 
 from datetime import datetime
@@ -94,8 +97,9 @@ RESEND_OTP_CODE = "123123"
 INVITE_STORE: dict[str, dict] = {}
 
 # ── Refresh Token Store ─────────────────────────────────────────────────────
-# jti (token id) → { user_id, phone, expires_at, revoked }
-REFRESH_TOKEN_STORE: dict[str, dict] = {}
+# MOVED TO REDIS — see app/core/redis.py → session_manager
+# Sessions are stored as: session:{jti} → { user_id, phone, created_at }
+# with automatic TTL-based expiry.
 
 
 # ══════════════════════════════════════════════════════════════════════════════

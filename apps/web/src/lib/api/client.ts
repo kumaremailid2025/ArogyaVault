@@ -1,18 +1,25 @@
 /**
  * API Client
  * ----------
- * Lightweight fetch wrapper for the ArogyaVault backend.
+ * Lightweight fetch wrapper that routes all requests through the
+ * Next.js API proxy at /api/proxy/[...path].
  *
- * - Attaches Bearer token from zustand store
- * - Automatically refreshes expired access tokens using the refresh token
- * - Retries the original request once after a successful refresh
- * - Redirects to sign-in if refresh also fails
+ * WHY a proxy?
+ *   - JWT access_token lives in an httpOnly cookie (JS cannot read it)
+ *   - The proxy reads the cookie server-side and forwards with
+ *     Authorization: Bearer header to the Python backend
+ *   - Token refresh is handled transparently by the proxy (client never
+ *     sees tokens)
+ *
+ * USAGE:
+ *   const posts = await apiClient<Post[]>("/community/posts");
+ *   const post  = await apiClient<Post>("/community/posts", {
+ *     method: "POST",
+ *     body: JSON.stringify({ content: "Hello" }),
+ *   });
  */
 
 import { useAuthStore } from "@/stores";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 /* ── Types ────────────────────────────────────────────────────────── */
 
@@ -21,110 +28,35 @@ export interface ApiError {
   detail: string;
 }
 
-/* ── Refresh lock ─────────────────────────────────────────────────── */
-
-// Prevent multiple concurrent refresh calls
-let refreshPromise: Promise<boolean> | null = null;
-
-const refreshAccessToken = async (): Promise<boolean> => {
-  const { tokens, setAccessToken, logout } = useAuthStore.getState();
-  const refreshToken = tokens?.refresh_token;
-
-  if (!refreshToken) {
-    logout();
-    return false;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-
-    if (!res.ok) {
-      // Refresh failed — token expired or revoked
-      logout();
-      if (typeof window !== "undefined") {
-        window.location.href = "/sign-in";
-      }
-      return false;
-    }
-
-    const data = await res.json();
-
-    // Update access token in store
-    setAccessToken(data.access_token, data.expires_in);
-
-    // If server returned a rotated refresh token, update it too
-    if (data.refresh_token) {
-      const currentState = useAuthStore.getState();
-      if (currentState.tokens) {
-        useAuthStore.setState({
-          tokens: {
-            ...currentState.tokens,
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            expires_in: data.expires_in,
-          },
-        });
-      }
-    }
-
-    return true;
-  } catch {
-    logout();
-    return false;
-  }
-};
-
 /* ── Client ───────────────────────────────────────────────────────── */
 
 export const apiClient = async <T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> => {
-  const url = `${API_BASE_URL}${path}`;
+  // Route through the Next.js proxy which adds Bearer from httpOnly cookie
+  const url = `/api/proxy${path}`;
 
-  const makeRequest = async (token?: string): Promise<Response> => {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers as Record<string, string>),
-    };
-
-    return fetch(url, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
   };
 
-  // First attempt with current access token
-  const accessToken = useAuthStore.getState().tokens?.access_token;
-  let res = await makeRequest(accessToken);
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: "include", // sends httpOnly cookies to the proxy
+  });
 
-  // If 401 → try refreshing the token and retry once
-  if (res.status === 401 && accessToken) {
-    // Use a shared promise so concurrent 401s only trigger one refresh
-    if (!refreshPromise) {
-      refreshPromise = refreshAccessToken().finally(() => {
-        refreshPromise = null;
-      });
-    }
-
-    const refreshed = await refreshPromise;
-
-    if (refreshed) {
-      // Retry with the new access token
-      const newToken = useAuthStore.getState().tokens?.access_token;
-      res = await makeRequest(newToken);
-    } else {
-      // Refresh failed — throw immediately
-      const error: ApiError = { status: 401, detail: "Session expired. Please sign in again." };
-      throw error;
-    }
+  // If 401, the proxy already tried to refresh and failed
+  // Clear client-side auth state and let the guard redirect
+  if (res.status === 401) {
+    useAuthStore.getState().clearUser();
+    const error: ApiError = {
+      status: 401,
+      detail: "Session expired. Please sign in again.",
+    };
+    throw error;
   }
 
   if (!res.ok) {

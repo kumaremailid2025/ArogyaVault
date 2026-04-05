@@ -2,7 +2,7 @@
  * Next.js Middleware — Route Protection
  * --------------------------------------
  * Runs on the edge for every matched route BEFORE the page renders.
- * Reads the httpOnly cookie set by the backend to determine auth status.
+ * Reads the httpOnly `access_token` cookie set by the backend.
  *
  * Protected routes (app group):  /community, /vault, /learn, /records, /profile, /groups, /arogya-ai
  * Public routes:                 /sign-in, /, /about, /features, etc.
@@ -15,9 +15,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/* ── Cookie name (must match backend AUTH_COOKIE_NAME) ───────────── */
+/* ── Cookie name (must match backend Set-Cookie name) ────────────── */
 
-const AUTH_COOKIE_NAME = "arogyavault-auth-token";
+const ACCESS_TOKEN_COOKIE = "access_token";
 
 /* ── Route definitions ───────────────────────────────────────────── */
 
@@ -37,8 +37,8 @@ const AUTH_ROUTES = ["/sign-in"];
 
 export const middleware = (request: NextRequest) => {
   const { pathname } = request.nextUrl;
-  const authToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const isAuthenticated = !!authToken;
+  const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
+  const isAuthenticated = !!accessToken;
 
   // Protected route without auth → redirect to sign-in
   const isProtectedRoute = PROTECTED_ROUTES.some(
@@ -71,8 +71,8 @@ export const config = {
      * Match all routes except:
      *   - _next/static, _next/image (Next.js internals)
      *   - favicon.ico, icons, images
-     *   - api routes (handled separately)
+     *   - api routes (handled by route handlers)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

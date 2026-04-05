@@ -1,6 +1,9 @@
 """
 Pydantic schemas for authentication endpoints.
 Mirrors shared-types/src/index.ts Auth & User types.
+
+NOTE: Tokens are no longer returned in JSON responses.
+They are set as httpOnly cookies by the backend.
 """
 
 from pydantic import BaseModel, Field
@@ -59,16 +62,23 @@ class UserOut(BaseModel):
     created_at: str
 
 
-class AuthTokens(BaseModel):
-    access_token: str
-    refresh_token: str
-    expires_in: int = Field(default=900, description="Access token expiry in seconds (15 min)")
-
-
 class VerifyOtpResponse(BaseModel):
+    """
+    OTP verification response.
+    NOTE: Tokens are NOT included in the body — they are set as httpOnly cookies.
+    The frontend stores only the user profile in Zustand (in-memory).
+    """
     message: str
     user: UserOut
-    tokens: AuthTokens
+
+
+class MeResponse(BaseModel):
+    """GET /auth/me — returns the authenticated user's profile."""
+    id: str
+    phone: str
+    name: str | None = None
+    role: str = "patient"
+    created_at: str
 
 
 class ResendOtpResponse(BaseModel):
@@ -86,6 +96,13 @@ class RefreshResponse(BaseModel):
     access_token: str
     refresh_token: str | None = None
     expires_in: int = 900
+
+
+class HeartbeatResponse(BaseModel):
+    """POST /auth/heartbeat — lightweight session liveness check."""
+    status: str = "alive"
+    user_id: str
+    expires_in: int = Field(description="Seconds until access_token expires")
 
 
 class ErrorResponse(BaseModel):
