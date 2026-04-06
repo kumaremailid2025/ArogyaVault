@@ -54,23 +54,15 @@ const GroupRepliesPage = () => {
   if (!isShowingPreview) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* ── Pinned header ── */}
-        <div className="shrink-0 px-4 pt-4 pb-2 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">{replyCountLabel(activePost.replyCount)}</span>
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground transition-colors"
+        {/* ── Pinned header: post quote with close button ── */}
+        <div className="shrink-0 px-4 pt-4 pb-2">
+          <div className="relative rounded-lg bg-muted/50 border border-border/60 px-3 py-2 pr-8">
+            <Link
+              href={basePath}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Link href={basePath}>
-                <XIcon className="size-4" />
-              </Link>
-            </Button>
-          </div>
-          {/* Compact post quote */}
-          <div className="rounded-lg bg-muted/50 border border-border/60 px-3 py-2">
+              <XIcon className="size-3.5" />
+            </Link>
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
               <span className="font-semibold text-primary">{activePost.author}</span>{" "}
               {activePost.text}

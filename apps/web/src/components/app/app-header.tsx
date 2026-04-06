@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
-  UsersIcon,
+  UsersIcon, StarIcon,
   VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
@@ -215,6 +215,11 @@ export const AppHeader = () => {
               <DropdownMenuItem asChild>
                 <Link href={profileHref} className="flex items-center gap-2 cursor-pointer">
                   <SettingsIcon className="size-4" /> Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/favorites" className="flex items-center gap-2 cursor-pointer">
+                  <StarIcon className="size-4" /> Favorites
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

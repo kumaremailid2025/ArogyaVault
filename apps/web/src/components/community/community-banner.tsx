@@ -27,7 +27,7 @@ export const CommunityBanner = React.memo(({ config }: CommunityBannerProps) => 
               key={b.label}
               className="bg-white/20 text-primary-foreground border-0 text-[10px] flex items-center gap-1"
             >
-              {b.icon}
+              {b.icon && b.icon}
               {b.label}
             </Badge>
           ))}

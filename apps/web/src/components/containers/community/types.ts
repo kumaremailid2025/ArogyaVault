@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import type { CommunityPost, LinkedPost } from "@/models/community";
-import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
 
 /* ═══════════════════════════════════════════════════════════════════
    SHARED TYPES & CONSTANTS — community wrapper
@@ -22,11 +20,16 @@ export type PanelState =
   | { view: "file-qa"; fileId: number }
   | { view: "member-detail"; memberId: number };
 
+export interface Badge {
+  label: string;
+  icon?: ReactNode;
+};
+
 /** Banner configuration — built by the wrapper, rendered by CommunityBanner */
 export interface BannerConfig {
   icon: ReactNode;
   title: string;
-  badges: { label: string; icon?: ReactNode }[];
+  badges: Badge[];
   description: ReactNode;
   tabs: readonly { readonly key: CommunityTab; readonly label: string; readonly href: string }[];
   activeTab: CommunityTab;

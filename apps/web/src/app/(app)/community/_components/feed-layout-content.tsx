@@ -12,18 +12,19 @@
 
 import * as React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
 
 import type { SmartInputSubmitPayload } from "@/models/input";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
 import type { CommunityPost, LinkedPost } from "@/models/community";
 import type { CommunityVariant, PanelState } from "@/components/containers/community/types";
 
-import { ComposeArea } from "@/components/community/compose-area";
 import { PostCard } from "@/components/community/post-card";
+import { SmartInput } from "@/components/shared/smart-input";
 import { generateRephrasings } from "@/lib/post-utils";
 import { FeedProvider } from "@/app/(app)/community/_context/feed-context";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
+import { useFavoritesStore, recordActivity } from "@/stores";
+import { TypeCode, ActionCode } from "@/models/type-codes";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
 import { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } from "@/data/linked-member-data";
@@ -129,15 +130,37 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
     }
   }, [pathname, basePath, escapedBase]);
 
+  /* ── Active post from URL (needed for toggle deselect) ── */
+  const urlPostId = React.useMemo(() => {
+    const postRe = new RegExp(`^${escapedBase}/post/(\\d+)`);
+    const match = pathname.match(postRe);
+    return match ? parseInt(match[1], 10) : null;
+  }, [pathname, escapedBase]);
+
+  /* ── Favorites store ── */
+  const { favoriteIds, toggleFavorite } = useFavoritesStore();
+
   /* ── Handlers ── */
 
   const openReplies = React.useCallback((postId: number) => {
+    /* Toggle deselect: if already viewing this post, go back to default */
+    if (urlPostId === postId) {
+      router.push(basePath);
+      return;
+    }
+    recordActivity({ typeCode: TypeCode.POST, actionCode: ActionCode.POST_VIEW, entityId: postId, groupId });
     router.push(`${basePath}/post/${postId}/replies`);
-  }, [router, basePath]);
+  }, [router, basePath, urlPostId, groupId]);
 
   const openSummary = React.useCallback((postId: number) => {
+    /* Toggle deselect for summary too */
+    if (urlPostId === postId) {
+      router.push(basePath);
+      return;
+    }
+    recordActivity({ typeCode: TypeCode.POST_SUMMARY, actionCode: ActionCode.AI_SUMMARY_VIEW, entityId: postId, groupId });
     router.push(`${basePath}/post/${postId}`);
-  }, [router, basePath]);
+  }, [router, basePath, urlPostId, groupId]);
 
   const handlePreviewSend = React.useCallback(
     (payload: ComposeSubmitPayload) => {
@@ -179,6 +202,14 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
 
   const toggleLike = React.useCallback(
     (postId: number) => {
+      const wasLiked = likedPosts.has(postId);
+      recordActivity({
+        typeCode: TypeCode.POST,
+        actionCode: wasLiked ? ActionCode.UNLIKE : ActionCode.LIKE,
+        entityId: postId,
+        groupId,
+      });
+
       if (isCommunity) {
         setLikedPosts((prev) => {
           const next = new Set(prev);
@@ -198,12 +229,12 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
       setInvitedPosts((prev) =>
         prev.map((p) => {
           if (p.id !== postId) return p;
-          const delta = likedPosts.has(postId) ? -1 : 1;
+          const delta = wasLiked ? -1 : 1;
           return { ...p, likes: p.likes + delta };
         }),
       );
     },
-    [isCommunity, likedPosts, toggleLikeMut],
+    [isCommunity, likedPosts, toggleLikeMut, groupId],
   );
 
   const handleSubmitReply = React.useCallback(() => {
@@ -212,6 +243,14 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
       const { postId, original, rephrasings } = prev;
       const versions: string[] = [original, ...rephrasings];
       const text = versions[selectedVersion];
+
+      recordActivity({
+        typeCode: TypeCode.REPLY,
+        actionCode: ActionCode.REPLY_SUBMIT,
+        entityId: postId,
+        groupId,
+        meta: { textSnippet: text.slice(0, 100), wasRephrased: selectedVersion !== 0 },
+      });
 
       if (isCommunity) {
         submitReplyMut.mutate({ postId, text });
@@ -246,6 +285,13 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
 
       if (isCommunity) {
         createPostMut.mutate({ text: trimmed, tag: "Discussion" });
+        recordActivity({
+          typeCode: TypeCode.POST,
+          actionCode: ActionCode.POST_CREATE,
+          entityId: groupId,
+          groupId,
+          meta: { textSnippet: trimmed.slice(0, 100) },
+        });
         setComposeText("");
         return;
       }
@@ -263,9 +309,16 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
         replies: [],
       } as LinkedPost;
       setInvitedPosts((prev) => [newPost, ...prev]);
+      recordActivity({
+        typeCode: TypeCode.POST,
+        actionCode: ActionCode.POST_CREATE,
+        entityId: newPost.id,
+        groupId,
+        meta: { textSnippet: trimmed.slice(0, 100) },
+      });
       setComposeText("");
     },
-    [isCommunity, createPostMut],
+    [isCommunity, createPostMut, groupId],
   );
 
   /* ── Derive replyPreviewState for context ── */
@@ -279,13 +332,6 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
     !isCommunity && member
       ? `Share an update, note, or question with ${member.name.split(" ")[0]}…`
       : undefined;
-
-  /* ── Highlight active post from URL ── */
-  const urlPostId = React.useMemo(() => {
-    const postRe = new RegExp(`^${escapedBase}/post/(\\d+)`);
-    const match = pathname.match(postRe);
-    return match ? parseInt(match[1], 10) : null;
-  }, [pathname, escapedBase]);
 
   const contextValue = {
     variant,
@@ -310,31 +356,38 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
   return (
     <FeedProvider value={contextValue}>
       <>
-        {/* LEFT — Compose (pinned) + Posts (scrollable) */}
+        {/* LEFT — Posts (scrollable) + Compose (pinned bottom) */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div className="shrink-0 px-5 pt-2 pb-1 lg:px-6">
-            <ComposeArea
-              value={composeText}
-              onChange={setComposeText}
-              onSubmit={handlePost}
-              placeholder={composePlaceholder}
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-5 pb-5 lg:px-6">
-            <div className="space-y-3 pt-1">
+          <div className="flex-1 overflow-y-auto px-5 pb-4 lg:px-6">
+            <div className="space-y-3 pt-3">
               {posts.map((p) => (
                 <PostCard
                   key={p.id}
                   post={p}
                   isActive={urlPostId === p.id}
                   isLiked={likedPosts.has(p.id)}
+                  isFavorited={favoriteIds.has(p.id)}
                   onLike={toggleLike}
                   onReplies={openReplies}
                   onSummary={openSummary}
+                  onFavorite={toggleFavorite}
                 />
               ))}
             </div>
+          </div>
+
+          {/* ── Pinned compose at bottom ── */}
+          <div className="shrink-0 border-t border-border px-4 pt-2 pb-3">
+            <SmartInput
+              value={composeText}
+              onChange={setComposeText}
+              onSubmit={handlePost}
+              placeholder={composePlaceholder ?? "Share a tip, ask the community, or start a discussion…"}
+              submitLabel="Post"
+              modes={["text", "voice", "image", "attach"]}
+              maxRows={4}
+              layout="compose"
+            />
           </div>
         </div>
 

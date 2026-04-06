@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {
-  ThumbsUpIcon, MessageSquareIcon, SparklesIcon,
+  ThumbsUpIcon, MessageSquareIcon, SparklesIcon, StarIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { Badge } from "@/core/ui/badge";
@@ -15,13 +15,15 @@ interface PostCardProps {
   post: CommunityPost | LinkedPost;
   isActive: boolean;
   isLiked: boolean;
+  isFavorited: boolean;
   onLike: (postId: number) => void;
   onReplies: (postId: number) => void;
   onSummary: (postId: number) => void;
+  onFavorite: (post: CommunityPost | LinkedPost) => void;
 }
 
 export const PostCard = React.memo(
-  ({ post, isActive, isLiked, onLike, onReplies, onSummary }: PostCardProps) => {
+  ({ post, isActive, isLiked, isFavorited, onLike, onReplies, onSummary, onFavorite }: PostCardProps) => {
     const hasLocation = "location" in post && post.location;
 
     return (
@@ -80,6 +82,29 @@ export const PostCard = React.memo(
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">{isLiked ? "Unlike" : "Like"}</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      suppressHydrationWarning
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFavorite(post);
+                      }}
+                      className={cn(
+                        "h-7 px-1.5 flex items-center gap-1 text-xs transition-colors",
+                        isFavorited
+                          ? "text-amber-500 font-medium"
+                          : "text-muted-foreground hover:text-amber-500"
+                      )}
+                    >
+                      <StarIcon className={cn("size-3", isFavorited && "fill-current")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{isFavorited ? "Remove from favorites" : "Add to favorites"}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

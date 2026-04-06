@@ -3,17 +3,21 @@
 /**
  * NavigationProgress
  * ------------------
- * A thin progress bar that appears instantly when the user clicks any
- * internal <Link>. This solves the perceived "URL not updating" problem
- * in Next.js dev mode, where route compilation causes a delay between
- * click and actual navigation.
+ * A thin progress bar + instant URL updater that provides immediate
+ * visual feedback when the user clicks any internal <Link>.
  *
- * How it works:
- *  1. Listens for click events on <a> tags with local hrefs
- *  2. Immediately shows an animated progress bar
- *  3. Hides once usePathname() reports a new route
+ * Two-pronged approach:
+ *  1. **Instant URL**: Uses window.history.pushState to update the
+ *     browser address bar the instant a link is clicked — before Next.js
+ *     even starts its route transition. This is safe because Next.js
+ *     will reconcile the same URL when its transition completes.
+ *  2. **Progress bar**: Shows an animated bar at the top of the viewport
+ *     that trickles from 15% → 90% during navigation and snaps to 100%
+ *     once the new route mounts (detected via usePathname change).
  *
- * Zero dependencies, ~2KB gzipped.
+ * Together these make every navigation feel instant — the URL updates
+ * in the address bar right away, a progress bar shows activity, and
+ * loading.tsx Suspense boundaries swap in the skeleton.
  */
 
 import { useEffect, useCallback, useRef, useState } from "react";
@@ -44,20 +48,17 @@ export const NavigationProgress = () => {
 
   // ── Trickle progress while navigating ───────────────────────────
   const startProgress = useCallback(() => {
-    // Clear any existing timer
     if (timerRef.current) clearInterval(timerRef.current);
 
     setIsNavigating(true);
     setProgress(15);
 
-    // Trickle: gradually increase but never reach 100
     timerRef.current = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) {
           if (timerRef.current) clearInterval(timerRef.current);
           return prev;
         }
-        // Slow down as we get closer to 90
         const increment = prev < 50 ? 8 : prev < 70 ? 4 : 2;
         return Math.min(prev + increment, 90);
       });
@@ -67,14 +68,13 @@ export const NavigationProgress = () => {
   // ── Intercept link clicks ───────────────────────────────────────
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      // Find the closest <a> tag
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor) return;
 
       const href = anchor.getAttribute("href");
       if (!href) return;
 
-      // Skip external links, hash links, and same-page links
+      // Skip external links, hash links, mailto/tel
       if (
         href.startsWith("http") ||
         href.startsWith("#") ||
@@ -92,7 +92,21 @@ export const NavigationProgress = () => {
       // Skip if it's the current path
       if (href === pathname || href === pathname + "/") return;
 
-      // Start the progress bar immediately
+      // ── INSTANT URL UPDATE ──
+      // Push the target URL into the browser address bar immediately.
+      // Next.js will reconcile the same URL when its transition completes,
+      // so this is safe. The user sees the URL change right away.
+      try {
+        window.history.pushState(
+          { ...window.history.state, __nprogress: true },
+          "",
+          href,
+        );
+      } catch {
+        // Silently ignore — cross-origin or invalid URL
+      }
+
+      // Start the progress bar
       startProgress();
     };
 
@@ -118,7 +132,7 @@ export const NavigationProgress = () => {
       />
       {/* Glow effect at the leading edge */}
       <div
-        className="absolute right-0 top-0 h-full w-24 -translate-x-0"
+        className="absolute right-0 top-0 h-full w-24"
         style={{
           background:
             "linear-gradient(to right, transparent, hsl(var(--primary) / 0.4))",

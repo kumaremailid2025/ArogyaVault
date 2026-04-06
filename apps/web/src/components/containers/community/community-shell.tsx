@@ -59,9 +59,8 @@ const buildCommunityBanner = (
       <MessageSquareIcon className="size-4" />
     </div>
   ),
-  title: "ArogyaTalk",
+  title: "Arogya Community",
   badges: [
-    { label: "Community" },
     { label: "Public", icon: <GlobeIcon className="size-2.5" /> },
     { label: "12,847 members", icon: <UsersIcon className="size-2.5" /> },
   ],
