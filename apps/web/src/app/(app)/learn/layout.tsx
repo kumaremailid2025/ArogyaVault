@@ -1,20 +1,13 @@
-"use client";
+import type { Metadata } from "next";
+import { LearnLayoutClient } from "./_components/learn-layout-client";
 
-/**
- * Learn Layout
- * ------------
- * Shared layout for all /learn/* routes.
- * Renders the ArogyaLearn banner with route-driven tab navigation,
- * then {children} for the active route's page content.
- */
-
-import { LearnBanner } from "@/components/learn/learn-banner";
+export const metadata: Metadata = {
+  title: "ArogyaLearn | ArogyaVault",
+  description: "Browse health topics, medical systems, departments, drug interactions, and PDF Q&A.",
+};
 
 const LearnLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="h-full flex flex-col overflow-hidden">
-    <LearnBanner />
-    <div className="flex-1 overflow-hidden">{children}</div>
-  </div>
+  <LearnLayoutClient>{children}</LearnLayoutClient>
 );
 
 export default LearnLayout;

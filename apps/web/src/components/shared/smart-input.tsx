@@ -187,15 +187,16 @@ export const SmartInput = ({
 
       {/* ── VOICE MODE ───────────────────────────────────────────── */}
       {mode === "voice" && (
-        <div className="p-3 space-y-2">
-          {/* Language selector + Record/Stop button — single row */}
-          <div className="flex items-center gap-2">
+        <div className="px-3 pt-3 pb-1 space-y-1">
+          <div className="flex items-center gap-1.5 h-[22px] leading-[22px]">
+            <MicIcon className="size-4 text-muted-foreground/50 shrink-0" />
+
             <Select
               value={voiceLang}
               onValueChange={setVoiceLang}
               disabled={voice.voiceState === "recording"}
             >
-              <SelectTrigger size="sm" className="w-[130px] shrink-0 text-xs" aria-label="Recording language">
+              <SelectTrigger size="sm" className="shrink-0 text-xs h-5 min-h-0 border-0 shadow-none px-0 gap-0.5 w-auto [&>svg]:size-3" aria-label="Recording language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -207,35 +208,33 @@ export const SmartInput = ({
               </SelectContent>
             </Select>
 
+            <span className="text-muted-foreground/30">|</span>
+
             {voice.voiceState === "idle" || voice.voiceState === "done" ? (
-              <Button
-                variant="outline"
+              <button
                 onClick={voice.startRecording}
                 aria-label="Start recording"
-                className="flex-1 h-8 flex items-center justify-center gap-2 rounded-lg border-dashed text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary"
+                className="text-sm text-muted-foreground/60 hover:text-primary/80 transition-colors"
               >
-                <MicIcon className="size-3.5" />
                 {voice.voiceState === "done" ? "Record again" : "Tap to record"}
-              </Button>
+              </button>
             ) : (
-              <Button
-                variant="ghost"
+              <button
                 onClick={voice.stopRecording}
                 aria-label="Stop recording"
-                className="flex-1 h-8 flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 text-xs font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
+                className="flex items-center gap-1.5 text-sm text-red-600"
               >
-                <span className="size-2 rounded-full bg-red-500 animate-ping inline-block" />
+                <span className="size-1.5 rounded-full bg-red-500 animate-ping inline-block" />
                 {voice.voiceState === "translating"
                   ? "Translating…"
-                  : `Recording ${voice.formatSeconds(voice.recordingSeconds)} — tap to stop`}
-              </Button>
+                  : `${voice.formatSeconds(voice.recordingSeconds)} — tap to stop`}
+              </button>
             )}
           </div>
 
           {/* Live transcript */}
           {voice.liveTranscript && (
             <div className="rounded-lg border border-border bg-muted/30 p-2.5 text-xs leading-relaxed">
-              {/* Show original non-English text above the translation */}
               {voice.voiceRecording && !voice.voiceRecording.lang.startsWith("en") && (
                 <p className="text-muted-foreground mb-1 italic">
                   {voice.voiceRecording.original}
@@ -249,7 +248,7 @@ export const SmartInput = ({
 
       {/* ── IMAGE & ATTACH MODES (shared flow) ───────────────────── */}
       {(mode === "image" || mode === "attach") && (
-        <div className="p-3 space-y-2">
+        <div className="px-3 pt-3 pb-1 space-y-1">
 
           {/* Step: select */}
           {attach.attachState.step === "select" && (
@@ -270,18 +269,18 @@ export const SmartInput = ({
                     : fileInputRef.current?.click();
                 }
               }}
-              className="rounded-lg border-2 border-dashed border-border hover:border-primary/40 bg-muted/20 p-6 text-center cursor-pointer transition-colors focus:outline-none focus:border-primary"
+              className="flex items-center gap-2 min-h-[22px] cursor-pointer group"
             >
               {mode === "image"
-                ? <ImageIcon className="size-5 text-muted-foreground/40 mx-auto mb-1.5" />
-                : <PaperclipIcon className="size-5 text-muted-foreground/40 mx-auto mb-1.5" />
+                ? <ImageIcon className="size-4 text-muted-foreground/50 shrink-0 group-hover:text-primary/60" />
+                : <PaperclipIcon className="size-4 text-muted-foreground/50 shrink-0 group-hover:text-primary/60" />
               }
-              <p className="text-xs font-medium text-muted-foreground">
+              <span className="text-sm text-muted-foreground/60 group-hover:text-primary/80 transition-colors">
                 {mode === "image" ? "Tap to select an image" : "Tap to attach a file"}
-              </p>
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+              </span>
+              <span className="text-[10px] text-muted-foreground/40">
                 {mode === "image" ? "JPG, PNG, WebP" : "PDF, image, Word, or text"}
-              </p>
+              </span>
 
               {/* Hidden file inputs */}
               <Input

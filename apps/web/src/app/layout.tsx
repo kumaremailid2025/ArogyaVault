@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { NavigationProgress } from "@/components/shared/navigation-progress";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ const RootLayout = ({
             enableSystem
             disableTransitionOnChange
           >
+            <NavigationProgress />
             {children}
           </ThemeProvider>
         </QueryProvider>
