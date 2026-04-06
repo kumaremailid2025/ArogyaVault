@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   ThumbsUpIcon, MessageSquareIcon, SparklesIcon, StarIcon,
 } from "lucide-react";
@@ -9,6 +10,7 @@ import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { tagToSlug } from "@/stores";
 import type { CommunityPost, LinkedPost } from "@/models/community";
 
 interface PostCardProps {
@@ -50,16 +52,44 @@ export const PostCard = React.memo(
                 <span className="text-xs text-muted-foreground">
                   {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
                 </span>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] text-primary border-primary/30"
+                <Link
+                  href={`/tags/${tagToSlug(post.tag)}`}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {post.tag}
-                </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] text-primary border-primary/30 hover:bg-primary/10 cursor-pointer transition-colors"
+                  >
+                    {post.tag}
+                  </Badge>
+                </Link>
               </div>
 
-              {/* Actions — top right with tooltips */}
+              {/* Actions — top right: Favorite · Like · Replies · AI Summary */}
               <div className="flex items-center gap-1 shrink-0">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      suppressHydrationWarning
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFavorite(post);
+                      }}
+                      className={cn(
+                        "h-7 px-1.5 flex items-center gap-1 text-xs transition-colors",
+                        isFavorited
+                          ? "text-amber-500 font-medium"
+                          : "text-muted-foreground hover:text-amber-500"
+                      )}
+                    >
+                      <StarIcon className={cn("size-3", isFavorited && "fill-current")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{isFavorited ? "Remove from favorites" : "Add to favorites"}</TooltipContent>
+                </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -82,29 +112,6 @@ export const PostCard = React.memo(
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">{isLiked ? "Unlike" : "Like"}</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      suppressHydrationWarning
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onFavorite(post);
-                      }}
-                      className={cn(
-                        "h-7 px-1.5 flex items-center gap-1 text-xs transition-colors",
-                        isFavorited
-                          ? "text-amber-500 font-medium"
-                          : "text-muted-foreground hover:text-amber-500"
-                      )}
-                    >
-                      <StarIcon className={cn("size-3", isFavorited && "fill-current")} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{isFavorited ? "Remove from favorites" : "Add to favorites"}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

@@ -58,6 +58,9 @@ export enum TypeCode {
 
   /* ── Favorites ─────────────────────────────────────── */
   FAVORITE         = "FAVORITE",         // a favorite record itself
+
+  /* ── Tags ──────────────────────────────────────────── */
+  TAG              = "TAG",              // a post/content tag
 }
 
 /**
@@ -122,6 +125,9 @@ export enum ActionCode {
   NOTIFICATION_VIEW = "NOTIFICATION_VIEW",
   NOTIFICATION_CLICK = "NOTIFICATION_CLICK",
 
+  /* ── Tags ───────────────────────────────────────────── */
+  TAG_VIEW         = "TAG_VIEW",
+
   /* ── Invite ────────────────────────────────────────── */
   INVITE_SEND      = "INVITE_SEND",
 }
@@ -157,6 +163,7 @@ export const TYPE_CODE_LABELS: Record<TypeCode, string> = {
   [TypeCode.PROFILE]:         "Profile",
   [TypeCode.NOTIFICATION]:    "Notification",
   [TypeCode.FAVORITE]:        "Favorite",
+  [TypeCode.TAG]:             "Tag",
 };
 
 /**
@@ -198,5 +205,6 @@ export const ACTION_CODE_LABELS: Record<ActionCode, string> = {
   [ActionCode.SETTINGS_VIEW]:       "Viewed settings",
   [ActionCode.NOTIFICATION_VIEW]:   "Viewed notifications",
   [ActionCode.NOTIFICATION_CLICK]:  "Clicked notification",
+  [ActionCode.TAG_VIEW]:            "Viewed tag",
   [ActionCode.INVITE_SEND]:         "Sent invite",
 };

@@ -23,7 +23,7 @@ import { SmartInput } from "@/components/shared/smart-input";
 import { generateRephrasings } from "@/lib/post-utils";
 import { FeedProvider } from "@/app/(app)/community/_context/feed-context";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
-import { useFavoritesStore, recordActivity } from "@/stores";
+import { useFavoritesStore, useTagsStore, useLikesStore, useRepliedStore, recordActivity } from "@/stores";
 import { TypeCode, ActionCode } from "@/models/type-codes";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
@@ -62,7 +62,6 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
 
   /* ── State ── */
   const [composeText, setComposeText] = React.useState("");
-  const [likedPosts, setLikedPosts] = React.useState<Set<number>>(new Set());
   const [panelState, setPanelState] = React.useState<PanelState>({ view: "default" });
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
   const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
@@ -140,6 +139,18 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
   /* ── Favorites store ── */
   const { favoriteIds, toggleFavorite } = useFavoritesStore();
 
+  /* ── Likes store (replaces local likedPosts state) ── */
+  const { likedIds: likedPosts, toggleLike: storeLike } = useLikesStore();
+
+  /* ── Replied store ── */
+  const { addReply: storeReply } = useRepliedStore();
+
+  /* ── Register posts in tags store ── */
+  const registerPosts = useTagsStore((s) => s.registerPosts);
+  React.useEffect(() => {
+    if (posts.length > 0) registerPosts(posts);
+  }, [posts, registerPosts]);
+
   /* ── Handlers ── */
 
   const openReplies = React.useCallback((postId: number) => {
@@ -202,30 +213,19 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
 
   const toggleLike = React.useCallback(
     (postId: number) => {
-      const wasLiked = likedPosts.has(postId);
-      recordActivity({
-        typeCode: TypeCode.POST,
-        actionCode: wasLiked ? ActionCode.UNLIKE : ActionCode.LIKE,
-        entityId: postId,
-        groupId,
-      });
+      const post = posts.find((p) => p.id === postId);
+      if (!post) return;
+
+      /* Store handles activity recording internally */
+      storeLike(post, groupId);
 
       if (isCommunity) {
-        setLikedPosts((prev) => {
-          const next = new Set(prev);
-          next.has(postId) ? next.delete(postId) : next.add(postId);
-          return next;
-        });
         toggleLikeMut.mutate(postId);
         return;
       }
 
-      /* Invited variant — update local state */
-      setLikedPosts((prev) => {
-        const next = new Set(prev);
-        next.has(postId) ? next.delete(postId) : next.add(postId);
-        return next;
-      });
+      /* Invited variant — also update local like count */
+      const wasLiked = likedPosts.has(postId);
       setInvitedPosts((prev) =>
         prev.map((p) => {
           if (p.id !== postId) return p;
@@ -234,7 +234,7 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
         }),
       );
     },
-    [isCommunity, likedPosts, toggleLikeMut, groupId],
+    [isCommunity, posts, likedPosts, storeLike, toggleLikeMut, groupId],
   );
 
   const handleSubmitReply = React.useCallback(() => {
@@ -251,6 +251,10 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
         groupId,
         meta: { textSnippet: text.slice(0, 100), wasRephrased: selectedVersion !== 0 },
       });
+
+      /* Record in replied store */
+      const repliedPost = posts.find((p) => p.id === postId);
+      if (repliedPost) storeReply(repliedPost, text, groupId);
 
       if (isCommunity) {
         submitReplyMut.mutate({ postId, text });
@@ -276,7 +280,7 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
       setSelectedVersion(0);
       return { view: "replies", postId };
     });
-  }, [selectedVersion, isCommunity, submitReplyMut]);
+  }, [selectedVersion, isCommunity, submitReplyMut, posts, storeReply]);
 
   const handlePost = React.useCallback(
     (payload: SmartInputSubmitPayload) => {

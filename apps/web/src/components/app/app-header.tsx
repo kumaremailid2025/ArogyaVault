@@ -6,19 +6,25 @@ import { usePathname } from "next/navigation";
 import {
   HeartPulseIcon, BellIcon, ChevronDownIcon,
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
-  UsersIcon, StarIcon,
+  UsersIcon, StarIcon, TagIcon, ThumbsUpIcon, MessageSquareIcon, ActivityIcon,
   VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/core/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useTagsStore, tagToSlug } from "@/stores";
 import { useLogout } from "@/hooks/api";
+
+/* Seed tags store from static data so the dropdown always has items */
+import { COMMUNITY_POSTS } from "@/data/community-data";
+import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -84,6 +90,17 @@ export const AppHeader = () => {
   const handleSignOut = () => {
     logoutMutation.mutate();
   };
+
+  /* ── Tags store (seed + read) ──────────────────────────────────── */
+  const { getSortedTags, registerPosts: registerTagPosts } = useTagsStore();
+  React.useEffect(() => {
+    const allPosts = [
+      ...COMMUNITY_POSTS,
+      ...Object.values(LINKED_MEMBER_DATA).flatMap((m) => m.posts),
+    ];
+    registerTagPosts(allPosts);
+  }, [registerTagPosts]);
+  const sortedTags = getSortedTags();
 
   return (
     <>
@@ -222,6 +239,46 @@ export const AppHeader = () => {
                   <StarIcon className="size-4" /> Favorites
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/likes" className="flex items-center gap-2 cursor-pointer">
+                  <ThumbsUpIcon className="size-4" /> Liked Posts
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/replied" className="flex items-center gap-2 cursor-pointer">
+                  <MessageSquareIcon className="size-4" /> My Replies
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/activity" className="flex items-center gap-2 cursor-pointer">
+                  <ActivityIcon className="size-4" /> Activity
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-2 cursor-pointer">
+                  <TagIcon className="size-4" /> Topics
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="w-44 max-h-64 overflow-y-auto">
+                    {sortedTags.length === 0 ? (
+                      <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                        No topics yet
+                      </DropdownMenuItem>
+                    ) : (
+                      sortedTags.map((tag) => (
+                        <DropdownMenuItem key={tag} asChild>
+                          <Link
+                            href={`/tags/${tagToSlug(tag)}`}
+                            className="flex items-center gap-2 cursor-pointer text-xs"
+                          >
+                            {tag}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleSignOut}
