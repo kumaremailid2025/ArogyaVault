@@ -1,47 +1,41 @@
 /**
- * Favorites Store (Zustand) — In-Memory Only
- * -------------------------------------------
- * Tracks which entities the user has favorited.
- * Each favorite record carries a UUID, TypeCode, and the original entity
- * snapshot. When the backend is ready, toggleFavorite will also sync
- * to the database.
+ * Favorites Store (Zustand) — API-Backed
+ * ----------------------------------------
+ * Thin client-side cache that syncs with /vault/favorites API.
+ * Provides optimistic updates for instant UI feedback while
+ * the API call completes in the background.
  *
- * Also records FAVORITE / UNFAVORITE activity automatically.
+ * Hydration: call hydrate(items) with data from useFavorites() query.
+ * Mutations: toggleFavorite fires API + updates local state optimistically.
  */
 
 import { create } from "zustand";
-import { TypeCode, ActionCode } from "@/models/type-codes";
-import { recordActivity } from "@/stores/activity-store";
+import { TypeCode } from "@/models/type-codes";
 import type { CommunityPost, LinkedPost } from "@/models/community";
+import type { FavoriteOut } from "@/models/vault";
+import { vaultApi } from "@/lib/api/vault";
 
 type AnyPost = CommunityPost | LinkedPost;
 
-/** A persisted favorite entry with UUID + TypeCode metadata. */
-export interface FavoriteEntry {
-  /** UUID v4 for this favorite record */
-  uuid: string;
-  /** The TypeCode of the favorited entity (currently always POST) */
-  typeCode: TypeCode;
-  /** The numeric or string id of the entity */
-  entityId: number;
-  /** ISO-8601 timestamp when favorited */
-  favoritedAt: string;
-  /** Snapshot of the post at the time of favoriting */
-  post: AnyPost;
-}
+/** Re-export for backward compat with pages that import from here */
+export type FavoriteEntry = FavoriteOut;
 
 interface FavoritesState {
   /** Set of favorited post IDs for O(1) lookups */
   favoriteIds: Set<number>;
   /** Full favorite entries keyed by entity id */
-  favorites: Map<number, FavoriteEntry>;
+  favorites: Map<number, FavoriteOut>;
+  /** Whether the store has been hydrated from the API at least once */
+  hydrated: boolean;
 
-  /** Toggle a post in/out of favorites (records activity automatically) */
+  /** Hydrate the store from API response */
+  hydrate: (items: FavoriteOut[]) => void;
+  /** Toggle a post in/out of favorites (calls API + optimistic update) */
   toggleFavorite: (post: AnyPost, groupId?: string) => void;
   /** Check if a post is favorited */
   isFavorited: (postId: number) => boolean;
   /** Get all favorite entries (most-recently-favorited first) */
-  getFavorites: () => FavoriteEntry[];
+  getFavorites: () => FavoriteOut[];
   /** Get just the post snapshots (most-recently-favorited first) */
   getFavoritePosts: () => AnyPost[];
 }
@@ -61,56 +55,90 @@ const generateUUID = (): string => {
 export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   favoriteIds: new Set(),
   favorites: new Map(),
+  hydrated: false,
 
-  toggleFavorite: (post, groupId) =>
-    set((state) => {
-      const nextIds = new Set(state.favoriteIds);
-      const nextFavorites = new Map(state.favorites);
+  hydrate: (items) => {
+    const nextIds = new Set<number>();
+    const nextFavorites = new Map<number, FavoriteOut>();
+    for (const item of items) {
+      nextIds.add(item.entity_id);
+      nextFavorites.set(item.entity_id, item);
+    }
+    set({ favoriteIds: nextIds, favorites: nextFavorites, hydrated: true });
+  },
 
-      if (nextIds.has(post.id)) {
-        /* ── Unfavorite ── */
-        nextIds.delete(post.id);
-        nextFavorites.delete(post.id);
+  toggleFavorite: (post, groupId) => {
+    const state = get();
+    const nextIds = new Set(state.favoriteIds);
+    const nextFavorites = new Map(state.favorites);
 
-        recordActivity({
-          typeCode: TypeCode.POST,
-          actionCode: ActionCode.UNFAVORITE,
-          entityId: post.id,
-          groupId,
-          description: `Unfavorited post by ${post.author}`,
-          meta: { postText: post.text.slice(0, 100) },
-        });
-      } else {
-        /* ── Favorite ── */
-        const entry: FavoriteEntry = {
+    if (nextIds.has(post.id)) {
+      /* ── Optimistic unfavorite ── */
+      nextIds.delete(post.id);
+      nextFavorites.delete(post.id);
+      set({ favoriteIds: nextIds, favorites: nextFavorites });
+
+      // Fire API (non-blocking)
+      vaultApi.toggleFavorite({ post_id: post.id, group_id: groupId }).catch(() => {
+        // Revert on failure
+        const revert = get();
+        const revertIds = new Set(revert.favoriteIds);
+        const revertFavs = new Map(revert.favorites);
+        revertIds.add(post.id);
+        // We lost the entry, put a placeholder back
+        revertFavs.set(post.id, {
           uuid: generateUUID(),
-          typeCode: TypeCode.POST,
-          entityId: post.id,
-          favoritedAt: new Date().toISOString(),
-          post,
-        };
-        nextIds.add(post.id);
-        nextFavorites.set(post.id, entry);
-
-        recordActivity({
-          typeCode: TypeCode.POST,
-          actionCode: ActionCode.FAVORITE,
-          entityId: post.id,
-          groupId,
-          description: `Favorited post by ${post.author}`,
-          meta: { postText: post.text.slice(0, 100), favoriteUuid: entry.uuid },
+          type_code: TypeCode.POST,
+          entity_id: post.id,
+          favorited_at: new Date().toISOString(),
+          post: post as unknown as FavoriteOut["post"],
         });
-      }
+        set({ favoriteIds: revertIds, favorites: revertFavs });
+      });
+    } else {
+      /* ── Optimistic favorite ── */
+      const optimisticEntry: FavoriteOut = {
+        uuid: generateUUID(),
+        type_code: TypeCode.POST,
+        entity_id: post.id,
+        favorited_at: new Date().toISOString(),
+        post: post as unknown as FavoriteOut["post"],
+      };
+      nextIds.add(post.id);
+      nextFavorites.set(post.id, optimisticEntry);
+      set({ favoriteIds: nextIds, favorites: nextFavorites });
 
-      return { favoriteIds: nextIds, favorites: nextFavorites };
-    }),
+      // Fire API — replace optimistic entry with server entry on success
+      vaultApi.toggleFavorite({ post_id: post.id, group_id: groupId }).then((res) => {
+        if (res.entry) {
+          const current = get();
+          const updatedFavs = new Map(current.favorites);
+          updatedFavs.set(post.id, res.entry);
+          set({ favorites: updatedFavs });
+        }
+      }).catch(() => {
+        // Revert on failure
+        const revert = get();
+        const revertIds = new Set(revert.favoriteIds);
+        const revertFavs = new Map(revert.favorites);
+        revertIds.delete(post.id);
+        revertFavs.delete(post.id);
+        set({ favoriteIds: revertIds, favorites: revertFavs });
+      });
+    }
+  },
 
   isFavorited: (postId) => get().favoriteIds.has(postId),
 
-  getFavorites: () => Array.from(get().favorites.values()).reverse(),
+  getFavorites: () => {
+    const entries = Array.from(get().favorites.values());
+    return entries.sort(
+      (a, b) => new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime(),
+    );
+  },
 
   getFavoritePosts: () =>
-    Array.from(get().favorites.values())
-      .reverse()
-      .map((e) => e.post),
+    get()
+      .getFavorites()
+      .map((e) => e.post as unknown as AnyPost),
 }));

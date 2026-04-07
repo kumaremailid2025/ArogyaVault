@@ -40,7 +40,7 @@ export const FilesLayoutContent = ({ variant, group, basePath, children }: Files
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
 
   /* ── API hooks ── */
-  const filesQuery = useFiles(groupId, isCommunity);
+  const filesQuery = useFiles(groupId, {}, isCommunity);
   const recentQAQuery = useRecentFileQA(groupId, isCommunity);
   const askFileQuestionMut = useAskFileQuestion(groupId);
 
@@ -64,7 +64,7 @@ export const FilesLayoutContent = ({ variant, group, basePath, children }: Files
 
   /* ── Resolved data ── */
   const communityFiles: CommunityFile[] = isCommunity
-    ? ((filesQuery.data as CommunityFile[]) ?? [])
+    ? ((filesQuery.data?.items as unknown as CommunityFile[]) ?? [])
     : invitedFiles;
 
   /* ── Derived recent QA ── */

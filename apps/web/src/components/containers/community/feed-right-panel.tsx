@@ -308,12 +308,12 @@ export const FeedRightPanel = React.memo(
             {/* ── Scrollable reply list ── */}
             <div className="flex-1 overflow-y-auto px-4 min-h-0">
               <div className="space-y-3 pb-2">
-                {activePost.replies.length === 0 ? (
+                {(activePost.replies ?? []).length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">
                     No replies yet — be the first.
                   </p>
                 ) : (
-                  activePost.replies.map((r, i) => (
+                  (activePost.replies ?? []).map((r, i) => (
                     <div key={i} className="flex gap-2">
                       <Avatar className="size-6 shrink-0 mt-0.5">
                         <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">

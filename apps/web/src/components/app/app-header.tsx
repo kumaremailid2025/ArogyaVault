@@ -13,18 +13,12 @@ import { Button } from "@/core/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-  DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
-  DropdownMenuPortal,
 } from "@/core/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { useAuthStore, useTagsStore, tagToSlug } from "@/stores";
+import { useAuthStore } from "@/stores";
 import { useLogout } from "@/hooks/api";
-
-/* Seed tags store from static data so the dropdown always has items */
-import { COMMUNITY_POSTS } from "@/data/community-data";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -38,12 +32,21 @@ const NotificationPanel = dynamic(
   { ssr: false, loading: () => null }
 );
 
-/* ── Top-nav items ───────────────────────────────────────────────── */
+/* ── Top-nav items (simple links) ───────────────────────────────── */
 const TOP_NAV = [
-  { id: "yours",     label: "My Vault",    href: "/vault",       icon: VaultIcon },
   { id: "community", label: "Community",   href: "/community",   icon: MessageCircleIcon },
   { id: "arogyaai",  label: "ArogyaAI",    href: "/arogya-ai",   icon: BotIcon },
-  { id: "learn",     label: "ArogyaLearn", href: "/learn",        icon: GraduationCapIcon },
+  { id: "learn",     label: "ArogyaLearn", href: "/learn",       icon: GraduationCapIcon },
+] as const;
+
+/* ── My Vault dropdown items ─────────────────────────────────────── */
+const MY_VAULT_ITEMS = [
+  { id: "vault",     label: "My Vault",             href: "/vault",         icon: VaultIcon },
+  { id: "favorites", label: "My Favorites",        href: "/favorites",     icon: StarIcon },
+  { id: "likes",     label: "My Liked Posts",      href: "/likes",         icon: ThumbsUpIcon },
+  { id: "replied",   label: "My Replies",          href: "/replied",       icon: MessageSquareIcon },
+  { id: "activity",  label: "My Activity",         href: "/activity",      icon: ActivityIcon },
+  { id: "topics",    label: "My Topics",           href: "/tags/diabetes", icon: TagIcon },
 ] as const;
 
 /* ── Groups available for targeted invites ───────────────────────── */
@@ -54,7 +57,7 @@ const INVITE_GROUPS = [
 ];
 
 export const AppHeader = () => {
-  const pathname     = usePathname();
+  const pathname = usePathname();
 
   const [inviteOpen,    setInviteOpen]    = React.useState(false);
   const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);
@@ -73,13 +76,20 @@ export const AppHeader = () => {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
+  /* ── My Vault active detection ─────────────────────────────── */
+  const activeVaultItem = MY_VAULT_ITEMS.find((item) =>
+    pathname === item.href || pathname.startsWith(`${item.href}/`)
+    || (item.id === "topics" && pathname.startsWith("/tags"))
+  );
+  const isVaultActive = !!activeVaultItem;
+  const vaultLabel = activeVaultItem?.label ?? "My Vault";
+  const VaultActiveIcon = activeVaultItem?.icon ?? VaultIcon;
+
   const user = useAuthStore((s) => s.user);
   const logoutMutation = useLogout();
 
   const displayName = user?.name ?? "User";
-  const displayPhone = user?.phone
-    ? `${user.phone.slice(0, 3)} ${user.phone.slice(3, 8)} ${user.phone.slice(8)}`
-    : "";
+  const displayPhone = user?.phone_masked ?? "";
   const initials = displayName
     .split(" ")
     .map((w) => w[0])
@@ -90,17 +100,6 @@ export const AppHeader = () => {
   const handleSignOut = () => {
     logoutMutation.mutate();
   };
-
-  /* ── Tags store (seed + read) ──────────────────────────────────── */
-  const { getSortedTags, registerPosts: registerTagPosts } = useTagsStore();
-  React.useEffect(() => {
-    const allPosts = [
-      ...COMMUNITY_POSTS,
-      ...Object.values(LINKED_MEMBER_DATA).flatMap((m) => m.posts),
-    ];
-    registerTagPosts(allPosts);
-  }, [registerTagPosts]);
-  const sortedTags = getSortedTags();
 
   return (
     <>
@@ -116,6 +115,7 @@ export const AppHeader = () => {
 
         {/* ── Centred top nav ──────────────────────────────────── */}
         <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-0.5">
+          {/* Simple nav links */}
           {TOP_NAV.map((item) => {
             const active = isNavActive(item);
             return (
@@ -134,6 +134,58 @@ export const AppHeader = () => {
               </Link>
             );
           })}
+
+          {/* My Vault — split: label (link) | divider | chevron (dropdown) */}
+          <div className={cn(
+            "flex items-center rounded-full overflow-hidden transition-colors",
+            isVaultActive
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}>
+            <Link
+              href={activeVaultItem?.href ?? "/vault"}
+              className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 text-xs font-medium cursor-pointer whitespace-nowrap"
+            >
+              <VaultActiveIcon className="size-3.5 shrink-0" />
+              {vaultLabel}
+            </Link>
+            {/* Divider between label and chevron */}
+            <div className={cn(
+              "w-px h-4 shrink-0",
+              isVaultActive ? "bg-white/30" : "bg-border"
+            )} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={cn(
+                  "flex items-center px-2 py-1.5 cursor-pointer transition-colors rounded-r-full",
+                  isVaultActive
+                    ? "hover:bg-white/10"
+                    : "hover:bg-muted"
+                )}>
+                  <ChevronDownIcon className="size-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {MY_VAULT_ITEMS.map((item) => {
+                  const isActive = activeVaultItem?.id === item.id;
+                  return (
+                    <DropdownMenuItem key={item.id} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-2 cursor-pointer",
+                          isActive && "font-semibold text-primary"
+                        )}
+                      >
+                        <item.icon className="size-3.5" />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </nav>
 
         {/* ── Right actions ────────────────────────────────────── */}
@@ -203,7 +255,7 @@ export const AppHeader = () => {
             )}
           </div>
 
-          {/* Profile dropdown */}
+          {/* Profile dropdown — clean: Profile, Settings, Sign Out */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full h-auto pl-1 pr-2 py-1 gap-2">
@@ -234,51 +286,6 @@ export const AppHeader = () => {
                   <SettingsIcon className="size-4" /> Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/favorites" className="flex items-center gap-2 cursor-pointer">
-                  <StarIcon className="size-4" /> Favorites
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/likes" className="flex items-center gap-2 cursor-pointer">
-                  <ThumbsUpIcon className="size-4" /> Liked Posts
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/replied" className="flex items-center gap-2 cursor-pointer">
-                  <MessageSquareIcon className="size-4" /> My Replies
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/activity" className="flex items-center gap-2 cursor-pointer">
-                  <ActivityIcon className="size-4" /> Activity
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="flex items-center gap-2 cursor-pointer">
-                  <TagIcon className="size-4" /> Topics
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent className="w-44 max-h-64 overflow-y-auto">
-                    {sortedTags.length === 0 ? (
-                      <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                        No topics yet
-                      </DropdownMenuItem>
-                    ) : (
-                      sortedTags.map((tag) => (
-                        <DropdownMenuItem key={tag} asChild>
-                          <Link
-                            href={`/tags/${tagToSlug(tag)}`}
-                            className="flex items-center gap-2 cursor-pointer text-xs"
-                          >
-                            {tag}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleSignOut}

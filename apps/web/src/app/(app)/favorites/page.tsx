@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
+import { PageBanner } from "@/components/shared/page-banner";
 import { useFavoritesStore } from "@/stores";
 import { TYPE_CODE_LABELS } from "@/models/type-codes";
 import type { CommunityPost } from "@/models/community";
@@ -24,21 +25,23 @@ const FavoritesPage = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-border lg:px-6">
-        <Button asChild variant="ghost" size="icon-sm">
-          <Link href="/community">
-            <ArrowLeftIcon className="size-4" />
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2">
-          <StarIcon className="size-4 text-amber-500 fill-amber-500" />
-          <h1 className="text-base font-semibold">Favorites</h1>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {entries.length} {entries.length === 1 ? "post" : "posts"}
-        </span>
-      </div>
+      {/* Banner */}
+      <PageBanner
+        icon={
+          <div className="flex size-7 items-center justify-center rounded-full bg-white/20">
+            <StarIcon className="size-4" />
+          </div>
+        }
+        title="Favorites"
+        badges={[
+          { label: `${entries.length} ${entries.length === 1 ? "post" : "posts"}`, icon: <StarIcon className="size-2.5" /> },
+        ]}
+        description={
+          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+            Posts you have starred for quick access. Click the star icon on any community post to save it here.
+          </p>
+        }
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-5 py-4 lg:px-6">

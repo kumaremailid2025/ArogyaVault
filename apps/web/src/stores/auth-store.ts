@@ -19,12 +19,19 @@ import { create } from "zustand";
 
 /* ── Types ────────────────────────────────────────────────────────── */
 
+/**
+ * AuthUser — identified by UUID only.
+ *
+ * `phone_masked` is optional and only populated when the profile
+ * endpoint (/auth/me) is called. It shows "+91****5592" style
+ * masking for the user's own profile page — never the real number.
+ */
 export interface AuthUser {
   id: string;
-  phone: string;
   name: string | null;
   role: string;
   created_at: string;
+  phone_masked?: string;
 }
 
 interface AuthState {

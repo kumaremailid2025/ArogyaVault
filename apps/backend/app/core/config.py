@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
+    # CORS — comma-separated origins (override via env for production)
+    cors_origins: str = "http://localhost:3000"
+
+    # API
+    api_version: str = "0.3.0"
+
     model_config = {"env_file": ".env", "case_sensitive": False}
 
 

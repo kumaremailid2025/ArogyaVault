@@ -46,18 +46,20 @@ export interface SendInviteRequest {
 
 export interface CheckRegistrationResponse {
   registered: boolean;
-  phone: string;
 }
 
 export interface SendOtpResponse {
   message: string;
-  phone: string;
   expires_in: number;
 }
 
+/**
+ * User profile returned after OTP verification.
+ * Uses UUID `id` for identification — no phone field.
+ * Phone is only exposed as `phone_masked` on the /auth/me endpoint.
+ */
 export interface UserOut {
   id: string;
-  phone: string;
   name: string | null;
   role: string;
   created_at: string;
@@ -72,13 +74,23 @@ export interface VerifyOtpResponse {
 
 export interface ResendOtpResponse {
   message: string;
-  phone: string;
   expires_in: number;
 }
 
 export interface SendInviteResponse {
   message: string;
-  phone: string;
+}
+
+/**
+ * GET /auth/me — the ONLY response that includes a masked phone.
+ * Used for the user's own profile page display.
+ */
+export interface MeResponse {
+  id: string;
+  phone_masked: string;
+  name: string | null;
+  role: string;
+  created_at: string;
 }
 
 /* ── API functions ────────────────────────────────────────────────── */
@@ -95,6 +107,7 @@ const directFetch = async <T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
+      "X-Platform": "web",
       ...(options.headers as Record<string, string>),
     },
   });
@@ -124,6 +137,7 @@ const localFetch = async <T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
+      "X-Platform": "web",
       ...(options.headers as Record<string, string>),
     },
     credentials: "include", // accept httpOnly cookies on same origin
@@ -172,7 +186,11 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
 
-  /** Invite an unregistered phone number (uses proxy — authenticated). */
+  /**
+   * [DEPRECATED] Legacy invite endpoint.
+   * New code should use inviteApi.sendInvite() from lib/api/invite.ts
+   * which provides encrypted phone storage and full lifecycle management.
+   */
   sendInvite: (data: SendInviteRequest) =>
     directFetch<SendInviteResponse>("/auth/send-invite", {
       method: "POST",

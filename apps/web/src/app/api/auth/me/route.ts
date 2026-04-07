@@ -51,14 +51,15 @@ export const GET = async (request: NextRequest) => {
   /* ── Strategy 1: Decode JWT locally (fast, no backend call) ──── */
   const payload = decodeJwtPayload(token);
 
-  if (payload && payload.sub && payload.phone) {
+  if (payload && payload.sub) {
     return NextResponse.json({
       user: {
         id: payload.sub as string,
-        phone: payload.phone as string,
         name: (payload.name as string) ?? null,
         role: (payload.role as string) ?? "member",
         created_at: (payload.created_at as string) ?? "",
+        // phone_masked comes from the JWT (already masked in the token)
+        phone_masked: (payload.phone as string) ?? "****",
       },
     });
   }

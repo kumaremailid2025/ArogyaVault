@@ -40,7 +40,7 @@ export const MembersLayoutContent = ({ variant, group, basePath, children }: Mem
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
 
   /* ── API hooks ── */
-  const membersQuery = useMembers(groupId, isCommunity);
+  const membersQuery = useMembers(groupId, {}, isCommunity);
 
   /* ── State ── */
   const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
@@ -57,7 +57,7 @@ export const MembersLayoutContent = ({ variant, group, basePath, children }: Mem
 
   /* ── Resolved data ── */
   const membersList: CommunityMember[] = isCommunity
-    ? ((membersQuery.data as CommunityMember[]) ?? [])
+    ? ((membersQuery.data?.items as unknown as CommunityMember[]) ?? [])
     : (INVITED_GROUP_MEMBERS[group] ?? []);
 
   /* ── Titles ── */

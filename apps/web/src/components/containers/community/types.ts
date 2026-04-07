@@ -23,7 +23,7 @@ export type PanelState =
 export interface Badge {
   label: string;
   icon?: ReactNode;
-};
+}
 
 /** Banner configuration — built by the wrapper, rendered by CommunityBanner */
 export interface BannerConfig {

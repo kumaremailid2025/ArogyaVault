@@ -57,7 +57,7 @@ export const MembersPageContainer = ({
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
 
   /* ── API hooks ── */
-  const membersQuery = useMembers(groupId, isCommunity);
+  const membersQuery = useMembers(groupId, {}, isCommunity);
 
   /* ── State ── */
   const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
@@ -65,7 +65,7 @@ export const MembersPageContainer = ({
 
   /* ── Resolved data ── */
   const membersList: CommunityMember[] = isCommunity
-    ? ((membersQuery.data as CommunityMember[]) ?? [])
+    ? ((membersQuery.data?.items as unknown as CommunityMember[]) ?? [])
     : (INVITED_GROUP_MEMBERS[group] ?? []);
 
   /* ── Derived ── */

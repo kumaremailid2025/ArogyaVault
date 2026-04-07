@@ -10,6 +10,7 @@ import Link from "next/link";
 import {
   MessageSquareIcon, ArrowLeftIcon, ThumbsUpIcon, StarIcon,
 } from "lucide-react";
+import { PageBanner } from "@/components/shared/page-banner";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
@@ -25,21 +26,23 @@ const RepliedPage = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-border lg:px-6">
-        <Button asChild variant="ghost" size="icon-sm">
-          <Link href="/community">
-            <ArrowLeftIcon className="size-4" />
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2">
-          <MessageSquareIcon className="size-4 text-primary" />
-          <h1 className="text-base font-semibold">My Replies</h1>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {entries.length} {entries.length === 1 ? "post" : "posts"}
-        </span>
-      </div>
+      {/* Banner */}
+      <PageBanner
+        icon={
+          <div className="flex size-7 items-center justify-center rounded-full bg-white/20">
+            <MessageSquareIcon className="size-4" />
+          </div>
+        }
+        title="My Replies"
+        badges={[
+          { label: `${entries.length} ${entries.length === 1 ? "post" : "posts"}`, icon: <MessageSquareIcon className="size-2.5" /> },
+        ]}
+        description={
+          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+            Posts you have replied to, along with your reply. Reply to a post in the community to see it here.
+          </p>
+        }
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-5 py-4 lg:px-6">

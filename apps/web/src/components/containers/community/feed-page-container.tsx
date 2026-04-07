@@ -76,8 +76,8 @@ export const FeedPageContainer = ({
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
 
-  /* ── API hooks ── */
-  const postsQuery = usePosts(groupId, isCommunity);
+  /* ── API hooks (enabled for ALL groups — community + invited) ── */
+  const postsQuery = usePosts(groupId, {});
   const createPostMut = useCreatePost(groupId);
   const submitReplyMut = useSubmitReply(groupId);
   const toggleLikeMut = useToggleLike(groupId);
@@ -90,20 +90,14 @@ export const FeedPageContainer = ({
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
   const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
 
-  /* Invited-only local posts */
-  const [invitedPosts, setInvitedPosts] = React.useState<(CommunityPost | LinkedPost)[]>(
-    member?.posts ?? [],
-  );
-  const nextPostIdRef = React.useRef(isCommunity ? 100 : (member?.posts.length ?? 0) + 100);
+  const nextPostIdRef = React.useRef(100);
 
-  /* ── Resolved data ── */
-  const posts: (CommunityPost | LinkedPost)[] = isCommunity
-    ? (postsQuery.data ?? [])
-    : invitedPosts;
+  /* ── Resolved data (API-backed for all groups) ── */
+  const posts: (CommunityPost | LinkedPost)[] = postsQuery.data?.items ?? [];
 
   /* ── Summary query (on-demand) ── */
   const summaryPostId = panelState.view === "summary" ? panelState.postId : null;
-  const summaryQuery = usePostSummary(groupId, summaryPostId, isCommunity && summaryPostId !== null);
+  const summaryQuery = usePostSummary(groupId, summaryPostId, summaryPostId !== null);
 
   /* ── Derived ── */
   const activePostId =
@@ -152,23 +146,15 @@ export const FeedPageContainer = ({
         setPendingReply(payload);
         setSelectedVersion(1);
 
-        if (isCommunity) {
-          rephraseMut.mutate(text, {
-            onSuccess: (data) => {
-              setPanelState((cur) => {
-                if (cur.view !== "reply-preview") return cur;
-                return { ...cur, rephrasings: data.rephrasings as [string, string] };
-              });
-            },
-          });
-          return {
-            view: "reply-preview" as const,
-            postId: prev.postId,
-            original: text,
-            rephrasings: generateRephrasings(text),
-          };
-        }
-
+        /* API-backed rephrase for all groups */
+        rephraseMut.mutate(text, {
+          onSuccess: (data) => {
+            setPanelState((cur) => {
+              if (cur.view !== "reply-preview") return cur;
+              return { ...cur, rephrasings: data.rephrasings as [string, string] };
+            });
+          },
+        });
         return {
           view: "reply-preview" as const,
           postId: prev.postId,
@@ -177,7 +163,7 @@ export const FeedPageContainer = ({
         };
       });
     },
-    [isCommunity, rephraseMut],
+    [rephraseMut],
   );
 
   const handleBackToCompose = React.useCallback(() => {
@@ -188,30 +174,15 @@ export const FeedPageContainer = ({
 
   const toggleLike = React.useCallback(
     (postId: number) => {
-      if (isCommunity) {
-        setLikedPosts((prev) => {
-          const next = new Set(prev);
-          next.has(postId) ? next.delete(postId) : next.add(postId);
-          return next;
-        });
-        toggleLikeMut.mutate(postId);
-        return;
-      }
-
+      /* API-backed for all groups */
       setLikedPosts((prev) => {
         const next = new Set(prev);
         next.has(postId) ? next.delete(postId) : next.add(postId);
         return next;
       });
-      setInvitedPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const delta = likedPosts.has(postId) ? -1 : 1;
-          return { ...p, likes: p.likes + delta };
-        }),
-      );
+      toggleLikeMut.mutate(postId);
     },
-    [isCommunity, likedPosts, toggleLikeMut],
+    [likedPosts, toggleLikeMut],
   );
 
   const handleSubmitReply = React.useCallback(() => {
@@ -221,57 +192,25 @@ export const FeedPageContainer = ({
       const versions: string[] = [original, ...rephrasings];
       const text = versions[selectedVersion];
 
-      if (isCommunity) {
-        submitReplyMut.mutate({ postId, text });
-      } else {
-        setInvitedPosts((ps) =>
-          ps.map((p) =>
-            p.id === postId
-              ? {
-                  ...p,
-                  replyCount: p.replyCount + 1,
-                  replies: [
-                    ...p.replies,
-                    { initials: "KU", author: "You", time: "Just now", text },
-                  ],
-                }
-              : p,
-          ),
-        );
-      }
+      /* API-backed for all groups */
+      submitReplyMut.mutate({ postId, text });
 
       setPendingReply(null);
       setSelectedVersion(0);
       return { view: "replies", postId };
     });
-  }, [selectedVersion, isCommunity, submitReplyMut]);
+  }, [selectedVersion, submitReplyMut]);
 
   const handlePost = React.useCallback(
     (payload: SmartInputSubmitPayload) => {
       const trimmed = payload.text.trim();
       if (!trimmed) return;
 
-      if (isCommunity) {
-        createPostMut.mutate({ text: trimmed, tag: "Discussion" });
-        setComposeText("");
-        return;
-      }
-
-      const newPost = {
-        id: nextPostIdRef.current++,
-        initials: "KU",
-        author: "You",
-        time: "Just now",
-        text: trimmed,
-        likes: 0,
-        replyCount: 0,
-        tag: "Update",
-        replies: [],
-      } as LinkedPost;
-      setInvitedPosts((prev) => [newPost, ...prev]);
+      /* API-backed for all groups */
+      createPostMut.mutate({ text: trimmed, tag: "Discussion" });
       setComposeText("");
     },
-    [isCommunity, createPostMut],
+    [createPostMut],
   );
 
   const composePlaceholder =

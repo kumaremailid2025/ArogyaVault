@@ -1,9 +1,16 @@
 """
 Pydantic schemas for authentication endpoints.
-Mirrors shared-types/src/index.ts Auth & User types.
 
-NOTE: Tokens are no longer returned in JSON responses.
-They are set as httpOnly cookies by the backend.
+SECURITY RULES (phone number protection):
+  - NO plaintext phone number is EVER returned to the frontend
+  - User is identified by UUID (id field), never by phone
+  - Masked phone (+91****5592) is ONLY returned on the profile endpoint (/auth/me)
+  - OTP/registration responses contain only a message — the FE already has the phone
+  - JWT tokens contain the user UUID, never the phone
+
+This matches the industry standard used by banking apps, healthcare platforms,
+and services like WhatsApp/Signal where the phone is used for auth but never
+exposed in API responses.
 """
 
 from pydantic import BaseModel, Field
@@ -41,22 +48,31 @@ class RefreshRequest(BaseModel):
 
 
 # ── Response Schemas ─────────────────────────────────────────────────────────
+#
+# IMPORTANT: No response schema contains a plaintext phone field.
+# The frontend identifies users by UUID (id), not phone.
 
 
 class CheckRegistrationResponse(BaseModel):
+    """Returns only whether the number is registered — no phone echo."""
     registered: bool
-    phone: str
 
 
 class SendOtpResponse(BaseModel):
+    """Confirms OTP was sent — no phone echo (FE already has it)."""
     message: str
-    phone: str
     expires_in: int = Field(default=300, description="OTP validity in seconds")
 
 
 class UserOut(BaseModel):
+    """
+    User profile returned after OTP verification.
+
+    The frontend uses `id` (UUID) for all subsequent API calls.
+    No phone field — the phone was only needed for the auth flow
+    and is never stored or transmitted after login.
+    """
     id: str
-    phone: str
     name: str | None = None
     role: str = "patient"
     created_at: str
@@ -78,23 +94,28 @@ class VerifyOtpResponse(BaseModel):
 
 
 class MeResponse(BaseModel):
-    """GET /auth/me — returns the authenticated user's profile."""
+    """
+    GET /auth/me — the ONLY endpoint that returns a masked phone.
+
+    This is for the user's own profile page display.
+    phone_masked shows "+91****5592" — never the real number.
+    """
     id: str
-    phone: str
+    phone_masked: str = Field(description="Masked phone for profile display, e.g. +91****5592")
     name: str | None = None
     role: str = "patient"
     created_at: str
 
 
 class ResendOtpResponse(BaseModel):
+    """Confirms OTP was resent — no phone echo."""
     message: str
-    phone: str
     expires_in: int = 300
 
 
 class SendInviteResponse(BaseModel):
+    """Confirms invite was sent — no phone echo."""
     message: str
-    phone: str
 
 
 class RefreshResponse(BaseModel):

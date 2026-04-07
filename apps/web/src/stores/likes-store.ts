@@ -1,32 +1,32 @@
 /**
- * Likes Store (Zustand) — In-Memory
- * -----------------------------------
- * Tracks which posts the user has liked, with full post snapshots
- * so the /likes page can render them without feed context.
- * Also records LIKE / UNLIKE activity automatically.
+ * Likes Store (Zustand) — API-Backed
+ * ------------------------------------
+ * Thin client-side cache that syncs with /vault/likes API.
+ * Provides optimistic updates for instant UI feedback.
+ *
+ * Hydration: call hydrate(items) with data from useLikedPosts() query.
  */
 
 import { create } from "zustand";
-import { TypeCode, ActionCode } from "@/models/type-codes";
-import { recordActivity } from "@/stores/activity-store";
+import { TypeCode } from "@/models/type-codes";
 import type { CommunityPost, LinkedPost } from "@/models/community";
+import type { LikeOut } from "@/models/vault";
+import { vaultApi } from "@/lib/api/vault";
 
 type AnyPost = CommunityPost | LinkedPost;
 
-export interface LikeEntry {
-  uuid: string;
-  typeCode: TypeCode;
-  entityId: number;
-  likedAt: string;
-  post: AnyPost;
-}
+/** Re-export for backward compat */
+export type LikeEntry = LikeOut;
 
 interface LikesState {
   likedIds: Set<number>;
-  likes: Map<number, LikeEntry>;
+  likes: Map<number, LikeOut>;
+  hydrated: boolean;
+
+  hydrate: (items: LikeOut[]) => void;
   toggleLike: (post: AnyPost, groupId?: string) => void;
   isLiked: (postId: number) => boolean;
-  getLikes: () => LikeEntry[];
+  getLikes: () => LikeOut[];
   getLikedPosts: () => AnyPost[];
 }
 
@@ -42,46 +42,85 @@ const generateUUID = (): string => {
 export const useLikesStore = create<LikesState>((set, get) => ({
   likedIds: new Set(),
   likes: new Map(),
+  hydrated: false,
 
-  toggleLike: (post, groupId) =>
-    set((state) => {
-      const nextIds = new Set(state.likedIds);
-      const nextLikes = new Map(state.likes);
+  hydrate: (items) => {
+    const nextIds = new Set<number>();
+    const nextLikes = new Map<number, LikeOut>();
+    for (const item of items) {
+      nextIds.add(item.entity_id);
+      nextLikes.set(item.entity_id, item);
+    }
+    set({ likedIds: nextIds, likes: nextLikes, hydrated: true });
+  },
 
-      if (nextIds.has(post.id)) {
-        nextIds.delete(post.id);
-        nextLikes.delete(post.id);
-        recordActivity({
-          typeCode: TypeCode.POST,
-          actionCode: ActionCode.UNLIKE,
-          entityId: post.id,
-          groupId,
-          description: `Unliked post by ${post.author}`,
-        });
-      } else {
-        const entry: LikeEntry = {
+  toggleLike: (post, groupId) => {
+    const state = get();
+    const nextIds = new Set(state.likedIds);
+    const nextLikes = new Map(state.likes);
+
+    if (nextIds.has(post.id)) {
+      /* ── Optimistic unlike ── */
+      nextIds.delete(post.id);
+      nextLikes.delete(post.id);
+      set({ likedIds: nextIds, likes: nextLikes });
+
+      vaultApi.toggleLike({ post_id: post.id, group_id: groupId }).catch(() => {
+        const revert = get();
+        const revertIds = new Set(revert.likedIds);
+        const revertLikes = new Map(revert.likes);
+        revertIds.add(post.id);
+        revertLikes.set(post.id, {
           uuid: generateUUID(),
-          typeCode: TypeCode.POST,
-          entityId: post.id,
-          likedAt: new Date().toISOString(),
-          post,
-        };
-        nextIds.add(post.id);
-        nextLikes.set(post.id, entry);
-        recordActivity({
-          typeCode: TypeCode.POST,
-          actionCode: ActionCode.LIKE,
-          entityId: post.id,
-          groupId,
-          description: `Liked post by ${post.author}`,
-          meta: { likeUuid: entry.uuid },
+          type_code: TypeCode.POST,
+          entity_id: post.id,
+          liked_at: new Date().toISOString(),
+          post: post as unknown as LikeOut["post"],
         });
-      }
+        set({ likedIds: revertIds, likes: revertLikes });
+      });
+    } else {
+      /* ── Optimistic like ── */
+      const optimistic: LikeOut = {
+        uuid: generateUUID(),
+        type_code: TypeCode.POST,
+        entity_id: post.id,
+        liked_at: new Date().toISOString(),
+        post: post as unknown as LikeOut["post"],
+      };
+      nextIds.add(post.id);
+      nextLikes.set(post.id, optimistic);
+      set({ likedIds: nextIds, likes: nextLikes });
 
-      return { likedIds: nextIds, likes: nextLikes };
-    }),
+      vaultApi.toggleLike({ post_id: post.id, group_id: groupId }).then((res) => {
+        if (res.entry) {
+          const current = get();
+          const updatedLikes = new Map(current.likes);
+          updatedLikes.set(post.id, res.entry);
+          set({ likes: updatedLikes });
+        }
+      }).catch(() => {
+        const revert = get();
+        const revertIds = new Set(revert.likedIds);
+        const revertLikes = new Map(revert.likes);
+        revertIds.delete(post.id);
+        revertLikes.delete(post.id);
+        set({ likedIds: revertIds, likes: revertLikes });
+      });
+    }
+  },
 
   isLiked: (postId) => get().likedIds.has(postId),
-  getLikes: () => Array.from(get().likes.values()).reverse(),
-  getLikedPosts: () => Array.from(get().likes.values()).reverse().map((e) => e.post),
+
+  getLikes: () => {
+    const entries = Array.from(get().likes.values());
+    return entries.sort(
+      (a, b) => new Date(b.liked_at).getTime() - new Date(a.liked_at).getTime(),
+    );
+  },
+
+  getLikedPosts: () =>
+    get()
+      .getLikes()
+      .map((e) => e.post as unknown as AnyPost),
 }));

@@ -58,7 +58,7 @@ export const FilesPageContainer = ({
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
 
   /* ── API hooks ── */
-  const filesQuery = useFiles(groupId, isCommunity);
+  const filesQuery = useFiles(groupId, {}, isCommunity);
   const recentQAQuery = useRecentFileQA(groupId, isCommunity);
   const askFileQuestionMut = useAskFileQuestion(groupId);
 
@@ -73,7 +73,7 @@ export const FilesPageContainer = ({
 
   /* ── Resolved data ── */
   const communityFiles: CommunityFile[] = isCommunity
-    ? ((filesQuery.data as CommunityFile[]) ?? [])
+    ? ((filesQuery.data?.items as unknown as CommunityFile[]) ?? [])
     : invitedFiles;
 
   /* ── Derived ── */

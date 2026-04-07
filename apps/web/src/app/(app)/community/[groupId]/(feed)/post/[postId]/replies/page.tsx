@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { XIcon, ArrowLeftIcon, SparklesIcon, PaperclipIcon, MicIcon, FileTextIcon } from "lucide-react";
+import { XIcon, ArrowLeftIcon, SparklesIcon, PaperclipIcon, MicIcon, FileTextIcon, Loader2Icon } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/core/ui/button";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
@@ -17,11 +17,14 @@ import { cn } from "@/lib/utils";
 import { ComposeBox } from "@/components/shared/compose-box";
 import { useFeedContext } from "@/app/(app)/community/_context/feed-context";
 import { getHasNative, getVoiceLangInfo } from "@/components/containers/community/right-panel-shared";
+import { usePostReplies } from "@/hooks/api";
+import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
 const GroupRepliesPage = () => {
   const params = useParams<{ postId: string }>();
   const {
     posts,
+    group,
     basePath,
     handlePreviewSend,
     handleBackToCompose,
@@ -34,6 +37,12 @@ const GroupRepliesPage = () => {
 
   const postId = parseInt(params.postId, 10);
   const activePost = posts.find((p) => p.id === postId) ?? null;
+
+  /* ── Fetch replies on-demand for the selected post ── */
+  const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
+  const repliesQuery = usePostReplies(groupId, postId, {}, !!activePost);
+  const replies = repliesQuery.data?.items ?? activePost?.replies ?? [];
+  const repliesLoading = repliesQuery.isLoading;
 
   if (!activePost) {
     return (
@@ -73,12 +82,17 @@ const GroupRepliesPage = () => {
         {/* ── Scrollable reply list ── */}
         <div className="flex-1 overflow-y-auto px-4 min-h-0">
           <div className="space-y-3 pb-2">
-            {activePost.replies.length === 0 ? (
+            {repliesLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground ml-2">Loading replies…</span>
+              </div>
+            ) : replies.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-3">
                 No replies yet — be the first.
               </p>
             ) : (
-              activePost.replies.map((r, i) => (
+              replies.map((r, i) => (
                 <div key={i} className="flex gap-2">
                   <Avatar className="size-6 shrink-0 mt-0.5">
                     <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">

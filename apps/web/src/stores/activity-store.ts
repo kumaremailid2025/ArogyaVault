@@ -1,43 +1,25 @@
 /**
- * Activity Recorder Store (Zustand) — In-Memory
- * -----------------------------------------------
+ * Activity Recorder Store (Zustand) — API-Backed
+ * ------------------------------------------------
  * Records every meaningful user action in the app.
  * Each record gets a UUID v4, a TypeCode (entity), an ActionCode (verb),
- * and a datetime. When the backend is ready these records will be synced
- * to the database; for now they live in memory.
+ * and a datetime. Records are synced to /vault/activities API.
  *
- * Usage:
- *   const { record } = useActivityStore();
- *   record({ typeCode: TypeCode.POST, actionCode: ActionCode.LIKE, entityId: 42, meta: { ... } });
- *
- *   const activities = useActivityStore((s) => s.activities);
+ * The local store acts as an optimistic write-through cache:
+ * - record() adds to local state instantly for UI feedback
+ * - Fires POST /vault/activities in background
+ * - hydrate() loads full history from API
  */
 
 import { create } from "zustand";
 import { TypeCode, ActionCode } from "@/models/type-codes";
+import type { ActivityOut, ActivityCreateRequest } from "@/models/vault";
+import { vaultApi } from "@/lib/api/vault";
 
 /* ── Types ────────────────────────────────────────────────────────── */
 
-export interface ActivityRecord {
-  /** Unique identifier for this activity entry (UUID v4) */
-  id: string;
-  /** What kind of entity was acted upon */
-  typeCode: TypeCode;
-  /** What action was performed */
-  actionCode: ActionCode;
-  /** ID of the entity (post id, file id, member id, etc.) */
-  entityId: string | number;
-  /** ISO-8601 timestamp */
-  datetime: string;
-  /** ID of the user who performed the action */
-  userId: string | null;
-  /** Optional group / community context */
-  groupId?: string;
-  /** Optional human-readable description (auto-generated) */
-  description?: string;
-  /** Arbitrary extra data (post text snippet, file name, etc.) */
-  meta?: Record<string, unknown>;
-}
+/** Re-export for backward compat — now mirrors API shape */
+export type ActivityRecord = ActivityOut;
 
 /** Payload the caller passes — id, datetime, userId are auto-filled. */
 export interface RecordPayload {
@@ -50,29 +32,31 @@ export interface RecordPayload {
 }
 
 interface ActivityState {
-  activities: ActivityRecord[];
-  /** Record a new activity. Returns the created record. */
-  record: (payload: RecordPayload) => ActivityRecord;
+  activities: ActivityOut[];
+  hydrated: boolean;
+
+  /** Hydrate the store from API response */
+  hydrate: (items: ActivityOut[]) => void;
+  /** Record a new activity (optimistic + API call). Returns the created record. */
+  record: (payload: RecordPayload) => ActivityOut;
   /** Get activities filtered by typeCode */
-  getByType: (typeCode: TypeCode) => ActivityRecord[];
+  getByType: (typeCode: TypeCode) => ActivityOut[];
   /** Get activities filtered by actionCode */
-  getByAction: (actionCode: ActionCode) => ActivityRecord[];
+  getByAction: (actionCode: ActionCode) => ActivityOut[];
   /** Get activities for a specific entity */
-  getByEntity: (entityId: string | number) => ActivityRecord[];
+  getByEntity: (entityId: string | number) => ActivityOut[];
   /** Get the N most recent activities */
-  getRecent: (limit?: number) => ActivityRecord[];
+  getRecent: (limit?: number) => ActivityOut[];
   /** Clear all activities (for testing / reset) */
   clearAll: () => void;
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────── */
 
-/** Generates a UUID v4 using the Web Crypto API (with fallback). */
 const generateUUID = (): string => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback for environments without crypto.randomUUID
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
@@ -84,35 +68,62 @@ const generateUUID = (): string => {
 
 export const useActivityStore = create<ActivityState>((set, get) => ({
   activities: [],
+  hydrated: false,
+
+  hydrate: (items) => {
+    set({ activities: items, hydrated: true });
+  },
 
   record: (payload) => {
-    const entry: ActivityRecord = {
+    // Build local entry matching API shape
+    const entry: ActivityOut = {
       id: generateUUID(),
-      typeCode: payload.typeCode,
-      actionCode: payload.actionCode,
-      entityId: payload.entityId,
+      type_code: payload.typeCode,
+      action_code: payload.actionCode,
+      entity_id: payload.entityId,
       datetime: new Date().toISOString(),
-      userId: null, // Will be populated from auth store by the caller or middleware
-      groupId: payload.groupId,
+      user_id: null,
+      group_id: payload.groupId,
       description: payload.description,
       meta: payload.meta,
     };
 
+    // Optimistic: prepend to local state
     set((state) => ({
       activities: [entry, ...state.activities],
     }));
+
+    // Fire API in background
+    const apiPayload: ActivityCreateRequest = {
+      type_code: payload.typeCode,
+      action_code: payload.actionCode,
+      entity_id: payload.entityId,
+      group_id: payload.groupId,
+      description: payload.description,
+      meta: payload.meta,
+    };
+    vaultApi.recordActivity(apiPayload).then((serverEntry) => {
+      // Replace optimistic entry with server-generated one
+      set((state) => ({
+        activities: state.activities.map((a) =>
+          a.id === entry.id ? serverEntry : a,
+        ),
+      }));
+    }).catch(() => {
+      // Activity recording is fire-and-forget; keep the optimistic entry
+    });
 
     return entry;
   },
 
   getByType: (typeCode) =>
-    get().activities.filter((a) => a.typeCode === typeCode),
+    get().activities.filter((a) => a.type_code === typeCode),
 
   getByAction: (actionCode) =>
-    get().activities.filter((a) => a.actionCode === actionCode),
+    get().activities.filter((a) => a.action_code === actionCode),
 
   getByEntity: (entityId) =>
-    get().activities.filter((a) => a.entityId === entityId),
+    get().activities.filter((a) => a.entity_id === entityId),
 
   getRecent: (limit = 50) =>
     get().activities.slice(0, limit),
@@ -126,5 +137,5 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
  * Record an activity from outside React components (e.g., in callbacks).
  * Same as useActivityStore.getState().record(payload).
  */
-export const recordActivity = (payload: RecordPayload): ActivityRecord =>
+export const recordActivity = (payload: RecordPayload): ActivityOut =>
   useActivityStore.getState().record(payload);

@@ -1,18 +1,35 @@
 /* ─────────────────────────────────────────────────────
    Community & Linked-member data models
+
+   NOTE: These are the local/UI models used by components.
+   The API layer types (AuthorOut, PostListOut, etc.) live
+   in src/lib/api/community.ts. These models add compat
+   helpers and local-only fields.
 ───────────────────────────────────────────────────── */
+
+import type { AuthorOut, Attachment } from "@/lib/api/community";
 
 export type PostReply = {
   id?: number;
+  /** Author display name (string for direct JSX rendering) */
+  author?: string;
+  /** Structured author object from API — use for avatar, role, etc. */
+  authorData?: AuthorOut;
   initials: string;
-  author: string;
+  authorName?: string;
   time: string;
   text: string;
+  attachments?: Attachment[];
+  likes?: number;
+  created_at?: string;
 };
 
 export type CommunityPost = {
   id: number;
   group_id?: string;
+  /** New: structured author from API */
+  authorObj?: AuthorOut;
+  /** Legacy flat fields — kept for backward compat */
   author: string;
   initials: string;
   location: string;
@@ -21,11 +38,18 @@ export type CommunityPost = {
   likes: number;
   replyCount: number;
   tag: string;
-  replies: PostReply[];
+  attachments?: Attachment[];
+  is_pinned?: boolean;
+  created_at?: string;
+  /** Replies are NOT included in list responses — fetched on-demand per post */
+  replies?: PostReply[];
 };
 
 export type LinkedPost = {
   id: number;
+  /** New: structured author from API */
+  authorObj?: AuthorOut;
+  /** Legacy flat fields */
   initials: string;
   author: string;
   time: string;
@@ -33,7 +57,9 @@ export type LinkedPost = {
   likes: number;
   replyCount: number;
   tag: string;
-  replies: PostReply[];
+  attachments?: Attachment[];
+  /** Replies are NOT included in list responses — fetched on-demand per post */
+  replies?: PostReply[];
 };
 
 export type LinkedMember = {
@@ -82,11 +108,8 @@ export type MemberActivity = {
   id: number;
   type: MemberActivityType;
   time: string;
-  /** Primary text — post text, reply text, question text, etc. */
   text: string;
-  /** Optional context — e.g. "replied to Meena R.'s post", "uploaded CBC Report.pdf" */
   context?: string;
-  /** Tag/category for the activity */
   tag?: string;
 };
 
@@ -99,7 +122,6 @@ export type CommunityMember = {
   statusLabel: string;
   joinedAt: string;
   location?: string;
-  /** Aggregate stats */
   stats: {
     posts: number;
     replies: number;
@@ -109,3 +131,71 @@ export type CommunityMember = {
   };
   activities: MemberActivity[];
 };
+
+/* ── Helpers: map API response → local model ───────────────────── */
+
+/**
+ * Convert API PostListOut (with AuthorOut) → flat CommunityPost
+ * for backward compat with components that read post.author, post.initials.
+ */
+export function apiPostToLocal(
+  apiPost: {
+    id: number;
+    group_id: string;
+    author: AuthorOut;
+    location: string;
+    time: string;
+    text: string;
+    likes: number;
+    replyCount: number;
+    tag: string;
+    attachments?: Attachment[];
+    is_pinned?: boolean;
+    created_at?: string;
+  },
+): CommunityPost {
+  return {
+    id: apiPost.id,
+    group_id: apiPost.group_id,
+    authorObj: apiPost.author,
+    author: apiPost.author.name,
+    initials: apiPost.author.initials,
+    location: apiPost.location,
+    time: apiPost.time,
+    text: apiPost.text,
+    likes: apiPost.likes,
+    replyCount: apiPost.replyCount,
+    tag: apiPost.tag,
+    attachments: apiPost.attachments ?? [],
+    is_pinned: apiPost.is_pinned ?? false,
+    created_at: apiPost.created_at ?? undefined,
+  };
+}
+
+/**
+ * Convert API PostReplyOut (with AuthorOut) → flat PostReply
+ */
+export function apiReplyToLocal(
+  apiReply: {
+    id: number;
+    author: AuthorOut;
+    time: string;
+    text: string;
+    attachments?: Attachment[];
+    likes?: number;
+    created_at?: string;
+  },
+): PostReply {
+  return {
+    id: apiReply.id,
+    author: apiReply.author.name,
+    authorData: apiReply.author,
+    initials: apiReply.author.initials,
+    authorName: apiReply.author.name,
+    time: apiReply.time,
+    text: apiReply.text,
+    attachments: apiReply.attachments ?? [],
+    likes: apiReply.likes ?? 0,
+    created_at: apiReply.created_at ?? undefined,
+  };
+}

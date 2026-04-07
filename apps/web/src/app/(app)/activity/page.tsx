@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
+import { PageBanner } from "@/components/shared/page-banner";
 import { useActivityStore } from "@/stores";
 import {
   TypeCode, ActionCode,
@@ -102,21 +103,23 @@ const ActivityPage = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-border lg:px-6">
-        <Button asChild variant="ghost" size="icon-sm">
-          <Link href="/community">
-            <ArrowLeftIcon className="size-4" />
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2">
-          <ActivityIcon className="size-4 text-primary" />
-          <h1 className="text-base font-semibold">Activity</h1>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {activities.length} {activities.length === 1 ? "action" : "actions"}
-        </span>
-      </div>
+      {/* Banner */}
+      <PageBanner
+        icon={
+          <div className="flex size-7 items-center justify-center rounded-full bg-white/20">
+            <ActivityIcon className="size-4" />
+          </div>
+        }
+        title="Activity"
+        badges={[
+          { label: `${activities.length} ${activities.length === 1 ? "action" : "actions"}`, icon: <ActivityIcon className="size-2.5" /> },
+        ]}
+        description={
+          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+            A chronological record of every action you have taken across the app.
+          </p>
+        }
+      />
 
       {/* Filter bar */}
       <div className="shrink-0 flex items-center gap-1.5 px-5 py-2.5 border-b border-border/60 overflow-x-auto lg:px-6">

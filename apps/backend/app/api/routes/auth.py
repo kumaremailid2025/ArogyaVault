@@ -6,25 +6,36 @@ Endpoints:
   POST /auth/send-otp            — Send OTP (hardcoded 121212 for dev)
   POST /auth/verify-otp          — Verify OTP → set httpOnly cookies + return user
   POST /auth/resend-otp          — Resend OTP (hardcoded 123123 for dev)
-  POST /auth/send-invite         — Invite an unregistered number
+  POST /auth/send-invite         — [DEPRECATED] Use POST /invites instead
   POST /auth/refresh             — Refresh access token (reads refresh_token cookie)
   POST /auth/logout              — Revoke session in Redis + clear cookies
   GET  /auth/me                  — Return current user from Bearer token
+  POST /auth/heartbeat           — Lightweight session liveness check
 
 Security:
   - access_token + refresh_token are httpOnly cookies (JS cannot read them)
   - JWT access_token includes user claims (sub, phone, name, role, created_at)
   - Refresh tokens tracked in Redis with TTL (auto-cleanup)
   - Token rotation on refresh (old token revoked, new one issued)
+
+Platform-aware:
+  - X-Platform header parsed on all endpoints (web/ios/android/api)
+  - Mobile clients may use Bearer token directly (no cookie proxy)
 """
 
-import re
 import uuid
 from datetime import datetime, timezone, timedelta
 
 import jwt
 from fastapi import APIRouter, HTTPException, Response, Request
 
+from app.core.constants import (
+    ACCESS_TOKEN_COOKIE,
+    REFRESH_TOKEN_COOKIE,
+    SEND_OTP_CODE,
+    RESEND_OTP_CODE,
+)
+from app.core.crypto import validate_phone
 from app.api.schemas.auth import (
     CheckRegistrationRequest,
     CheckRegistrationResponse,
@@ -45,34 +56,17 @@ from app.api.schemas.auth import (
 from app.api.store import (
     INVITE_STORE,
     OTP_STORE,
-    REGISTERED_USERS,
-    RESEND_OTP_CODE,
-    SEND_OTP_CODE,
     USERS_BY_ID,
+    is_phone_registered,
+    lookup_user_by_phone,
 )
+from app.core.crypto import phone_hash
 from app.core.config import get_settings
 from app.core.redis import session_manager
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# ── Constants ────────────────────────────────────────────────────────────────
-
-PHONE_REGEX = re.compile(r"^\+91[6-9]\d{9}$")
-
-# Cookie names — must match Next.js middleware + proxy expectations
-ACCESS_TOKEN_COOKIE = "access_token"
-REFRESH_TOKEN_COOKIE = "refresh_token"
-
 # ── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _validate_phone(phone: str) -> None:
-    """Raise 422 if phone format is invalid."""
-    if not PHONE_REGEX.match(phone):
-        raise HTTPException(
-            status_code=422,
-            detail="Invalid phone number. Expected format: +91XXXXXXXXXX",
-        )
 
 
 def _create_access_token(user: dict) -> tuple[str, int]:
@@ -89,7 +83,7 @@ def _create_access_token(user: dict) -> tuple[str, int]:
 
     payload = {
         "sub": user["id"],
-        "phone": user["phone"],
+        "phone": user.get("phone_masked", "****"),  # masked — no plaintext in JWT
         "name": user.get("name"),
         "role": user.get("role", "patient"),
         "created_at": user.get("created_at", ""),
@@ -220,9 +214,9 @@ def _clear_auth_cookies(response: Response) -> None:
     response_model=CheckRegistrationResponse,
 )
 async def check_registration(body: CheckRegistrationRequest):
-    _validate_phone(body.phone)
-    registered = body.phone in REGISTERED_USERS
-    return CheckRegistrationResponse(registered=registered, phone=body.phone)
+    validate_phone(body.phone)
+    registered = is_phone_registered(body.phone)
+    return CheckRegistrationResponse(registered=registered)
 
 
 # ── 2. Send OTP ─────────────────────────────────────────────────────────────
@@ -235,21 +229,23 @@ async def check_registration(body: CheckRegistrationRequest):
     responses={404: {"model": ErrorResponse}},
 )
 async def send_otp(body: SendOtpRequest):
-    _validate_phone(body.phone)
+    validate_phone(body.phone)
 
-    if body.phone not in REGISTERED_USERS:
+    if not is_phone_registered(body.phone):
         raise HTTPException(
             status_code=404,
             detail="Phone number is not registered. Please register first.",
         )
 
-    OTP_STORE[body.phone] = {
+    # OTP keyed by phone hash — no plaintext phone in the store
+    ph = phone_hash(body.phone)
+    OTP_STORE[ph] = {
         "code": SEND_OTP_CODE,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "attempts": 0,
     }
 
-    return SendOtpResponse(message="OTP sent successfully", phone=body.phone, expires_in=300)
+    return SendOtpResponse(message="OTP sent successfully", expires_in=300)
 
 
 # ── 3. Verify OTP ───────────────────────────────────────────────────────────
@@ -262,14 +258,16 @@ async def send_otp(body: SendOtpRequest):
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
 async def verify_otp(body: VerifyOtpRequest, response: Response):
-    _validate_phone(body.phone)
+    validate_phone(body.phone)
 
-    otp_entry = OTP_STORE.get(body.phone)
+    # All OTP lookups use the phone hash — no plaintext phone in the store
+    ph = phone_hash(body.phone)
+    otp_entry = OTP_STORE.get(ph)
 
     if otp_entry:
         # ── Normal flow: OTP was sent and is in-memory ──
         if otp_entry["attempts"] >= 5:
-            del OTP_STORE[body.phone]
+            del OTP_STORE[ph]
             raise HTTPException(
                 status_code=400,
                 detail="Too many failed attempts. Please request a new OTP.",
@@ -284,7 +282,7 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
                 detail=f"Invalid OTP. {remaining} attempt(s) remaining.",
             )
 
-        del OTP_STORE[body.phone]
+        del OTP_STORE[ph]
     else:
         # ── Dev fallback: OTP_STORE was cleared (e.g. server restart with --reload).
         #    Accept the hardcoded dev OTP codes so the sign-in flow isn't broken. ──
@@ -294,21 +292,27 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
                 detail="Invalid OTP. Please try again or request a new OTP.",
             )
 
-    user_data = REGISTERED_USERS.get(body.phone)
+    user_data = lookup_user_by_phone(body.phone)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    user = UserOut(**user_data)
+    # User record has phone_masked for safe display; use that in JWT
+    user = UserOut(
+        id=user_data["id"],
+        name=user_data.get("name"),
+        role=user_data.get("role", "patient"),
+        created_at=user_data.get("created_at", ""),
+    )
 
     # ── Generate JWT tokens ────────────────────────────────────────────
     access_token, access_expires = _create_access_token(user_data)
-    refresh_token, refresh_expires, jti = _create_refresh_token(user.id, user.phone)
+    refresh_token, refresh_expires, jti = _create_refresh_token(user.id, user_data["phone_masked"])
 
     # ── Store refresh session in Redis ─────────────────────────────────
     await session_manager.store_session(
         jti=jti,
         user_id=user.id,
-        phone=user.phone,
+        phone=user_data.get("phone_masked", "****"),
         ttl_seconds=refresh_expires,
     )
 
@@ -342,12 +346,13 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
     responses={404: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
 )
 async def resend_otp(body: ResendOtpRequest):
-    _validate_phone(body.phone)
+    validate_phone(body.phone)
 
-    if body.phone not in REGISTERED_USERS:
+    if not is_phone_registered(body.phone):
         raise HTTPException(status_code=404, detail="Phone number is not registered.")
 
-    existing = OTP_STORE.get(body.phone)
+    ph = phone_hash(body.phone)
+    existing = OTP_STORE.get(ph)
     if existing:
         created = datetime.fromisoformat(existing["created_at"])
         elapsed = (datetime.now(timezone.utc) - created).total_seconds()
@@ -358,39 +363,52 @@ async def resend_otp(body: ResendOtpRequest):
                 detail=f"Please wait {remaining} seconds before requesting a new OTP.",
             )
 
-    OTP_STORE[body.phone] = {
+    OTP_STORE[ph] = {
         "code": RESEND_OTP_CODE,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "attempts": 0,
     }
 
-    return ResendOtpResponse(message="OTP resent successfully", phone=body.phone, expires_in=300)
+    return ResendOtpResponse(message="OTP resent successfully", expires_in=300)
 
 
-# ── 5. Send Invite ──────────────────────────────────────────────────────────
+# ── 5. Send Invite (LEGACY — use POST /invites instead) ─────────────────────
 
 
 @router.post(
     "/send-invite",
-    summary="Invite an unregistered user to ArogyaVault",
+    summary="[DEPRECATED] Invite an unregistered user — use POST /invites instead",
     response_model=SendInviteResponse,
     responses={409: {"model": ErrorResponse}},
+    deprecated=True,
 )
 async def send_invite(body: SendInviteRequest):
-    _validate_phone(body.phone)
+    """
+    Legacy invite endpoint kept for backward compatibility.
 
-    if body.phone in REGISTERED_USERS:
+    New clients (web v0.3+, mobile) should use POST /invites which provides:
+      - AES-256-GCM encrypted phone storage
+      - Full invite lifecycle (accept/reject/revoke)
+      - Platform-aware responses
+      - Proper authentication via CurrentUser dependency
+
+    This endpoint will be removed in v1.0.
+    """
+    validate_phone(body.phone)
+
+    if is_phone_registered(body.phone):
         raise HTTPException(
             status_code=409,
             detail="This phone number is already registered on ArogyaVault.",
         )
 
-    INVITE_STORE[body.phone] = {
+    ph = phone_hash(body.phone)
+    INVITE_STORE[ph] = {
         "invited_by": body.invited_by,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    return SendInviteResponse(message="Invite sent successfully", phone=body.phone)
+    return SendInviteResponse(message="Invite sent successfully")
 
 
 # ── 6. Refresh Token ────────────────────────────────────────────────────────
@@ -542,12 +560,12 @@ async def get_me(request: Request):
     token = _get_bearer_token(request)
     payload = _decode_token(token, expected_type="access")
 
-    # Try to get fresh data from user store
+    # Try to get fresh data from user store (phone is always masked)
     user = USERS_BY_ID.get(payload["sub"])
     if user:
         return MeResponse(
             id=user["id"],
-            phone=user["phone"],
+            phone_masked=user.get("phone_masked", "****"),
             name=user.get("name"),
             role=user.get("role", "patient"),
             created_at=user.get("created_at", ""),
@@ -556,7 +574,7 @@ async def get_me(request: Request):
     # Fallback: use JWT claims (always available)
     return MeResponse(
         id=payload["sub"],
-        phone=payload["phone"],
+        phone_masked=payload.get("phone", "****"),
         name=payload.get("name"),
         role=payload.get("role", "patient"),
         created_at=payload.get("created_at", ""),

@@ -53,8 +53,8 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
 
-  /* ── API hooks ── */
-  const postsQuery = usePosts(groupId, isCommunity);
+  /* ── API hooks (enabled for ALL groups — community + invited) ── */
+  const postsQuery = usePosts(groupId, {});
   const createPostMut = useCreatePost(groupId);
   const submitReplyMut = useSubmitReply(groupId);
   const toggleLikeMut = useToggleLike(groupId);
@@ -66,20 +66,14 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
   const [selectedVersion, setSelectedVersion] = React.useState<0 | 1 | 2>(1);
   const [pendingReply, setPendingReply] = React.useState<ComposeSubmitPayload | null>(null);
 
-  /* Invited-only local posts */
-  const [invitedPosts, setInvitedPosts] = React.useState<(CommunityPost | LinkedPost)[]>(
-    member?.posts ?? [],
-  );
-  const nextPostIdRef = React.useRef(isCommunity ? 100 : (member?.posts.length ?? 0) + 100);
+  const nextPostIdRef = React.useRef(100);
 
-  /* ── Resolved data ── */
-  const posts: (CommunityPost | LinkedPost)[] = isCommunity
-    ? (postsQuery.data ?? [])
-    : invitedPosts;
+  /* ── Resolved data (API-backed for all groups) ── */
+  const posts: (CommunityPost | LinkedPost)[] = postsQuery.data?.items ?? [];
 
   /* ── Summary query (on-demand) ── */
   const summaryPostId = panelState.view === "summary" ? panelState.postId : null;
-  const summaryQuery = usePostSummary(groupId, summaryPostId, isCommunity && summaryPostId !== null);
+  const summaryQuery = usePostSummary(groupId, summaryPostId, summaryPostId !== null);
 
   /* ── Derived ── */
   const activePostId =
@@ -219,22 +213,10 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
       /* Store handles activity recording internally */
       storeLike(post, groupId);
 
-      if (isCommunity) {
-        toggleLikeMut.mutate(postId);
-        return;
-      }
-
-      /* Invited variant — also update local like count */
-      const wasLiked = likedPosts.has(postId);
-      setInvitedPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const delta = wasLiked ? -1 : 1;
-          return { ...p, likes: p.likes + delta };
-        }),
-      );
+      /* API-backed for all groups */
+      toggleLikeMut.mutate(postId);
     },
-    [isCommunity, posts, likedPosts, storeLike, toggleLikeMut, groupId],
+    [posts, storeLike, toggleLikeMut, groupId],
   );
 
   const handleSubmitReply = React.useCallback(() => {
@@ -244,85 +226,36 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
       const versions: string[] = [original, ...rephrasings];
       const text = versions[selectedVersion];
 
-      recordActivity({
-        typeCode: TypeCode.REPLY,
-        actionCode: ActionCode.REPLY_SUBMIT,
-        entityId: postId,
-        groupId,
-        meta: { textSnippet: text.slice(0, 100), wasRephrased: selectedVersion !== 0 },
-      });
-
-      /* Record in replied store */
+      /* Record in replied store — backend auto-records REPLY_SUBMIT activity */
       const repliedPost = posts.find((p) => p.id === postId);
       if (repliedPost) storeReply(repliedPost, text, groupId);
 
-      if (isCommunity) {
-        submitReplyMut.mutate({ postId, text });
-      } else {
-        /* Invited variant — update local state */
-        setInvitedPosts((ps) =>
-          ps.map((p) =>
-            p.id === postId
-              ? {
-                  ...p,
-                  replyCount: p.replyCount + 1,
-                  replies: [
-                    ...p.replies,
-                    { initials: "KU", author: "You", time: "Just now", text },
-                  ],
-                }
-              : p,
-          ),
-        );
-      }
+      /* API-backed for all groups */
+      submitReplyMut.mutate({ postId, text });
 
       setPendingReply(null);
       setSelectedVersion(0);
       return { view: "replies", postId };
     });
-  }, [selectedVersion, isCommunity, submitReplyMut, posts, storeReply]);
+  }, [selectedVersion, submitReplyMut, posts, storeReply, groupId]);
 
   const handlePost = React.useCallback(
     (payload: SmartInputSubmitPayload) => {
       const trimmed = payload.text.trim();
       if (!trimmed) return;
 
-      if (isCommunity) {
-        createPostMut.mutate({ text: trimmed, tag: "Discussion" });
-        recordActivity({
-          typeCode: TypeCode.POST,
-          actionCode: ActionCode.POST_CREATE,
-          entityId: groupId,
-          groupId,
-          meta: { textSnippet: trimmed.slice(0, 100) },
-        });
-        setComposeText("");
-        return;
-      }
-
-      /* Invited variant — create local post */
-      const newPost = {
-        id: nextPostIdRef.current++,
-        initials: "KU",
-        author: "You",
-        time: "Just now",
-        text: trimmed,
-        likes: 0,
-        replyCount: 0,
-        tag: "Update",
-        replies: [],
-      } as LinkedPost;
-      setInvitedPosts((prev) => [newPost, ...prev]);
+      /* API-backed for all groups */
+      createPostMut.mutate({ text: trimmed, tag: "Discussion" });
       recordActivity({
         typeCode: TypeCode.POST,
         actionCode: ActionCode.POST_CREATE,
-        entityId: newPost.id,
+        entityId: groupId,
         groupId,
         meta: { textSnippet: trimmed.slice(0, 100) },
       });
       setComposeText("");
     },
-    [isCommunity, createPostMut, groupId],
+    [createPostMut, groupId],
   );
 
   /* ── Derive replyPreviewState for context ── */

@@ -28,6 +28,20 @@ export interface ApiError {
   detail: string;
 }
 
+/**
+ * Platform identifier sent with every API request.
+ *
+ * This tells the backend which client is calling so it can adapt
+ * response shapes, pagination defaults, and push behaviour.
+ *
+ * Values: "web" | "ios" | "android" | "api"
+ *
+ * Mobile apps (React Native / Capacitor) should set this to
+ * "ios" or "android" in their own client setup. The web app
+ * always sends "web".
+ */
+const PLATFORM = "web";
+
 /* ── Client ───────────────────────────────────────────────────────── */
 
 export const apiClient = async <T>(
@@ -39,6 +53,7 @@ export const apiClient = async <T>(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-Platform": PLATFORM,
     ...(options.headers as Record<string, string>),
   };
 
