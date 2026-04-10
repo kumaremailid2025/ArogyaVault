@@ -30,6 +30,22 @@ import { useLinkedMembers } from "@/data/linked-member-data";
 import type { CommunityTab, CommunityVariant, BannerConfig } from "./types";
 import { GROUP_SLUG_TO_UUID } from "./types";
 
+/** UUID regex — dynamic invite groups use their UUID directly as the slug. */
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolve a group slug (or UUID) to the UUID segment we use in URLs.
+ * - Static seed slugs ("ravi") → UUID via GROUP_SLUG_TO_UUID.
+ * - Dynamic invite groups already pass in their UUID → return as-is.
+ */
+const slugToRouteId = (group: string): string => {
+  const mapped = GROUP_SLUG_TO_UUID[group];
+  if (mapped) return mapped;
+  if (UUID_REGEX.test(group)) return group;
+  return "";
+};
+
 /* ── Lazy-loaded invite modal ─────────────────────────────────────── */
 
 const InviteModal = dynamic(
@@ -43,8 +59,10 @@ const InviteModal = dynamic(
 /* ── Derive active tab from pathname ──────────────────────────────── */
 
 const deriveTab = (pathname: string): CommunityTab => {
-  if (pathname.endsWith("/files")) return "files";
-  if (pathname.endsWith("/members")) return "members";
+  // Match whether the path is the tab itself (".../members") OR a
+  // sub-route under it (".../members/123"). Same for files.
+  if (/\/files(\/|$)/.test(pathname)) return "files";
+  if (/\/members(\/|$)/.test(pathname)) return "members";
   return "feed";
 };
 
@@ -111,7 +129,7 @@ const buildInvitedBanner = (
     };
   }
 
-  const groupUuid = GROUP_SLUG_TO_UUID[group] ?? "";
+  const groupUuid = slugToRouteId(group);
   return {
     icon: (
       <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
@@ -186,6 +204,10 @@ export const CommunityShell = ({
   }, [variant, group, tab, LINKED_MEMBER_DATA]);
 
   const member = variant === "invited" ? LINKED_MEMBER_DATA[group] : null;
+  // Resolve the static slug → UUID so the invite modal receives a real
+  // group id it can pass to /invites/lookup for the duplicate-member
+  // check. Dynamic invite groups already flow through as UUIDs.
+  const invitedGroupId = variant === "invited" ? slugToRouteId(group) : "";
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -197,7 +219,12 @@ export const CommunityShell = ({
       <InviteModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        {...(member ? { groupContext: `${member.name}'s group` } : {})}
+        {...(member && invitedGroupId
+          ? {
+              groupContext: `${member.name}'s group`,
+              groupId: invitedGroupId,
+            }
+          : {})}
       />
     </div>
   );

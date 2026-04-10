@@ -302,19 +302,45 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-5 pb-4 lg:px-6">
             <div className="space-y-3 pt-3">
-              {posts.map((p) => (
-                <PostCard
-                  key={p.id}
-                  post={p}
-                  isActive={urlPostId === p.id}
-                  isLiked={likedPosts.has(p.id)}
-                  isFavorited={favoriteIds.has(p.id)}
-                  onLike={toggleLike}
-                  onReplies={openReplies}
-                  onSummary={openSummary}
-                  onFavorite={toggleFavorite}
-                />
-              ))}
+              {posts.length === 0 && !isCommunity ? (
+                <div className="flex flex-col items-center justify-center text-center py-12 px-4 max-w-md mx-auto">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 mb-3">
+                    <span className="text-lg font-bold text-primary">
+                      {member?.initials ?? ""}
+                    </span>
+                  </div>
+                  <p className="text-base font-semibold mb-1">
+                    Say hi to {member?.name.split(" ")[0] ?? "your group"} 👋
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-snug mb-4">
+                    This is your shared space. Share a report, ask a question,
+                    or send a quick message using the box below — {member?.name.split(" ")[0] ?? "they"} will see it instantly.
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
+                    <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-left">
+                      <p className="text-xs font-semibold text-primary mb-0.5">Tip</p>
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        Use the attach button in the compose box to share a
+                        lab report, prescription, or any PDF with the group.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                posts.map((p) => (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    isActive={urlPostId === p.id}
+                    isLiked={likedPosts.has(p.id)}
+                    isFavorited={favoriteIds.has(p.id)}
+                    onLike={toggleLike}
+                    onReplies={openReplies}
+                    onSummary={openSummary}
+                    onFavorite={toggleFavorite}
+                  />
+                ))
+              )}
             </div>
           </div>
 

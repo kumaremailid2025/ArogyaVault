@@ -118,6 +118,53 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
   const { HEALTH_SCORE, VAULT_FILES, HEALTH_ALERTS } = useVaultHealth();
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
+  /* ── Fresh-user empty state ────────────────────────────────────
+     If there's no vault data, no insights, and no capabilities yet,
+     show a clean welcome screen encouraging the user to ask anything
+     or add their first health record. */
+  const isEmpty =
+    VAULT_FILES.length === 0 &&
+    AI_CONTEXT_CARDS.length === 0 &&
+    AI_CAPABILITIES.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="max-w-2xl mx-auto px-1 pt-10 pb-6 flex flex-col items-center text-center">
+        <div className="size-14 rounded-full bg-primary flex items-center justify-center mb-4">
+          <BrainCircuitIcon className="size-7 text-primary-foreground" />
+        </div>
+        <h2 className="text-xl font-bold mb-1.5">Welcome to ArogyaAI</h2>
+        <p className="text-sm text-muted-foreground mb-5 max-w-md leading-relaxed">
+          Your personal health assistant. Ask me anything about symptoms,
+          medications, lab reports, or general wellbeing — or start by
+          adding a report to your vault.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
+          {[
+            "What can you help me with?",
+            "How do I add my first report?",
+            "Give me a general health tip",
+            "How should I track my vitals?",
+          ].map((q) => (
+            <button
+              key={q}
+              onClick={() => onAsk(q)}
+              className="group text-left rounded-xl border border-border px-3 py-2.5 text-xs text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground transition-colors cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="truncate">{q}</span>
+              <ArrowRightIcon className="size-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-6 text-[11px] text-muted-foreground/80">
+          Type your question in the box below to get started.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-1 space-y-6">
       {/* Greeting + health score row */}
@@ -136,7 +183,7 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
             </p>
           </div>
         </div>
-        <MiniScoreRing score={HEALTH_SCORE.overall} />
+        <MiniScoreRing score={HEALTH_SCORE?.overall ?? 0} />
       </div>
 
       {/* Health context cards — what AI sees in your data */}

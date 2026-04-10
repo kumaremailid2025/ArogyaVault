@@ -50,10 +50,19 @@ export const useVerifyOtp = () => {
   const setUser = useAuthStore((s) => s.setUser);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: authApi.verifyOtp,
     onSuccess: (data) => {
+      // Wipe any cached queries from a previous session before setting
+      // the new user. Without this, if a prior user didn't cleanly log
+      // out (e.g. cookies expired, tab stayed open, the user switched
+      // accounts), React Query could serve the old user's cached
+      // bootstrap bundle — leaking sidebar entries and mis-labelling
+      // dynamic groups with the wrong viewer perspective.
+      queryClient.clear();
+
       // Store only user profile — tokens arrived as httpOnly cookies
       setUser(data.user);
 

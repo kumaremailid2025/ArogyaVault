@@ -14,8 +14,8 @@ interface MembersContainerProps {
   title: string;
   memberCount: number | string;
   members: CommunityMember[];
-  selectedMemberId: number | null;
-  onSelectMember: (memberId: number) => void;
+  selectedMemberId: string | null;
+  onSelectMember: (memberId: string) => void;
 }
 
 /* ── Status filter → member.status mapping ─────────────────────── */

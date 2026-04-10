@@ -8,7 +8,7 @@
 
 import { useParams, notFound } from "next/navigation";
 import { MembersLayoutContent } from "@/app/(app)/community/_components/members-layout-content";
-import { GROUP_UUID_MAP } from "@/components/containers/community/types";
+import { resolveGroupSlug } from "@/components/containers/community/types";
 
 interface MembersLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface MembersLayoutProps {
 
 export default function GroupMembersLayout({ children }: MembersLayoutProps) {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = resolveGroupSlug(params.groupId);
 
   if (!slug) {
     notFound();

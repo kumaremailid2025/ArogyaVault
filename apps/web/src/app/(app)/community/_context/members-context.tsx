@@ -15,8 +15,8 @@ export interface MembersContextValue {
   group: string;
   basePath: string; // e.g. "/community" or "/community/<groupId>"
   members: CommunityMember[];
-  selectedMemberId: number | null;
-  setSelectedMemberId: (id: number | null) => void;
+  selectedMemberId: string | null;
+  setSelectedMemberId: (id: string | null) => void;
   memberCount: string | number;
 }
 

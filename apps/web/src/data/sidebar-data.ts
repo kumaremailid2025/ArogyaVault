@@ -22,6 +22,13 @@ export interface LinkedGroup {
   rel: string;
   sub: string;
   count: number;
+  /**
+   * Optional pre-computed initials. The backend sets this for dynamic
+   * invite groups where the `name` may be a masked phone number (e.g.
+   * "+91****5592" → "92") and naive first-letter extraction wouldn't
+   * produce a sensible avatar label.
+   */
+  initials?: string;
 }
 
 export interface InviteGroup {

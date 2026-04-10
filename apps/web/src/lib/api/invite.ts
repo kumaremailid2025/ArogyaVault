@@ -51,6 +51,7 @@ export interface InviteListParams {
   status?: InviteStatus;
   page?: number;
   page_size?: number;
+  [key: string]: unknown;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -118,12 +119,25 @@ export interface InviteCountsOut {
 /* ── Lookup phone (invite modal — verify against store) ── */
 export interface LookupPhoneData {
   phone: string;
+  /**
+   * Optional group id (UUID or legacy slug) the invite modal is scoped
+   * to. When supplied, the response will set already_member=true if the
+   * looked-up phone is already a member of that group.
+   */
+  group_id?: string;
 }
 
 export interface LookupPhoneResponse {
   registered: boolean;
   phone_masked: string;
   name: string | null;
+  /**
+   * True when the phone is already a member of the group_id passed in
+   * the request. The invite modal uses this flag to short-circuit into
+   * an "already existing in the same group" state with only a Cancel
+   * button.
+   */
+  already_member: boolean;
 }
 
 /* ── Register new user via invite OTP flow ── */
@@ -131,6 +145,14 @@ export interface RegisterInviteeData {
   phone: string;
   code: string;
   name?: string;
+  /**
+   * "app"        — register only, no group
+   * "group"      — register + create a brand-new linked group
+   * "<groupId>"  — register + add the invitee to an existing group
+   */
+  invite_level?: string;
+  relation?: InviteRelation;
+  access_scope?: InviteAccessScope;
 }
 
 export interface RegisterInviteeResponse {
@@ -138,6 +160,7 @@ export interface RegisterInviteeResponse {
   user_id: string;
   phone_masked: string;
   name: string;
+  group_id: string | null;
   message: string;
 }
 

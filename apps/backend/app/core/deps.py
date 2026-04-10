@@ -2,19 +2,24 @@
 Dependency injection utilities for FastAPI routes.
 
 Centralised dependencies ensure consistent behaviour across all endpoints.
-When auth middleware is wired, `get_current_user` will decode JWTs.
+`get_current_user` decodes the JWT forwarded by the Next.js proxy (or a
+mobile client's raw Authorization header) and returns the real user record.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from fastapi import Request
 
-from app.api.store import USERS_BY_ID
+import jwt
+from fastapi import HTTPException, Request
+
+from app.api.store import USERS_BY_ID, lookup_user_by_phone, register_new_user
+from app.core.config import get_settings
 from app.core.constants import (
     MOBILE_ACTIVITY_PAGE_SIZE,
     MOBILE_FEED_LIMIT,
     MOBILE_PAGE_SIZE,
+    SEED_OWNER_USER_ID,
     WEB_ACTIVITY_PAGE_SIZE,
     WEB_FEED_LIMIT,
     WEB_PAGE_SIZE,
@@ -22,28 +27,93 @@ from app.core.constants import (
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  CURRENT USER — placeholder until real JWT auth is wired
+#  CURRENT USER — decode the JWT access token and return the real user
 # ══════════════════════════════════════════════════════════════════════════════
 
-_FALLBACK_USER_ID = "usr_001"
+# Legacy fallback, only used when FORCE_FALLBACK_USER=1 is explicitly set
+# (handy for local debugging without a running auth flow). Points at the
+# seed owner (Kumar).
+_FALLBACK_USER_ID = SEED_OWNER_USER_ID
+
+
+def _decode_access_token(token: str) -> dict:
+    """Decode a JWT access token. Raises HTTPException on any failure."""
+    settings = get_settings()
+    try:
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    if payload.get("type") != "access":
+        raise HTTPException(
+            status_code=401,
+            detail=f"Expected access token, got {payload.get('type')}.",
+        )
+    return payload
 
 
 async def get_current_user(request: Request) -> dict:
     """
-    Return the authenticated user dict.
+    Return the authenticated user dict by decoding the Bearer access token.
 
-    Currently returns the hardcoded fallback user. Once JWT auth middleware
-    is wired, this will decode the token from the Authorization header
-    (forwarded by the Next.js proxy) and return the real user.
+    The Next.js proxy forwards the httpOnly `access_token` cookie as an
+    `Authorization: Bearer <jwt>` header; native mobile clients set the
+    header directly. We decode it here and look up the user by `sub`.
     """
-    # Future: token = request.headers.get("Authorization", "").removeprefix("Bearer ")
-    # decoded = jwt.decode(token, ...)
-    # user = USERS_BY_ID[decoded["sub"]]
-    user = USERS_BY_ID.get(_FALLBACK_USER_ID)
-    if not user:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
+    import os
+
+    auth_header = request.headers.get("Authorization", "") or ""
+
+    # Only fall back to the seed owner when FORCE_FALLBACK_USER=1.
+    if not auth_header.startswith("Bearer "):
+        if os.getenv("FORCE_FALLBACK_USER") == "1":
+            user = USERS_BY_ID.get(_FALLBACK_USER_ID)
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found")
+            return user
+        raise HTTPException(
+            status_code=401,
+            detail="Missing or invalid Authorization header.",
+        )
+
+    token = auth_header[len("Bearer "):].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Empty bearer token.")
+
+    payload = _decode_access_token(token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token missing subject.")
+
+    user = USERS_BY_ID.get(user_id)
+    if user:
+        return user
+
+    # ── Dev-mode rehydrate ───────────────────────────────────────────
+    # The in-memory store is wiped on every backend restart, so any
+    # JWT issued before the restart points to a user id that no longer
+    # exists. Rather than forcing a full re-sign-in (which in turn
+    # requires redoing the invite flow for invitees), we auto-rehydrate
+    # the user from the `phone` claim in the JWT: it's still signed by
+    # our secret, so trusting it in dev is fine.
+    phone = (payload.get("phone") or "").strip()
+    if phone:
+        existing = lookup_user_by_phone(phone)
+        if existing:
+            return existing
+        # Auto-register a minimal user record so the session keeps
+        # working. Invite-group linkage (inviter_id / invited_by) is
+        # intentionally lost — the invite group was in-memory too and
+        # is gone after the restart anyway.
+        return register_new_user(phone, name=None, invited_by=None)
+
+    raise HTTPException(status_code=401, detail="User not found")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

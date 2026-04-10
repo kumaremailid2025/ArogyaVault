@@ -55,11 +55,15 @@ export interface SendOtpResponse {
 
 /**
  * User profile returned after OTP verification.
- * Uses UUID `id` for identification — no phone field.
- * Phone is only exposed as `phone_masked` on the /auth/me endpoint.
+ * Uses UUID `id` for identification — no plaintext phone field.
+ * Includes `phone_masked` (e.g. "+91****5592") so the header can show
+ * the user's identity immediately after sign-in without an extra
+ * /auth/me round-trip. This is critical for newly registered invitees
+ * who have no name yet and must be shown by their masked phone.
  */
 export interface UserOut {
   id: string;
+  phone_masked: string;
   name: string | null;
   role: string;
   created_at: string;

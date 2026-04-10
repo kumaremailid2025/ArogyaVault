@@ -18,7 +18,7 @@ export type PanelState =
   | { view: "reply-preview"; postId: number; original: string; rephrasings: [string, string] }
   | { view: "file-detail"; fileId: number }
   | { view: "file-qa"; fileId: number }
-  | { view: "member-detail"; memberId: number };
+  | { view: "member-detail"; memberId: string };
 
 export interface Badge {
   label: string;
@@ -56,3 +56,21 @@ export const GROUP_SLUG_TO_UUID: Record<string, string> = Object.fromEntries(
 );
 
 export const INVITED_SLUGS = new Set(["ravi", "sharma", "priya"]);
+
+/**
+ * Resolve a route `groupId` param to its community slug.
+ *
+ * Static seeded groups use short slugs ("ravi", "sharma", ...) that are
+ * mapped via `GROUP_UUID_MAP`. Dynamically-created invite groups use the
+ * UUID itself as their slug, so when the `groupId` is already a UUID but
+ * isn't in the static map, we return it as-is.
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const resolveGroupSlug = (groupId: string | undefined): string | null => {
+  if (!groupId) return null;
+  const staticSlug = GROUP_UUID_MAP[groupId];
+  if (staticSlug) return staticSlug;
+  if (UUID_REGEX.test(groupId)) return groupId;
+  return null;
+};

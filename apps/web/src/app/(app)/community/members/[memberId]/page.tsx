@@ -28,7 +28,7 @@ interface MemberDetailPageProps {
 
 export default function MemberDetailPage({ params }: MemberDetailPageProps) {
   const { members, basePath } = useMembersContext();
-  const memberId = parseInt(params.memberId, 10);
+  const memberId = params.memberId;
   const activeMember = members.find((m) => m.id === memberId);
 
   if (!activeMember) {

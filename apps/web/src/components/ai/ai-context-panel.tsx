@@ -80,6 +80,72 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
   const { AI_CAPABILITIES, AI_CONTEXT_CARDS, SMART_SUGGESTIONS } = useAiContext();
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
+  const overallScore = HEALTH_SCORE?.overall ?? 0;
+  const breakdown = HEALTH_SCORE?.breakdown ?? [];
+
+  /* ── Fresh-user empty state ──────────────────────────────────── */
+  const isEmpty =
+    VAULT_FILES.length === 0 &&
+    AI_CONTEXT_CARDS.length === 0 &&
+    AI_CAPABILITIES.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
+            <SparklesIcon className="size-5 text-primary mx-auto mb-1.5" />
+            <p className="text-xs font-semibold mb-1">ArogyaAI is ready</p>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Ask me any health question — I&apos;ll use whatever you add to
+              your vault to give you better answers over time.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1.5 px-1 mb-1.5">
+              <SparklesIcon className="size-3 text-primary" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Try these prompts
+              </span>
+            </div>
+            <div className="space-y-1">
+              {[
+                "Explain what my health score means",
+                "How often should I get a full check-up?",
+                "What should I track daily?",
+                "Give me 3 simple wellbeing habits",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => onAsk(q)}
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer text-[11px] text-muted-foreground hover:text-foreground border border-border"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1.5 px-1 mb-1.5">
+              <FileTextIcon className="size-3 text-muted-foreground" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Next step
+              </span>
+            </div>
+            <div className="rounded-lg border border-dashed border-border p-3 text-center">
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Add your first report in <span className="font-medium">My Vault</span>{" "}
+                to unlock personalised insights.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Health score header */}
@@ -89,11 +155,11 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
             <HeartPulseIcon className="size-3.5 text-primary" />
             <span className="text-xs font-semibold">Health Score</span>
           </div>
-          <MiniScore score={HEALTH_SCORE.overall} />
+          <MiniScore score={overallScore} />
         </div>
         {/* Score breakdown chips */}
         <div className="flex flex-wrap gap-1 mt-2">
-          {HEALTH_SCORE.breakdown.map((b) => (
+          {breakdown.map((b) => (
             <span
               key={b.label}
               className="text-[9px] px-1.5 py-0.5 rounded-full border"

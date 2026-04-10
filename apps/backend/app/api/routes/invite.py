@@ -40,6 +40,10 @@ from app.api.schemas.invite import (
     InviteStatus,
     InviteeOut,
     InviterOut,
+    LookupPhoneRequest,
+    LookupPhoneResponse,
+    RegisterInviteeRequest,
+    RegisterInviteeResponse,
     RejectInviteRequest,
     SendInviteRequest,
     SendInviteResponse,
@@ -48,12 +52,18 @@ from app.api.store import (
     GROUPS,
     INVITE_REGISTRY,
     INVITE_PHONE_INDEX,
+    USER_GROUPS,
     is_phone_registered,
+    lookup_user_by_phone,
+    register_new_user,
+    add_user_to_group,
+    create_invite_group,
     COMMUNITY_POSTS,
     COMMUNITY_FILES,
     COMMUNITY_MEMBERS,
     POST_NEXT_ID,
 )
+from app.core.constants import INVITE_REGISTER_OTP
 from app.core.constants import INVITE_EXPIRY_DAYS
 from app.core.crypto import (
     decrypt_phone,
@@ -380,6 +390,166 @@ async def invite_counts(user: CurrentUser):
         sent_total=sent_total,
         received_pending=received_pending,
         received_total=received_total,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  3b. LOOKUP PHONE — does this number already exist on ArogyaVault?
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post(
+    "/lookup",
+    summary="Check whether a phone number is already registered",
+    response_model=LookupPhoneResponse,
+)
+async def lookup_phone(body: LookupPhoneRequest, user: CurrentUser):
+    """
+    Used by the invite modal before deciding between the 'existing user'
+    and 'new user' branches. Requires auth because only signed-in users
+    invite people.
+
+    When `group_id` is supplied the response additionally surfaces
+    `already_member=True` if the looked-up phone is already a member of
+    that group — the modal uses this to short-circuit into a cancel-only
+    "already existing in the same group" state.
+    """
+    try:
+        phone = normalize_phone(body.phone)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    validate_phone(phone)
+
+    existing = lookup_user_by_phone(phone)
+    masked = mask_phone(phone)
+
+    # Duplicate-member check: only meaningful when a group context was
+    # provided and the phone actually maps to a registered user.
+    already_member = False
+    group_id = (body.group_id or "").strip() or None
+    if existing and group_id:
+        target_gid = group_id
+        # The frontend may pass either a canonical UUID or a legacy slug
+        # (e.g. "ravi"). Resolve the slug path so both work.
+        if target_gid not in GROUPS:
+            from app.api.store import GROUP_BY_SLUG  # local import to avoid cycles
+            slug_match = GROUP_BY_SLUG.get(target_gid)
+            if slug_match:
+                target_gid = slug_match["id"]
+        memberships = USER_GROUPS.get(existing["id"], set())
+        if target_gid in memberships:
+            already_member = True
+
+    if existing:
+        return LookupPhoneResponse(
+            registered=True,
+            phone_masked=existing.get("phone_masked", masked),
+            name=existing.get("name"),
+            already_member=already_member,
+        )
+    return LookupPhoneResponse(
+        registered=False,
+        phone_masked=masked,
+        name=None,
+        already_member=False,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  3c. REGISTER NEW USER VIA INVITE OTP
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post(
+    "/register-user",
+    summary="Register a brand new user via the invite OTP flow",
+    response_model=RegisterInviteeResponse,
+)
+async def register_invitee(body: RegisterInviteeRequest, user: CurrentUser):
+    """
+    Verify the dev OTP (123456), create the new user, and optionally wire
+    them up to a group based on the chosen invite level:
+
+      - "app"        : just register, no group
+      - "group"      : create a brand-new linked group between inviter+invitee
+      - "<group_id>" : add invitee to an existing group the inviter owns
+    """
+    if body.code != INVITE_REGISTER_OTP:
+        raise HTTPException(status_code=400, detail="Invalid OTP. Please try again.")
+
+    try:
+        phone = normalize_phone(body.phone)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    validate_phone(phone)
+
+    # Cannot register yourself
+    if phone_hash(phone) == user.get("phone_hash"):
+        raise HTTPException(status_code=400, detail="You cannot invite yourself.")
+
+    if is_phone_registered(phone):
+        # Safety net for the duplicate-member case: if the inviter is
+        # targeting an existing group and the registered user is already
+        # in it, surface a clearer "already a member" message so the
+        # frontend can flip into its cancel-only state. For any other
+        # registered-phone case we keep the generic 409.
+        level_for_check = (body.invite_level or "group").strip()
+        if level_for_check not in ("app", "group"):
+            target_group = GROUPS.get(level_for_check)
+            if target_group:
+                existing_user = lookup_user_by_phone(phone)
+                if existing_user and target_group["id"] in USER_GROUPS.get(
+                    existing_user["id"], set()
+                ):
+                    raise HTTPException(
+                        status_code=409,
+                        detail={
+                            "code": "already_member",
+                            "message": "This number is already a member of the same group.",
+                        },
+                    )
+        raise HTTPException(
+            status_code=409,
+            detail="This phone number is already registered on ArogyaVault.",
+        )
+
+    # Never auto-fill a name for the invitee — the frontend falls back
+    # to showing the masked phone number until the invitee sets one.
+    # Persist the inviter UUID directly on the new user record so that
+    # when the invitee later signs in on their own device we can resolve
+    # the inviter's masked phone without going through the group index.
+    new_user = register_new_user(phone, name=None, invited_by=user["id"])
+
+    group_id: str | None = None
+    level = (body.invite_level or "group").strip()
+
+    if level == "app":
+        # Vault-only invite — no group created, user just gets an account.
+        pass
+    elif level == "group":
+        # Create a fresh linked group connecting the two users.
+        group_id = create_invite_group(
+            inviter=user,
+            invitee=new_user,
+            relation=(body.relation or InviteRelation.FAMILY).value,
+            access_scope=(body.access_scope or InviteAccessScope.APP_ACCESS).value,
+        )
+    else:
+        # Treat the level as an existing group id owned by the inviter.
+        existing_group = GROUPS.get(level)
+        if not existing_group:
+            raise HTTPException(status_code=404, detail="Group not found.")
+        add_user_to_group(new_user["id"], level)
+        group_id = level
+
+    return RegisterInviteeResponse(
+        user_id=new_user["id"],
+        phone_masked=new_user["phone_masked"],
+        name=new_user["name"],
+        group_id=group_id,
+        message="Invitee registered successfully",
     )
 
 

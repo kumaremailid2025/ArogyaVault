@@ -8,6 +8,7 @@ Import from here instead of hardcoding page sizes, cookie names, etc.
 from __future__ import annotations
 
 import re
+import uuid
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PAGINATION DEFAULTS
@@ -48,3 +49,24 @@ PHONE_REGEX = re.compile(r"^\+91[6-9]\d{9}$")
 # ══════════════════════════════════════════════════════════════════════════════
 
 INVITE_EXPIRY_DAYS = 30
+
+# Dev-only hardcoded OTP used by the invite modal flow. The real SMS gateway
+# replaces this in production. Kept separate from the sign-in OTP codes above
+# so QA can clearly tell which path is being exercised.
+INVITE_REGISTER_OTP = "123456"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SEED USER
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Kumar's plaintext phone is only referenced here and in the seed builder.
+# It's used to derive a deterministic UUID so the seed owner's id is stable
+# across restarts and across deployments (same phone → same UUID).
+SEED_OWNER_PHONE = "+919248255592"
+
+# Deterministic UUID derived from Kumar's phone. Every user id in the system
+# is a UUID; Kumar's happens to be derived from his number so it's
+# reproducible in tests and local dev without hardcoding a magic constant.
+#     uuid5(NAMESPACE_OID, "+919248255592") → 8541cc91-8663-51bf-869b-982dd31a0d12
+SEED_OWNER_USER_ID = str(uuid.uuid5(uuid.NAMESPACE_OID, SEED_OWNER_PHONE))

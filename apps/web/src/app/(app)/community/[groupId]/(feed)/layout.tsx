@@ -8,7 +8,7 @@
 
 import { useParams, notFound } from "next/navigation";
 import { FeedLayoutContent } from "@/app/(app)/community/_components/feed-layout-content";
-import { GROUP_UUID_MAP } from "@/components/containers/community/types";
+import { resolveGroupSlug } from "@/components/containers/community/types";
 
 interface FeedLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface FeedLayoutProps {
 
 const GroupFeedLayout = ({ children }: FeedLayoutProps) => {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = resolveGroupSlug(params.groupId);
 
   if (!slug) {
     notFound();

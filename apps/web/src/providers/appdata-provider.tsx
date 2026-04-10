@@ -82,11 +82,21 @@ export const AppDataProvider = ({
      first load (header/sidebar mount before AuthGuard resolves). */
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authUserId = useAuthStore((s) => s.user?.id ?? null);
 
+  /*
+   * Scope the query key by the currently-signed-in user id. Without
+   * this, when Kumar logs out and an invitee signs in, React Query
+   * would serve Kumar's cached bundle under the same global key —
+   * leaking the seeded demo groups (Ravi/Sharma/Priya) into the
+   * invitee's sidebar and rendering the new invite group with
+   * inviter-side labels. Keying by user id gives every account an
+   * isolated cache slot.
+   */
   const query = useQuery<AppDataBootstrapResponse>({
-    queryKey: ["app-data", "bootstrap"],
+    queryKey: ["app-data", "bootstrap", authUserId],
     queryFn: () => appDataApi.getBootstrap(),
-    enabled: enabled && isHydrated && isAuthenticated,
+    enabled: enabled && isHydrated && isAuthenticated && Boolean(authUserId),
     staleTime: 5 * 60 * 1000, // 5 min — rarely changes during a session
     retry: 1,
   });

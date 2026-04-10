@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, UploadCloudIcon, SparklesIcon, HeartPulseIcon } from "lucide-react";
 import { VaultBanner, type VaultTab } from "@/components/vault/vault-banner";
 import { FilesColumn } from "@/components/vault/files-column";
 import { useVaultHealth } from "@/data/vault-health-data";
+import { Button } from "@/core/ui/button";
 
 /* ── Lazy-loaded column/panel components ─────────────────────────── */
 
@@ -54,6 +55,7 @@ const FileQAHistoryPanel = dynamic(
 
 export const VaultContainer = () => {
   const { VAULT_FILES, HEALTH_ALERTS, VITALS, CHART_CONFIGS } = useVaultHealth();
+  const isEmpty = VAULT_FILES.length === 0 && VITALS.length === 0 && CHART_CONFIGS.length === 0;
   const [activeTab, setActiveTab] = React.useState<VaultTab>("vault");
   /** null = no drilldown (show FilesColumn), string = metricId or chartId */
   const [drilldownTarget, setDrilldownTarget] = React.useState<string | null>(null);
@@ -109,7 +111,33 @@ export const VaultContainer = () => {
 
       {/* Content area */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === "files" ? (
+        {isEmpty ? (
+          /* ─── EMPTY VAULT — welcome state ─── */
+          <div className="h-full flex items-center justify-center overflow-y-auto">
+            <div className="max-w-md px-6 py-10 text-center">
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
+                <HeartPulseIcon className="size-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">Your vault is ready</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                Your personal health vault is where all your medical reports,
+                prescriptions, and vital readings will live. Add your first
+                document to unlock AI-powered insights and trend tracking.
+              </p>
+              <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
+                <Button size="sm" className="w-full gap-2">
+                  <UploadCloudIcon className="size-3.5" /> Upload your first report
+                </Button>
+                <Button size="sm" variant="outline" className="w-full gap-2">
+                  <SparklesIcon className="size-3.5" /> Ask ArogyaAI how this works
+                </Button>
+              </div>
+              <p className="mt-6 text-[11px] text-muted-foreground/80">
+                PDFs, images, and common lab report formats are all supported.
+              </p>
+            </div>
+          </div>
+        ) : activeTab === "files" ? (
           /* ─── FILES TAB — list + right panel (always visible) ─── */
           <div className="h-full flex overflow-hidden">
             {/* Left — File list (flexible) */}

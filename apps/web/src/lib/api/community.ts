@@ -233,7 +233,7 @@ export interface MemberActivityOut {
 }
 
 export interface MemberOut {
-  id: number;
+  id: string;
   name: string;
   initials: string;
   role: string;
@@ -380,7 +380,7 @@ export const communityApi = {
       `/community/${groupId}/members${toQueryString(params)}`,
     ),
 
-  getMember: (memberId: number, groupId: string) =>
+  getMember: (memberId: string, groupId: string) =>
     apiClient<MemberOut>(
       `/community/members/${memberId}?group_id=${groupId}`,
     ),

@@ -169,3 +169,72 @@ class InviteCountsOut(BaseModel):
     sent_total: int = 0
     received_pending: int = 0
     received_total: int = 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  LOOKUP + REGISTER (invite modal flow)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class LookupPhoneRequest(BaseModel):
+    """Check whether a phone is already registered on ArogyaVault."""
+    phone: str = Field(..., description="Phone number in E.164 or loose format")
+    group_id: str | None = Field(
+        default=None,
+        description=(
+            "Optional group id the invite modal is currently scoped to. "
+            "When supplied, the response will set already_member=True if the "
+            "looked-up phone already belongs to this group so the modal can "
+            "short-circuit into a cancel-only state."
+        ),
+    )
+
+
+class LookupPhoneResponse(BaseModel):
+    """Lookup result — safe for the invite modal."""
+    registered: bool
+    phone_masked: str
+    name: str | None = None
+    already_member: bool = Field(
+        default=False,
+        description=(
+            "True when the looked-up phone is already a member of the "
+            "group_id passed in the request. The invite modal uses this "
+            "to show an 'already a member' state with only a Cancel button."
+        ),
+    )
+
+
+class RegisterInviteeRequest(BaseModel):
+    """
+    Register a brand-new user via the invite OTP flow (dev OTP = 123456).
+
+    `invite_level` drives the post-registration behaviour:
+      - "app"         → register only, no group created
+      - "group"       → register + create a fresh linked group between inviter+invitee
+      - "<group_id>"  → register + add invitee to an existing group owned by the inviter
+    """
+    phone: str = Field(..., description="Invitee phone in E.164 format")
+    code: str = Field(..., description="OTP verification code")
+    name: str | None = Field(None, max_length=100)
+    invite_level: str = Field(
+        default="group",
+        description="'app', 'group', or a group id the inviter wants to reuse",
+    )
+    relation: InviteRelation | None = Field(
+        default=InviteRelation.FAMILY,
+        description="Relationship to record on the newly-created linked group",
+    )
+    access_scope: InviteAccessScope | None = Field(
+        default=InviteAccessScope.APP_ACCESS,
+        description="Access scope for the new linked group",
+    )
+
+
+class RegisterInviteeResponse(BaseModel):
+    success: bool = True
+    user_id: str
+    phone_masked: str
+    name: str
+    group_id: str | None = None
+    message: str = "Invitee registered successfully"

@@ -689,10 +689,10 @@ async def list_members(
 
 
 @router.get("/members/{member_id}", response_model=MemberOut)
-async def get_member(member_id: int, group_id: str, user: CurrentUser):
-    """Get a single member by ID."""
+async def get_member(member_id: str, group_id: str, user: CurrentUser):
+    """Get a single member by ID (UUID string)."""
     for members in COMMUNITY_MEMBERS.values():
-        member = next((m for m in members if m["id"] == member_id), None)
+        member = next((m for m in members if str(m["id"]) == member_id), None)
         if member:
             return member
     raise NotFoundError("Member")

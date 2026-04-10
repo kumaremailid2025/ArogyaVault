@@ -69,10 +69,14 @@ class UserOut(BaseModel):
     User profile returned after OTP verification.
 
     The frontend uses `id` (UUID) for all subsequent API calls.
-    No phone field — the phone was only needed for the auth flow
-    and is never stored or transmitted after login.
+    Includes `phone_masked` (e.g. "+91****5592") so the header can
+    render the user's identity immediately after sign-in without a
+    follow-up /auth/me round-trip — this is especially important for
+    newly registered invitees who have no name yet and must be
+    identified by their masked phone.
     """
     id: str
+    phone_masked: str = ""
     name: str | None = None
     role: str = "patient"
     created_at: str

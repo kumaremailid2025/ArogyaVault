@@ -22,7 +22,7 @@ const STATUS_DOT: Record<CommunityMember["status"], string> = {
 interface MemberCardProps {
   member: CommunityMember;
   isActive: boolean;
-  onSelect: (memberId: number) => void;
+  onSelect: (memberId: string) => void;
 }
 
 /* ── Component ─────────────────────────────────────────────────── */

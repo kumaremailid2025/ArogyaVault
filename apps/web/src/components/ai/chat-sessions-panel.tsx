@@ -31,6 +31,9 @@ const timeAgo = (iso: string) => {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 };
 
+/** Hide the search input until there are more than this many conversations. */
+const SEARCH_MIN_SESSIONS = 5;
+
 export const ChatSessionsPanel = ({
   activeSessionId,
   onSelectSession,
@@ -39,8 +42,10 @@ export const ChatSessionsPanel = ({
   const { CHAT_SESSIONS } = useAiContext();
   const [search, setSearch] = React.useState("");
 
+  const showSearch = CHAT_SESSIONS.length > SEARCH_MIN_SESSIONS;
+
   const filtered = React.useMemo(() => {
-    if (!search.trim()) return CHAT_SESSIONS;
+    if (!showSearch || !search.trim()) return CHAT_SESSIONS;
     const q = search.toLowerCase();
     return CHAT_SESSIONS.filter(
       (s) =>
@@ -48,11 +53,11 @@ export const ChatSessionsPanel = ({
         s.preview.toLowerCase().includes(q) ||
         s.tags.some((t) => t.toLowerCase().includes(q))
     );
-  }, [search]);
+  }, [search, showSearch, CHAT_SESSIONS]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* New chat button */}
+      {/* New AI conversation button */}
       <div className="px-2 pt-2 pb-1">
         <Button
           onClick={onNewChat}
@@ -60,21 +65,23 @@ export const ChatSessionsPanel = ({
           className="w-full gap-1.5 text-xs"
         >
           <PlusIcon className="size-3.5" />
-          New Conversation
+          New AI Conversation
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative px-2 py-1.5">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Search conversations..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-7 pl-7 pr-2 rounded-lg border border-border bg-muted/40 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40"
-        />
-      </div>
+      {/* Search — only shown when there are enough conversations */}
+      {showSearch && (
+        <div className="relative px-2 py-1.5">
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-7 pl-7 pr-2 rounded-lg border border-border bg-muted/40 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40"
+          />
+        </div>
+      )}
 
       {/* Section label */}
       <div className="px-3 py-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -120,7 +127,9 @@ export const ChatSessionsPanel = ({
 
         {filtered.length === 0 && (
           <div className="py-6 text-center text-xs text-muted-foreground">
-            No conversations found.
+            {CHAT_SESSIONS.length === 0
+              ? "No conversations yet. Start a new one!"
+              : "No conversations found."}
           </div>
         )}
       </div>

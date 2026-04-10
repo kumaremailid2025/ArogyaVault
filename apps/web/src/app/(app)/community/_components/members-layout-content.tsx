@@ -45,13 +45,15 @@ export const MembersLayoutContent = ({ variant, group, basePath, children }: Mem
   const membersQuery = useMembers(groupId, {}, isCommunity);
 
   /* ── State ── */
-  const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = React.useState<string | null>(null);
 
   /* ── Derive selectedMemberId from URL ── */
   React.useEffect(() => {
-    const match = pathname.match(/\/members\/(\d+)$/);
+    // Member ids are now UUIDs (or any non-slash string). Match everything
+    // after the final /members/ segment until the next slash or end of path.
+    const match = pathname.match(/\/members\/([^/]+)$/);
     if (match) {
-      setSelectedMemberId(parseInt(match[1], 10));
+      setSelectedMemberId(match[1]);
     } else {
       setSelectedMemberId(null);
     }
@@ -67,7 +69,7 @@ export const MembersLayoutContent = ({ variant, group, basePath, children }: Mem
   const memberCount = isCommunity ? "12,847" : membersList.length;
 
   /* ── Handlers ── */
-  const handleSelectMember = React.useCallback((memberId: number) => {
+  const handleSelectMember = React.useCallback((memberId: string) => {
     setSelectedMemberId(memberId);
     router.push(`${basePath}/members/${memberId}`);
   }, [router, basePath]);

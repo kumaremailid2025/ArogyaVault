@@ -83,14 +83,22 @@ export const AppHeader = () => {
   const user = useAuthStore((s) => s.user);
   const logoutMutation = useLogout();
 
-  const displayName = user?.name ?? "User";
+  // For invited users the backend leaves `name` empty until they set one
+  // themselves — fall back to the masked phone number everywhere we show
+  // the profile, and derive initials from the phone digits in that case.
+  const rawName = (user?.name ?? "").trim();
   const displayPhone = user?.phone_masked ?? "";
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const hasRealName = rawName.length > 0;
+  const displayName = hasRealName ? rawName : displayPhone || "User";
+
+  const initials = hasRealName
+    ? rawName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : (displayPhone.match(/\d/g) ?? []).slice(-2).join("") || "U";
 
   const handleSignOut = () => {
     logoutMutation.mutate();
@@ -267,7 +275,9 @@ export const AppHeader = () => {
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span className="font-semibold">{displayName}</span>
-                  <span className="text-xs font-normal text-muted-foreground">{displayPhone}</span>
+                  {hasRealName && displayPhone && (
+                    <span className="text-xs font-normal text-muted-foreground">{displayPhone}</span>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

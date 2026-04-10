@@ -294,7 +294,7 @@ class MemberStatsOut(BaseModel):
 
 
 class MemberOut(BaseModel):
-    id: int
+    id: str
     name: str
     initials: str
     role: str

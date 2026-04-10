@@ -62,7 +62,7 @@ export const MembersPageContainer = ({
   const membersQuery = useMembers(groupId, {}, isCommunity);
 
   /* ── State ── */
-  const [selectedMemberId, setSelectedMemberId] = React.useState<number | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = React.useState<string | null>(null);
   const [panelState, setPanelState] = React.useState<PanelState>({ view: "default" });
 
   /* ── Resolved data ── */
@@ -84,7 +84,7 @@ export const MembersPageContainer = ({
 
   /* ── Handlers ── */
 
-  const handleSelectMember = React.useCallback((memberId: number) => {
+  const handleSelectMember = React.useCallback((memberId: string) => {
     setSelectedMemberId(memberId);
     setPanelState({ view: "member-detail", memberId });
   }, []);

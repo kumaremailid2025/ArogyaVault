@@ -19,10 +19,14 @@ const DOT_OFF = "bg-primary/15";
 const SUB_ON  = "text-primary-foreground/70";
 const SUB_OFF = "text-muted-foreground";
 
-/** Build the community route for a given slug */
+/** Build the community route for a given slug (or dynamic UUID-as-slug) */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const communityHref = (slug: string): string => {
   const uuid = GROUP_SLUG_TO_UUID[slug];
-  return uuid ? `/community/${uuid}` : "/community";
+  if (uuid) return `/community/${uuid}`;
+  // Dynamically-created invite groups use the UUID directly as their slug
+  if (UUID_RE.test(slug)) return `/community/${slug}`;
+  return "/community";
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -64,9 +68,18 @@ const CommunitySidebar = () => {
       {/* ── Nested conversation groups ────────────────────── */}
       <div className="ml-4 mr-2 border-l-2 border-primary/15 pl-1 flex flex-col gap-0 mb-1">
         {LINKED_GROUPS.map((g) => {
-          const uuid = GROUP_SLUG_TO_UUID[g.slug] ?? "";
+          const uuid = GROUP_SLUG_TO_UUID[g.slug] ?? (UUID_RE.test(g.slug) ? g.slug : "");
           const isActive = activeGroupId === uuid;
-          const initials = g.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
+          // Prefer the initials computed by the backend (handles masked
+          // phone labels like "+91****5592" → "92"). Fall back to first
+          // letters of the name for static seeded groups.
+          const nameLooksLikePhone = /^[+*\d\s]+$/.test(g.name);
+          const initials =
+            (g as { initials?: string }).initials
+            || (nameLooksLikePhone
+              ? (g.name.match(/\d/g) ?? []).slice(-2).join("")
+              : g.name.split(" ").map((w) => w[0]).join("").slice(0, 2));
+          const hasExtras = (g.count ?? 0) > 0;
           return (
             <Link
               key={g.slug}
@@ -80,17 +93,19 @@ const CommunitySidebar = () => {
                 "flex size-6 shrink-0 items-center justify-center rounded-md text-[9px] font-bold",
                 isActive ? DOT_ON : DOT_OFF
               )}>
-                {initials}
+                {initials || "U"}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 min-w-0">
                   <p className="text-xs font-semibold leading-snug truncate">{g.name}</p>
-                  <span className={cn("text-[9px] font-medium shrink-0", isActive ? SUB_ON : SUB_OFF)}>
-                    +{g.count}
-                  </span>
+                  {hasExtras && (
+                    <span className={cn("text-[9px] font-medium shrink-0", isActive ? SUB_ON : SUB_OFF)}>
+                      +{g.count}
+                    </span>
+                  )}
                 </div>
                 <p className={cn("text-[9px] truncate", isActive ? SUB_ON : SUB_OFF)}>
-                  {g.rel} · {g.sub}
+                  {[g.rel, g.sub].filter(Boolean).join(" · ")}
                 </p>
               </div>
             </Link>

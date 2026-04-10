@@ -11,21 +11,21 @@
       "name": "Ravi Kumar",
       "rel": "Family Member",
       "sub": "App Access",
-      "count": 2
+      "count": 0
     },
     {
       "slug": "sharma",
       "name": "Dr. Sharma's Clinic",
       "rel": "Doctor",
       "sub": "Group Access",
-      "count": 3
+      "count": 0
     },
     {
       "slug": "priya",
       "name": "Priya Singh",
       "rel": "Caregiver",
       "sub": "App Access",
-      "count": 2
+      "count": 0
     }
   ],
   "INVITE_GROUPS": [

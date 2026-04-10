@@ -299,6 +299,7 @@ async def verify_otp(body: VerifyOtpRequest, response: Response):
     # User record has phone_masked for safe display; use that in JWT
     user = UserOut(
         id=user_data["id"],
+        phone_masked=user_data.get("phone_masked", ""),
         name=user_data.get("name"),
         role=user_data.get("role", "patient"),
         created_at=user_data.get("created_at", ""),

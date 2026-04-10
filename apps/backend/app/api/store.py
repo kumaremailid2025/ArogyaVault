@@ -19,6 +19,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from app.core.crypto import encrypt_phone, mask_phone, phone_hash
+from app.core.constants import SEED_OWNER_PHONE, SEED_OWNER_USER_ID
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -42,31 +43,17 @@ from app.core.crypto import encrypt_phone, mask_phone, phone_hash
 
 _SEED_USERS = [
     {
-        "id": "usr_001",
-        "phone": "+919248255592",
+        # Deterministic UUID derived from Kumar's phone — see
+        # app/core/constants.py::SEED_OWNER_USER_ID. Keeps the seed
+        # owner's id stable across restarts without hardcoding a magic
+        # string, and lets the JWT rehydrate path find him by phone.
+        "id": SEED_OWNER_USER_ID,
+        "phone": SEED_OWNER_PHONE,
         "name": "Kumar",
         "initials": "KU",
         "role": "patient",
         "location": "Hyderabad",
         "created_at": "2025-01-15T10:30:00Z",
-    },
-    {
-        "id": "usr_002",
-        "phone": "+919177111831",
-        "name": "Ayyappa",
-        "initials": "AY",
-        "role": "doctor",
-        "location": "Chennai",
-        "created_at": "2025-02-20T14:00:00Z",
-    },
-    {
-        "id": "usr_003",
-        "phone": "+919010238712",
-        "name": "Yuvanth",
-        "initials": "YU",
-        "role": "patient",
-        "location": "Bangalore",
-        "created_at": "2025-03-10T09:15:00Z",
     },
 ]
 
@@ -101,6 +88,7 @@ def _build_user_stores() -> tuple[dict[str, dict], dict[str, dict]]:
             "initials": seed["initials"],
             "role": seed["role"],
             "location": seed.get("location", ""),
+            "invited_by": None,
             "created_at": seed["created_at"],
         }
 
@@ -131,6 +119,153 @@ def lookup_user_by_phone(phone: str) -> dict | None:
 def is_phone_registered(phone: str) -> bool:
     """Check if a phone is registered (hash-based, no plaintext lookup)."""
     return phone_hash(phone) in REGISTERED_USERS
+
+
+def _next_user_id() -> str:
+    """
+    Generate a fresh user id as a UUID (v4).
+
+    Every user in the system is keyed by a UUID. The seed owner (Kumar)
+    gets a deterministic UUID derived from his phone via uuid5 so it's
+    stable across restarts (see constants.SEED_OWNER_USER_ID); every
+    other user gets a random uuid4 assigned at registration time.
+    """
+    return str(uuid.uuid4())
+
+
+def _phone_initials(phone_masked: str) -> str:
+    """
+    Derive 2-character initials from a masked phone number.
+
+    Falls back to the last two visible digits, e.g.:
+        "+91****5592" → "92"
+        "+1****1234"  → "34"
+    Returns "U" if the phone is unusable.
+    """
+    digits = [c for c in phone_masked if c.isdigit()]
+    if len(digits) >= 2:
+        return "".join(digits[-2:])
+    return "U"
+
+
+def register_new_user(
+    phone: str,
+    name: str | None = None,
+    invited_by: str | None = None,
+) -> dict:
+    """
+    Register a brand new user from the invite flow.
+
+    - Hashes + encrypts the phone number.
+    - Inserts into REGISTERED_USERS and USERS_BY_ID.
+    - Returns the fresh user dict.
+
+    The caller is responsible for checking `is_phone_registered` first.
+
+    When `name` is empty/None, the user is created with an empty display
+    name. The frontend is expected to fall back to showing the masked
+    phone number until the invitee edits their profile.
+
+    `invited_by` records the UUID of the inviter that created this user
+    via the invite flow. It is stored directly on the user record so that
+    on a later sign-in we can resolve the inviter's masked phone without
+    relying on any intermediate group/membership index. This mirrors the
+    `inviter_id` stored on the linked group but provides a direct
+    user → inviter link that survives group edits.
+    """
+    ph = phone_hash(phone)
+    uid = _next_user_id()
+    display_name = (name or "").strip()
+    masked = mask_phone(phone)
+    if display_name:
+        initials = "".join(word[0] for word in display_name.split()[:2]).upper() or "U"
+    else:
+        initials = _phone_initials(masked)
+
+    user = {
+        "id": uid,
+        "phone_hash": ph,
+        "phone_encrypted": encrypt_phone(phone),
+        "phone_masked": masked,
+        "name": display_name,
+        "initials": initials[:2],
+        "role": "patient",
+        "location": "",
+        "invited_by": invited_by or None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    REGISTERED_USERS[ph] = user
+    USERS_BY_ID[uid] = user
+    return user
+
+
+# ── User ↔ Group Membership ────────────────────────────────────────
+# user_id → set of group IDs they belong to. Used to surface
+# dynamically-created linked groups to invited users.
+USER_GROUPS: dict[str, set[str]] = {}
+
+
+def add_user_to_group(user_id: str, group_id: str) -> None:
+    """Add a user to a group's membership set."""
+    USER_GROUPS.setdefault(user_id, set()).add(group_id)
+
+
+def get_user_groups(user_id: str) -> list[dict]:
+    """Return group dicts the user belongs to (ordered by creation)."""
+    ids = USER_GROUPS.get(user_id, set())
+    return [GROUPS[g] for g in ids if g in GROUPS]
+
+
+def create_invite_group(
+    inviter: dict,
+    invitee: dict,
+    relation: str = "Family Member",
+    access_scope: str = "App Access",
+) -> str:
+    """
+    Create a brand-new linked group connecting an inviter and invitee.
+    Both users are added to the group membership.
+    Returns the new group ID.
+
+    When the invitee has no display name yet the group's stored `name` is
+    left empty — the bootstrap builder computes a phone-number label per
+    viewer (inviter sees invitee's phone, invitee sees inviter's phone).
+    """
+    import uuid as _uuid
+
+    group_id = str(_uuid.uuid4())
+    invitee_name = (invitee.get("name") or "").strip()
+    # Leave the stored name empty when the invitee has no name — the
+    # sidebar/group builders will fall back to each side's masked phone.
+    stored_name = invitee_name
+    description_subject = invitee_name or invitee.get("phone_masked") or "Invited User"
+
+    GROUPS[group_id] = {
+        "id": group_id,
+        "slug": group_id,  # use the UUID itself as the slug for dynamic groups
+        "name": stored_name,
+        "type": "linked",
+        "rel": relation,
+        "access": access_scope,
+        "description": f"Shared records with {description_subject}",
+        "inviter_id": inviter["id"],
+        "invitee_id": invitee["id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # Keep the slug index in sync
+    GROUP_BY_SLUG[group_id] = GROUPS[group_id]
+
+    # Initialize empty collections for the new group
+    COMMUNITY_POSTS[group_id] = []
+    COMMUNITY_FILES[group_id] = []
+    COMMUNITY_MEMBERS[group_id] = []
+    POST_NEXT_ID[group_id] = 0
+
+    # Register both members
+    add_user_to_group(inviter["id"], group_id)
+    add_user_to_group(invitee["id"], group_id)
+
+    return group_id
 
 # ── Groups ────────────────────────────────────────────────────────────────────
 # Stable UUIDs for dev — will be DB-generated in production.
@@ -214,7 +349,7 @@ def _seed_invites() -> None:
     seed_data = [
         {
             "id": "inv_ravi_001",
-            "inviter_id": "usr_001",
+            "inviter_id": SEED_OWNER_USER_ID,
             "invitee_phone": "+919876500001",
             "invitee_name": "Ravi Kumar",
             "relation": "Family Member",
@@ -226,21 +361,8 @@ def _seed_invites() -> None:
             "accepted_at": "2025-12-01T12:30:00+00:00",
         },
         {
-            "id": "inv_sharma_001",
-            "inviter_id": "usr_002",
-            "invitee_phone": "+919248255592",
-            "invitee_name": "Kumar",
-            "relation": "Doctor",
-            "access_scope": "Group Access",
-            "status": InviteStatus.ACCEPTED,
-            "message": "Connecting for your post-op follow-up records.",
-            "group_id": "a1b2c3d4-5e6f-7a8b-9c0d-e1f2a3b4c5d6",
-            "created_at": "2025-11-15T09:00:00+00:00",
-            "accepted_at": "2025-11-15T14:00:00+00:00",
-        },
-        {
             "id": "inv_priya_001",
-            "inviter_id": "usr_001",
+            "inviter_id": SEED_OWNER_USER_ID,
             "invitee_phone": "+919876500003",
             "invitee_name": "Priya Singh",
             "relation": "Caregiver",
@@ -253,7 +375,7 @@ def _seed_invites() -> None:
         },
         {
             "id": "inv_pending_001",
-            "inviter_id": "usr_001",
+            "inviter_id": SEED_OWNER_USER_ID,
             "invitee_phone": "+919876500004",
             "invitee_name": "Dr. Patel",
             "relation": "Doctor",
@@ -267,13 +389,9 @@ def _seed_invites() -> None:
     ]
 
     inviter_info = {
-        "usr_001": InviterOut(
-            id="usr_001", name="Kumar", initials="KU",
+        SEED_OWNER_USER_ID: InviterOut(
+            id=SEED_OWNER_USER_ID, name="Kumar", initials="KU",
             phone_masked="+91****5592",
-        ),
-        "usr_002": InviterOut(
-            id="usr_002", name="Ayyappa", initials="AY",
-            phone_masked="+91****1831",
         ),
     }
 
@@ -316,6 +434,11 @@ def _seed_invites() -> None:
 
 # Run seed on module load (dev only — will be DB migrations in production)
 _seed_invites()
+
+# Seed Kumar's existing linked-group memberships so his experience is unchanged.
+for _gid, _grp in GROUPS.items():
+    if _grp.get("type") == "linked":
+        add_user_to_group(SEED_OWNER_USER_ID, _gid)
 
 # ── Refresh Token Store ─────────────────────────────────────────────────────
 # MOVED TO REDIS — see app/core/redis.py → session_manager
@@ -408,13 +531,13 @@ COMMUNITY_POSTS[_RAVI_GROUP_ID] = [
         "text": "Just uploaded my latest CBC report. Let me know if anything looks off — flagging it here so you can check too.",
         "likes": 2, "replyCount": 1,
         "replies": [
-            {"id": 1, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "45 min ago",
+            {"id": 1, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "45 min ago",
              "text": "Checked it — Haemoglobin is at 11.2 g/dL, mildly low again. Let's get you back on the iron supplements and retest in 4 weeks."},
         ],
     },
     {
         "id": 1, "group_id": _RAVI_GROUP_ID,
-        "author_id": "usr_001", "author": "You", "initials": "KU",
+        "author_id": SEED_OWNER_USER_ID, "author": "You", "initials": "KU",
         "location": "Hyderabad", "time": "Yesterday", "tag": "Reminder",
         "text": "Ravi, your Haemoglobin was 11.2 g/dL last time — mildly low. Please make sure you're taking the iron supplements daily.",
         "likes": 0, "replyCount": 0, "replies": [],
@@ -426,7 +549,7 @@ COMMUNITY_POSTS[_RAVI_GROUP_ID] = [
         "text": "Doctor suggested we get a thyroid panel done this month. Will upload once the report comes in.",
         "likes": 1, "replyCount": 1,
         "replies": [
-            {"id": 2, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "3 days ago",
+            {"id": 2, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "3 days ago",
              "text": "Good idea. Let me know once it's done — I'll add it to your health timeline and flag anything outside normal range."},
         ],
     },
@@ -440,13 +563,13 @@ COMMUNITY_POSTS[_SHARMA_GROUP_ID] = [
         "text": "Your post-operative report has been reviewed. Healing is on track. Please continue the prescribed antibiotics for the full course.",
         "likes": 0, "replyCount": 1,
         "replies": [
-            {"id": 1, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "1 hour ago",
+            {"id": 1, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "1 hour ago",
              "text": "Thank you, Doctor. Noted — I'll complete the full antibiotic course and monitor for any swelling or fever."},
         ],
     },
     {
         "id": 1, "group_id": _SHARMA_GROUP_ID,
-        "author_id": "usr_001", "author": "You", "initials": "KU",
+        "author_id": SEED_OWNER_USER_ID, "author": "You", "initials": "KU",
         "location": "Hyderabad", "time": "Yesterday", "tag": "Update",
         "text": "Doctor, I've uploaded the wound photos as requested. Please review at your earliest convenience.",
         "likes": 0, "replyCount": 0, "replies": [],
@@ -458,7 +581,7 @@ COMMUNITY_POSTS[_SHARMA_GROUP_ID] = [
         "text": "Discharge summary has been added to your group. Please review the follow-up schedule — next visit in 2 weeks.",
         "likes": 0, "replyCount": 1,
         "replies": [
-            {"id": 2, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "4 days ago",
+            {"id": 2, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "4 days ago",
              "text": "Reviewed — follow-up booked for 13 April. I've also shared the discharge summary with my caregiver Priya for reference."},
         ],
     },
@@ -472,13 +595,13 @@ COMMUNITY_POSTS[_PRIYA_GROUP_ID] = [
         "text": "I've been tracking your father's medication schedule — he missed the evening Metformin dose twice this week. Want me to set up reminders?",
         "likes": 1, "replyCount": 1,
         "replies": [
-            {"id": 1, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "2 hours ago",
+            {"id": 1, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "2 hours ago",
              "text": "Yes please — reminders would be really helpful. Also, can you check if his BP medication needs refilling this week?"},
         ],
     },
     {
         "id": 1, "group_id": _PRIYA_GROUP_ID,
-        "author_id": "usr_001", "author": "You", "initials": "KU",
+        "author_id": SEED_OWNER_USER_ID, "author": "You", "initials": "KU",
         "location": "Hyderabad", "time": "2 days ago", "tag": "Care Plan",
         "text": "Priya, I've updated the care plan with the new physiotherapy schedule. Please make sure he does the exercises after lunch.",
         "likes": 0, "replyCount": 1,
@@ -494,7 +617,7 @@ COMMUNITY_POSTS[_PRIYA_GROUP_ID] = [
         "text": "Today's vitals: BP 138/86, Sugar (fasting) 142 mg/dL, Temperature 98.4°F. Slightly elevated BP and sugar — should we flag this with Dr. Sharma?",
         "likes": 2, "replyCount": 1,
         "replies": [
-            {"id": 3, "author_id": "usr_001", "initials": "KU", "author": "Kumar", "time": "5 days ago",
+            {"id": 3, "author_id": SEED_OWNER_USER_ID, "initials": "KU", "author": "Kumar", "time": "5 days ago",
              "text": "Yes, please share this with Dr. Sharma's group. The fasting sugar has been creeping up — might need a dosage adjustment."},
         ],
     },
@@ -580,7 +703,8 @@ COMMUNITY_FILES: dict[str, list[dict]] = {
 COMMUNITY_MEMBERS: dict[str, list[dict]] = {
     _COMMUNITY_GROUP_ID: [
         {
-            "id": 1, "name": "Dr. Anjali Mehta", "initials": "AM", "role": "Moderator",
+            "id": str(uuid.uuid5(uuid.NAMESPACE_OID, "community-member:dr-anjali-mehta")),
+            "name": "Dr. Anjali Mehta", "initials": "AM", "role": "Moderator",
             "status": "online", "statusLabel": "Active now", "joinedAt": "Jan 2024", "location": "Delhi",
             "stats": {"posts": 48, "replies": 215, "uploads": 12, "questions": 6, "likes": 340},
             "activities": [
@@ -590,7 +714,8 @@ COMMUNITY_MEMBERS: dict[str, list[dict]] = {
             ],
         },
         {
-            "id": 2, "name": "Meena R.", "initials": "MR", "role": "Member",
+            "id": str(uuid.uuid5(uuid.NAMESPACE_OID, "community-member:meena-r")),
+            "name": "Meena R.", "initials": "MR", "role": "Member",
             "status": "online", "statusLabel": "Active now", "joinedAt": "Mar 2024", "location": "Chennai",
             "stats": {"posts": 22, "replies": 87, "uploads": 5, "questions": 14, "likes": 156},
             "activities": [
@@ -599,7 +724,8 @@ COMMUNITY_MEMBERS: dict[str, list[dict]] = {
             ],
         },
         {
-            "id": 3, "name": "Suresh K.", "initials": "SK", "role": "Member",
+            "id": str(uuid.uuid5(uuid.NAMESPACE_OID, "community-member:suresh-k")),
+            "name": "Suresh K.", "initials": "SK", "role": "Member",
             "status": "recently", "statusLabel": "30 min ago", "joinedAt": "Apr 2024", "location": "Mumbai",
             "stats": {"posts": 15, "replies": 64, "uploads": 3, "questions": 8, "likes": 187},
             "activities": [
@@ -608,7 +734,8 @@ COMMUNITY_MEMBERS: dict[str, list[dict]] = {
             ],
         },
         {
-            "id": 4, "name": "Ananya P.", "initials": "AP", "role": "Health Expert",
+            "id": str(uuid.uuid5(uuid.NAMESPACE_OID, "community-member:ananya-p")),
+            "name": "Ananya P.", "initials": "AP", "role": "Health Expert",
             "status": "recently", "statusLabel": "1 hour ago", "joinedAt": "Feb 2024", "location": "Hyderabad",
             "stats": {"posts": 34, "replies": 156, "uploads": 8, "questions": 22, "likes": 203},
             "activities": [
@@ -617,7 +744,8 @@ COMMUNITY_MEMBERS: dict[str, list[dict]] = {
             ],
         },
         {
-            "id": 5, "name": "Divya M.", "initials": "DM", "role": "Member",
+            "id": str(uuid.uuid5(uuid.NAMESPACE_OID, "community-member:divya-m")),
+            "name": "Divya M.", "initials": "DM", "role": "Member",
             "status": "offline", "statusLabel": "2 days ago", "joinedAt": "Jun 2024", "location": "Bangalore",
             "stats": {"posts": 8, "replies": 42, "uploads": 2, "questions": 5, "likes": 89},
             "activities": [
@@ -661,7 +789,7 @@ _ALL_COMMUNITY_POSTS = COMMUNITY_POSTS.get(_COMMUNITY_GROUP_ID, [])
 _now = datetime.now(timezone.utc)
 
 USER_FAVORITES: dict[str, dict[int, dict]] = {
-    "usr_001": {
+    SEED_OWNER_USER_ID: {
         0: {
             "uuid": str(uuid.uuid4()),
             "type_code": "POST",
@@ -682,7 +810,7 @@ USER_FAVORITES: dict[str, dict[int, dict]] = {
 # ── User Likes ──────────────────────────────────────────────────────────────
 # user_id → { post_id → LikeEntry dict }
 USER_LIKES: dict[str, dict[int, dict]] = {
-    "usr_001": {
+    SEED_OWNER_USER_ID: {
         0: {
             "uuid": str(uuid.uuid4()),
             "type_code": "POST",
@@ -703,20 +831,20 @@ USER_LIKES: dict[str, dict[int, dict]] = {
 # ── User Replied ────────────────────────────────────────────────────────────
 # user_id → { post_id → RepliedEntry dict }
 USER_REPLIED: dict[str, dict[int, dict]] = {
-    "usr_001": {},
+    SEED_OWNER_USER_ID: {},
 }
 
 # ── User Activities ─────────────────────────────────────────────────────────
 # user_id → list[ActivityRecord dict]  (newest first)
 USER_ACTIVITIES: dict[str, list[dict]] = {
-    "usr_001": [
+    SEED_OWNER_USER_ID: [
         {
             "id": str(uuid.uuid4()),
             "type_code": "POST",
             "action_code": "FAVORITE",
             "entity_id": 0,
             "datetime": (_now - timedelta(hours=2)).isoformat(),
-            "user_id": "usr_001",
+            "user_id": SEED_OWNER_USER_ID,
             "group_id": _COMMUNITY_GROUP_ID,
             "description": "Favorited post by Meena R.",
             "meta": {"postText": _ALL_COMMUNITY_POSTS[0]["text"][:100]},
@@ -727,7 +855,7 @@ USER_ACTIVITIES: dict[str, list[dict]] = {
             "action_code": "LIKE",
             "entity_id": 0,
             "datetime": (_now - timedelta(hours=1)).isoformat(),
-            "user_id": "usr_001",
+            "user_id": SEED_OWNER_USER_ID,
             "group_id": _COMMUNITY_GROUP_ID,
             "description": "Liked post by Meena R.",
             "meta": None,
@@ -738,7 +866,7 @@ USER_ACTIVITIES: dict[str, list[dict]] = {
             "action_code": "FAVORITE",
             "entity_id": 2,
             "datetime": (_now - timedelta(hours=5)).isoformat(),
-            "user_id": "usr_001",
+            "user_id": SEED_OWNER_USER_ID,
             "group_id": _COMMUNITY_GROUP_ID,
             "description": "Favorited post by Ananya P.",
             "meta": {"postText": _ALL_COMMUNITY_POSTS[2]["text"][:100]},
@@ -749,7 +877,7 @@ USER_ACTIVITIES: dict[str, list[dict]] = {
             "action_code": "LIKE",
             "entity_id": 3,
             "datetime": (_now - timedelta(hours=3)).isoformat(),
-            "user_id": "usr_001",
+            "user_id": SEED_OWNER_USER_ID,
             "group_id": _COMMUNITY_GROUP_ID,
             "description": "Liked post by Divya M.",
             "meta": None,

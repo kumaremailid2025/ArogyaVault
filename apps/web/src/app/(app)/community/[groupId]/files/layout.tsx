@@ -8,7 +8,7 @@
 
 import { useParams, notFound } from "next/navigation";
 import { FilesLayoutContent } from "@/app/(app)/community/_components/files-layout-content";
-import { GROUP_UUID_MAP } from "@/components/containers/community/types";
+import { resolveGroupSlug } from "@/components/containers/community/types";
 
 interface FilesLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface FilesLayoutProps {
 
 export default function GroupFilesLayout({ children }: FilesLayoutProps) {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = resolveGroupSlug(params.groupId);
 
   if (!slug) {
     notFound();

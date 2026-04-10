@@ -45,7 +45,7 @@ export const communityKeys = {
   /* ── Members (offset-paginated) ── */
   members: (groupId: string, params?: Record<string, unknown>) =>
     [...communityKeys.all, "members", groupId, params ?? {}] as const,
-  member: (groupId: string, memberId: number) =>
+  member: (groupId: string, memberId: string) =>
     [...communityKeys.all, "member", groupId, memberId] as const,
 };
 

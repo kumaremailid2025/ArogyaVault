@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   XIcon, SmartphoneIcon, SendIcon,
   MessageCircleIcon, UserCheckIcon, UserPlusIcon,
@@ -16,6 +18,7 @@ import {
 } from "@/core/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/core/ui/input-otp";
 import { inviteApi } from "@/lib/api/invite";
+import { useSidebar } from "@/data/sidebar-data";
 
 /* ── Types ───────────────────────────────────────────────────────── */
 type Step =
@@ -23,6 +26,7 @@ type Step =
   | "checking"
   | "existing"
   | "new"
+  | "already-member"
   | "otp"
   | "verifying"
   | "created"
@@ -31,25 +35,29 @@ type Step =
 export type InviteModalProps = {
   open: boolean;
   onClose: () => void;
-  /** When set, pre-selects this group in the invite-level dropdown.
-   *  undefined = generic invite (defaults to "app" level). */
+  /** Display label used in the modal header copy (e.g. "Ravi's group").
+   *  Undefined = generic invite (defaults to new-group level). */
   groupContext?: string;
+  /** Actual group UUID this modal is scoped to — passed to the phone
+   *  lookup endpoint so the backend can report already_member=true when
+   *  the invitee is already a member of this group. */
+  groupId?: string;
 };
 
-/* ── Invite level options ────────────────────────────────────────── */
-type InviteLevel = { id: string; label: string; sub: string };
+/* ── Invite level options ─────────────────────────────────────────
+   Two fixed choices live at the top of the dropdown:
+     - "group" — create a brand-new linked group between inviter + invitee
+     - "app"   — vault-only invite, no group is created
+   followed by any existing linked groups owned by the inviter.
+────────────────────────────────────────────────────────────────── */
+const LEVEL_NEW_GROUP = "group";
+const LEVEL_APP_ONLY  = "app";
 
-const INVITE_LEVELS: InviteLevel[] = [
-  { id: "app",       label: "App Access",          sub: "Invite to join ArogyaVault" },
-  { id: "community", label: "Community",            sub: "ArogyaCommunity feed" },
-  { id: "ravi",      label: "Ravi Kumar",           sub: "Family Member group" },
-  { id: "sharma",    label: "Dr. Sharma's Clinic",  sub: "Doctor group" },
-  { id: "priya",     label: "Priya Singh",          sub: "Caregiver group" },
-];
-
-const inviteLevelLabel = (id: string): string => {
-  return INVITE_LEVELS.find((l) => l.id === id)?.label ?? id;
-};
+interface InviteLevel {
+  id: string;          // "group" | "app" | group UUID/slug
+  label: string;
+  sub: string;
+}
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 /**
@@ -71,38 +79,77 @@ const normalizeIndianPhone = (raw: string): string => {
 const VALID_OTP = "123456";
 
 /* ── Component ───────────────────────────────────────────────────── */
-export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) => {
+export const InviteModal = ({
+  open,
+  onClose,
+  groupContext,
+  groupId,
+}: InviteModalProps) => {
+  const { LINKED_GROUPS } = useSidebar();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  /** Group id returned by /invites/register-user — used to jump the user
+   *  straight into the freshly-created group once they close the modal. */
+  const [createdGroupId, setCreatedGroupId] = React.useState<string | null>(null);
+
+  /* Build the level list: new-group first, vault second, then existing. */
+  const inviteLevels: InviteLevel[] = React.useMemo(() => {
+    const base: InviteLevel[] = [
+      { id: LEVEL_NEW_GROUP, label: "Invite",               sub: "Create a new shared group" },
+      { id: LEVEL_APP_ONLY,  label: "Invite to ArogyaVault", sub: "App access only — no group created" },
+    ];
+    const existing = LINKED_GROUPS.map<InviteLevel>((g) => ({
+      id: g.slug,
+      label: g.name,
+      sub: `${g.rel} · ${g.sub}`,
+    }));
+    return [...base, ...existing];
+  }, [LINKED_GROUPS]);
+
+  /* Default level: if the modal is opened from inside a group, pre-select
+   * that group's id; otherwise fall back to LEVEL_NEW_GROUP. The legacy
+   * `groupContext` prop is now just a display label and no longer used
+   * to drive level selection. */
+  const defaultLevel = groupId ?? LEVEL_NEW_GROUP;
+
   const [step,        setStep]        = React.useState<Step>("phone");
   const [phone,       setPhone]       = React.useState("");
   const [otp,         setOtp]         = React.useState("");
   const [otpError,    setOtpError]    = React.useState(false);
   const [lookupError, setLookupError] = React.useState<string | null>(null);
   const [existingName, setExistingName] = React.useState<string | null>(null);
-  const [inviteLevel, setInviteLevel] = React.useState<string>(groupContext ?? "app");
+  const [inviteLevel, setInviteLevel] = React.useState<string>(defaultLevel);
 
   /* Re-sync invite level whenever the modal opens with a new context */
   React.useEffect(() => {
-    if (open) setInviteLevel(groupContext ?? "app");
-  }, [open, groupContext]);
+    if (open) setInviteLevel(defaultLevel);
+  }, [open, defaultLevel]);
 
   /* Reset state when modal closes */
   React.useEffect(() => {
     if (!open) {
-      setTimeout(() => {
+      const t = setTimeout(() => {
         setStep("phone");
         setPhone("");
         setOtp("");
         setOtpError(false);
         setLookupError(null);
         setExistingName(null);
+        setCreatedGroupId(null);
       }, 200);
+      return () => clearTimeout(t);
     }
   }, [open]);
+
+  const currentLevel = inviteLevels.find((l) => l.id === inviteLevel) ?? inviteLevels[0];
+  const levelLabel   = currentLevel?.label ?? "ArogyaVault";
+  const isAppLevel   = inviteLevel === LEVEL_APP_ONLY;
+  const isNewGroup   = inviteLevel === LEVEL_NEW_GROUP;
 
   /* ── Actions ─────────────────────────────────────────────────── */
   /**
    * Verify the entered number against the store:
-   *   - Found → "existing" (offer in-app invitation)
+   *   - Found → "existing" (can only add them to an existing section)
    *   - Not found → "new"  (offer WhatsApp or Send OTP to Register)
    */
   const handleContinue = async () => {
@@ -112,7 +159,24 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
     setStep("checking");
     try {
       const normalized = normalizeIndianPhone(phone);
-      const result = await inviteApi.lookupPhone({ phone: normalized });
+      // If the modal was opened from inside a group, scope the lookup
+      // to that group so the backend can tell us when the phone is
+      // already a member. Fall back to the currently-selected invite
+      // level if it's an existing group id from the dropdown.
+      const scopeGroupId =
+        groupId
+        ?? (inviteLevel !== LEVEL_NEW_GROUP && inviteLevel !== LEVEL_APP_ONLY
+          ? inviteLevel
+          : undefined);
+      const result = await inviteApi.lookupPhone({
+        phone: normalized,
+        ...(scopeGroupId ? { group_id: scopeGroupId } : {}),
+      });
+      if (result.already_member) {
+        setExistingName(result.name);
+        setStep("already-member");
+        return;
+      }
       if (result.registered) {
         setExistingName(result.name);
         setStep("existing");
@@ -152,7 +216,7 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
   /**
    * Verify the 123456 OTP and actually create the user on the backend.
    * After success the new user can sign in via the normal /sign-in flow
-   * and will see empty-state dashboards (no seeded data).
+   * and will see a welcome empty-state dashboard.
    */
   const handleVerifyOtp = async () => {
     if (otp !== VALID_OTP) {
@@ -161,10 +225,23 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
     }
     setStep("verifying");
     try {
-      await inviteApi.registerInvitee({
+      const res = await inviteApi.registerInvitee({
         phone: normalizeIndianPhone(phone),
         code: otp,
+        invite_level: inviteLevel,
       });
+      // Remember the newly created group so the "Done" button can jump
+      // into it — either a freshly created linked group (LEVEL_NEW_GROUP)
+      // or the existing group id the caller chose from the dropdown.
+      const targetGroupId =
+        res.group_id
+        ?? (inviteLevel !== LEVEL_NEW_GROUP && inviteLevel !== LEVEL_APP_ONLY
+          ? inviteLevel
+          : null);
+      setCreatedGroupId(targetGroupId);
+      // Refetch the bootstrap bundle so the sidebar picks up the new
+      // linked group at the top of the Community menu.
+      await queryClient.invalidateQueries({ queryKey: ["app-data", "bootstrap"] });
       setStep("created");
     } catch (err) {
       console.error("[InviteModal] register failed", err);
@@ -173,13 +250,34 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
     }
   };
 
+  /**
+   * Close the modal and navigate into the freshly-created group so the
+   * user lands directly on the new invitee's community page.
+   */
+  const handleDone = () => {
+    const gid = createdGroupId;
+    onClose();
+    if (gid) {
+      router.push(`/community/${gid}`);
+    }
+  };
+
   if (!open) return null;
 
-  const levelLabel   = inviteLevelLabel(inviteLevel);
-  const isAppLevel   = inviteLevel === "app";
   const phoneReady   = phone.replace(/\D/g, "").length >= 10;
   /* Footer is shown only while the user is entering phone + level */
   const showFooter   = step === "phone";
+
+  const headerTitle = isAppLevel
+    ? "Invite to ArogyaVault"
+    : isNewGroup
+      ? "Invite — create a new group"
+      : `Invite to ${levelLabel}`;
+  const headerSub = isAppLevel
+    ? "Give them access to ArogyaVault without sharing a group"
+    : isNewGroup
+      ? "A new shared group will be created between you and the invitee"
+      : `Adding someone to ${levelLabel}`;
 
   return (
     <>
@@ -204,16 +302,9 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
         >
           {/* ── Header ─────────────────────────────────────────── */}
           <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border">
-            <div className="space-y-0.5">
-              <h2 className="font-semibold text-base leading-none">
-                {isAppLevel ? "Invite to ArogyaVault" : `Invite to ${levelLabel}`}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {isAppLevel
-                  ? "Invite someone to join ArogyaVault"
-                  : <>Adding someone to <span className="text-primary font-medium">{levelLabel}</span></>
-                }
-              </p>
+            <div className="space-y-0.5 pr-3">
+              <h2 className="font-semibold text-base leading-none">{headerTitle}</h2>
+              <p className="text-xs text-muted-foreground">{headerSub}</p>
             </div>
             <Button
               variant="ghost"
@@ -230,9 +321,9 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
           <div className="px-5 py-5 space-y-4 flex-1">
 
             {/* Phone + invite level — shown during phone/lookup steps */}
-            {(step === "phone" || step === "checking" || step === "existing" || step === "new") && (
+            {(step === "phone" || step === "checking" || step === "existing" || step === "new" || step === "already-member") && (
               <>
-                {/* Mobile number — Continue button removed from here */}
+                {/* Mobile number — Continue button lives in footer */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Mobile Number</Label>
                   <Input
@@ -266,7 +357,7 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {INVITE_LEVELS.map((lvl) => (
+                      {inviteLevels.map((lvl) => (
                         <SelectItem key={lvl.id} value={lvl.id}>
                           {lvl.label} — {lvl.sub}
                         </SelectItem>
@@ -294,19 +385,49 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-primary">
-                      {existingName ? `${existingName} is on ArogyaVault` : "ArogyaVault user found"}
+                      {existingName ? `${existingName} is already on ArogyaVault` : "ArogyaVault user found"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {isAppLevel
-                        ? "Invitation will appear in their app & notifications"
-                        : <>Sending invite to join <strong>{levelLabel}</strong></>
-                      }
+                      Only an app-level invitation is possible for existing users.
                     </p>
                   </div>
                 </div>
-                <Button className="w-full cursor-pointer" onClick={handleSendApp}>
+                <Button
+                  className="w-full cursor-pointer"
+                  onClick={() => {
+                    // Existing users can only receive an "already exists" app invite.
+                    setInviteLevel(LEVEL_APP_ONLY);
+                    handleSendApp();
+                  }}
+                >
                   <SendIcon className="size-3.5 mr-1.5" />
-                  {isAppLevel ? "Send In-App Invitation" : `Add to ${levelLabel}`}
+                  Send ArogyaVault Invite
+                </Button>
+              </div>
+            )}
+
+            {/* Already a member of the current group */}
+            {step === "already-member" && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-3.5 flex items-center gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+                    <AlertCircleIcon className="size-4 text-amber-700 dark:text-amber-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                      {existingName ? `${existingName} is already in this group` : "Already existing in the same group"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      This phone number is already a member of this group. No new invite is needed.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  onClick={onClose}
+                >
+                  Cancel
                 </Button>
               </div>
             )}
@@ -324,8 +445,10 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isAppLevel
-                        ? "Invite them to join and link to your vault"
-                        : <>Invite them to join and add to <strong>{levelLabel}</strong></>
+                        ? "Invite them to join ArogyaVault"
+                        : isNewGroup
+                          ? "Invite them and create a new shared group"
+                          : <>Invite them and add to <strong>{levelLabel}</strong></>
                       }
                     </p>
                   </div>
@@ -351,7 +474,7 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     The invited person received a one-time password. Enter it below to complete
-                    their registration and create the link.
+                    their registration and create the link. (Dev OTP: <code>123456</code>)
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -414,7 +537,9 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                     A new ArogyaVault account has been created for <strong>{phone}</strong>.
                     {isAppLevel
                       ? " They can now sign in and view shared records."
-                      : <> They've been added to <strong>{levelLabel}</strong> and can now sign in.</>
+                      : isNewGroup
+                        ? " A new shared group has been created — they'll see it in Community."
+                        : <> They've been added to <strong>{levelLabel}</strong> and can now sign in.</>
                     }
                   </p>
                 </div>
@@ -424,13 +549,17 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                   </div>
                   <div className="flex items-center justify-center gap-1.5">
                     <CheckCircle2Icon className="size-3.5 text-primary shrink-0" />
-                    {isAppLevel ? "App access granted" : `Added to ${levelLabel}`}
+                    {isAppLevel
+                      ? "App access granted"
+                      : isNewGroup
+                        ? "Shared group created"
+                        : `Added to ${levelLabel}`}
                   </div>
                   <div className="flex items-center justify-center gap-1.5">
                     <CheckCircle2Icon className="size-3.5 text-primary shrink-0" /> Welcome notification sent
                   </div>
                 </div>
-                <Button size="sm" variant="outline" className="mt-1 cursor-pointer" onClick={onClose}>Done</Button>
+                <Button size="sm" variant="outline" className="mt-1 cursor-pointer" onClick={handleDone}>Done</Button>
               </div>
             )}
 

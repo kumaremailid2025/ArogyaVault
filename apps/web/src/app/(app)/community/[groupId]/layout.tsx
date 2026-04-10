@@ -10,11 +10,11 @@
 
 import { useParams, notFound } from "next/navigation";
 import { CommunityShell } from "@/components/containers/community/community-shell";
-import { GROUP_UUID_MAP } from "@/components/containers/community/types";
+import { resolveGroupSlug } from "@/components/containers/community/types";
 
 const GroupLayout = ({ children }: { children: React.ReactNode }) => {
   const params = useParams<{ groupId: string }>();
-  const slug = GROUP_UUID_MAP[params.groupId];
+  const slug = resolveGroupSlug(params.groupId);
 
   if (!slug) {
     notFound();

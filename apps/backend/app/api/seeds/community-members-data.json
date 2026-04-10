@@ -1,7 +1,7 @@
 {
   "COMMUNITY_MEMBERS": [
     {
-      "id": 1,
+      "id": "f84d0580-7982-5590-8018-9bcc8326bfab",
       "name": "Dr. Anjali Mehta",
       "initials": "AM",
       "role": "Moderator",
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "id": 2,
+      "id": "6fb08f7b-5df1-5fcf-ae8a-e5f17a0f1661",
       "name": "Meena R.",
       "initials": "MR",
       "role": "Member",
@@ -125,7 +125,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": "3a85d37f-38ba-57ae-952c-c875d3e791f8",
       "name": "Suresh K.",
       "initials": "SK",
       "role": "Member",
@@ -183,7 +183,7 @@
       ]
     },
     {
-      "id": 4,
+      "id": "28fd1bc5-4550-5687-925a-7aa33ab37d8e",
       "name": "Ananya P.",
       "initials": "AP",
       "role": "Member",
@@ -241,7 +241,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": "1bded1c4-e671-5adb-93e9-5f041cb8a6c9",
       "name": "Divya M.",
       "initials": "DM",
       "role": "Member",
@@ -291,7 +291,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": "84eeecb1-8eda-54c4-9d8c-95e21e07601a",
       "name": "Rahul V.",
       "initials": "RV",
       "role": "Member",
@@ -334,7 +334,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": "a0b0f2a0-e72d-592d-a47f-c2c63065e40b",
       "name": "Dr. Sharma",
       "initials": "DS",
       "role": "Health Expert",
@@ -392,7 +392,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": "c8b53bb4-29dc-5ad4-9348-c3595cc0695d",
       "name": "Priya Singh",
       "initials": "PS",
       "role": "Member",
@@ -450,7 +450,7 @@
       ]
     },
     {
-      "id": 9,
+      "id": "b88aba96-f624-5492-b570-eef4b8023db2",
       "name": "Neha Gupta",
       "initials": "NG",
       "role": "Member",
@@ -493,7 +493,7 @@
       ]
     },
     {
-      "id": 10,
+      "id": "0838b76e-c9ee-5ea7-8dec-47bec9e4bca3",
       "name": "Arjun Patel",
       "initials": "AP2",
       "role": "Member",
@@ -537,7 +537,7 @@
   "INVITED_GROUP_MEMBERS": {
     "ravi": [
       {
-        "id": 201,
+        "id": "08daa5e1-93ce-53a9-b5e3-3711e5bd0ee1",
         "name": "You (Kumar)",
         "initials": "KU",
         "role": "Owner",
@@ -579,7 +579,7 @@
         ]
       },
       {
-        "id": 202,
+        "id": "59c19b7d-e012-55d4-8d9b-12c2604feb22",
         "name": "Ravi Kumar",
         "initials": "RK",
         "role": "Family Member",
@@ -630,7 +630,7 @@
     ],
     "sharma": [
       {
-        "id": 301,
+        "id": "4da7458d-6373-5bb5-934e-7399dc82f914",
         "name": "You (Kumar)",
         "initials": "KU",
         "role": "Patient",
@@ -672,7 +672,7 @@
         ]
       },
       {
-        "id": 302,
+        "id": "351b3c83-7f3c-5984-96c2-fdb45cb57021",
         "name": "Dr. Sharma's Clinic",
         "initials": "DS",
         "role": "Doctor",
@@ -723,7 +723,7 @@
     ],
     "priya": [
       {
-        "id": 401,
+        "id": "df210614-5b2f-53bf-bee4-3cb0554315a4",
         "name": "You (Kumar)",
         "initials": "KU",
         "role": "Owner",
@@ -765,7 +765,7 @@
         ]
       },
       {
-        "id": 402,
+        "id": "de29758a-f1e0-57e8-bc15-bd12c3207bde",
         "name": "Priya Singh",
         "initials": "PS",
         "role": "Caregiver",
