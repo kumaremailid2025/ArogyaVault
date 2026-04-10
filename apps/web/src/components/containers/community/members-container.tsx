@@ -4,7 +4,7 @@ import * as React from "react";
 import { SearchIcon, UsersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MemberCard } from "@/components/community/member-card";
-import { MEMBER_STATUS_FILTERS } from "@/data/community-members-data";
+import { useCommunityMembers } from "@/data/community-members-data";
 import type { MemberStatusFilter } from "@/data/community-members-data";
 import type { CommunityMember } from "@/models/community";
 
@@ -36,6 +36,7 @@ export const MembersContainer = ({
   selectedMemberId,
   onSelectMember,
 }: MembersContainerProps) => {
+  const { MEMBER_STATUS_FILTERS } = useCommunityMembers();
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<MemberStatusFilter>("All");
 

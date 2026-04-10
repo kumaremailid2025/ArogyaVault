@@ -1,8 +1,10 @@
-/* ─────────────────────────────────────────────────────
-   ArogyaLearn — personalized context data
-   Recommendations based on user's vault health data.
-   In production this would be dynamically generated.
-───────────────────────────────────────────────────── */
+/**
+ * Learn Context Data — hook-only (data lives in backend store).
+ */
+
+"use client";
+
+import { useAppDataContext } from "@/providers/appdata-provider";
 
 export type RecommendedTopic = {
   topicId: string;
@@ -28,51 +30,27 @@ export type TrendingTopic = {
 
 export type ContinueReading = {
   topicId: string;
-  progress: number; // 0-100
+  progress: number;
   lastRead: string;
 };
 
-/* ── Personalized recommendations (based on vault health data) ── */
-export const RECOMMENDED_TOPICS: RecommendedTopic[] = [
-  { topicId: "hba1c-basics", reason: "Your HbA1c is 7.2% — pre-diabetes range", urgency: "high" },
-  { topicId: "bp-reading", reason: "Your BP reading is 138/88 mmHg", urgency: "high" },
-  { topicId: "iron-anaemia-basics", reason: "Your Hb is 11.8 g/dL — below normal", urgency: "medium" },
-  { topicId: "tsh-interpretation", reason: "Your TSH is 5.2 mIU/L — borderline elevated", urgency: "medium" },
-  { topicId: "metformin-moa", reason: "You are prescribed Metformin 500 mg", urgency: "low" },
-  { topicId: "cbc-interpretation", reason: "Recent CBC uploaded — learn to read it", urgency: "low" },
-];
+interface LearnContextBundle {
+  RECOMMENDED_TOPICS: RecommendedTopic[];
+  FEATURED_TOPIC: FeaturedTopic | null;
+  TRENDING_TOPICS: TrendingTopic[];
+  CONTINUE_READING: ContinueReading[];
+  LAB_CATEGORIES: readonly string[];
+}
 
-/* ── Featured hero topic ── */
-export const FEATURED_TOPIC: FeaturedTopic = {
-  id: "hba1c-basics",
-  title: "HbA1c: What your number really means",
-  subtitle: "Your latest HbA1c is 7.2%. Understand what this means and how to bring it down.",
-  readTime: "3 min",
-  category: "Lab Values",
-  gradient: "from-blue-600 to-indigo-700",
+export const useLearnContext = (): LearnContextBundle => {
+  const { data } = useAppDataContext();
+  const src = (data.learnContext || {}) as Record<string, unknown>;
+  return {
+    RECOMMENDED_TOPICS:
+      (src.RECOMMENDED_TOPICS as RecommendedTopic[]) ?? [],
+    FEATURED_TOPIC: (src.FEATURED_TOPIC as FeaturedTopic | null) ?? null,
+    TRENDING_TOPICS: (src.TRENDING_TOPICS as TrendingTopic[]) ?? [],
+    CONTINUE_READING: (src.CONTINUE_READING as ContinueReading[]) ?? [],
+    LAB_CATEGORIES: (src.LAB_CATEGORIES as string[]) ?? [],
+  };
 };
-
-/* ── Trending topics ── */
-export const TRENDING_TOPICS: TrendingTopic[] = [
-  { id: "bp-reading", title: "Reading your blood pressure numbers", readers: 12400, category: "Conditions" },
-  { id: "hba1c-basics", title: "HbA1c explained", readers: 9800, category: "Lab Values" },
-  { id: "metformin-moa", title: "Metformin: How it works", readers: 7200, category: "Medications" },
-  { id: "iron-anaemia-basics", title: "Iron deficiency: Signs & solutions", readers: 6500, category: "Conditions" },
-  { id: "glp1-sglt2-comparison", title: "GLP-1 vs SGLT-2 inhibitors", readers: 4100, category: "Research" },
-];
-
-/* ── Continue reading (mock user progress) ── */
-export const CONTINUE_READING: ContinueReading[] = [
-  { topicId: "hba1c-basics", progress: 65, lastRead: "2026-04-02T10:30:00" },
-  { topicId: "metformin-moa", progress: 30, lastRead: "2026-03-28T14:15:00" },
-];
-
-/* ── Quick lab reference categories for right panel ── */
-export const LAB_CATEGORIES = [
-  "Diabetes",
-  "Thyroid",
-  "Blood Count",
-  "Kidney",
-  "Liver",
-  "Cardiac",
-] as const;

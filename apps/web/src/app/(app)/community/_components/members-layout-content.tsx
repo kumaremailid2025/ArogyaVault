@@ -21,8 +21,8 @@ import { MembersContainer } from "@/components/containers/community/members-cont
 import { useMembers } from "@/hooks/api";
 
 /* ── Mock data ────────────────────────────────────────────────── */
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
-import { INVITED_GROUP_MEMBERS } from "@/data/community-members-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
+import { useCommunityMembers } from "@/data/community-members-data";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
 interface MembersLayoutContentProps {
@@ -33,6 +33,8 @@ interface MembersLayoutContentProps {
 }
 
 export const MembersLayoutContent = ({ variant, group, basePath, children }: MembersLayoutContentProps) => {
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
+  const { INVITED_GROUP_MEMBERS } = useCommunityMembers();
   const router = useRouter();
   const pathname = usePathname();
 

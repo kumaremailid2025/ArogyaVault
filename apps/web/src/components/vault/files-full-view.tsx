@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { VAULT_FILES, FILE_CATEGORIES, type MedFile } from "@/data/vault-health-data";
+import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILES FULL VIEW — shown when "Files" tab is active in banner
@@ -34,6 +34,7 @@ const formatDate = (iso: string) => {
 };
 
 export const FilesFullView = ({ onFileClick, selectedFileId }: FilesFullViewProps) => {
+  const { VAULT_FILES, FILE_CATEGORIES } = useVaultHealth();
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
 

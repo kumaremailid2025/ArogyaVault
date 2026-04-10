@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, groups, community, invite, vault
+from app.api.routes import auth, groups, community, invite, vault, appdata, mocks
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.middleware import PlatformMiddleware
@@ -77,6 +77,8 @@ app.include_router(groups.router)
 app.include_router(community.router)
 app.include_router(invite.router)
 app.include_router(vault.router)
+app.include_router(appdata.router)
+app.include_router(mocks.router)
 
 
 @app.get("/")

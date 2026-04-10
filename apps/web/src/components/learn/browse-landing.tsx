@@ -1,4 +1,5 @@
 "use client";
+import { resolveIcon } from "@/lib/icon-resolver";
 
 import * as React from "react";
 import {
@@ -6,10 +7,8 @@ import {
   ArrowRightIcon, ClockIcon, AlertTriangleIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EDU_TOPICS, EDU_CATEGORIES } from "@/data/learn-data";
-import {
-  RECOMMENDED_TOPICS, FEATURED_TOPIC, TRENDING_TOPICS, CONTINUE_READING,
-} from "@/data/learn-context-data";
+import { useLearn } from "@/data/learn-data";
+import { useLearnContext } from "@/data/learn-context-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    BROWSE LANDING — personalized dashboard for the Browse tab center
@@ -20,6 +19,38 @@ import {
 interface BrowseLandingProps {
   onSelectTopic: (topicId: string) => void;
 }
+
+/* Tailwind-like color tokens for the Featured Hero gradient.
+   We can't pass `from-<color> to-<color>` classes dynamically to
+   Tailwind (the JIT only scans static source strings, so runtime
+   values from JSON never get compiled), which left the hero
+   rendering as an empty transparent rectangle. Instead, parse the
+   gradient string from JSON and build a real CSS linear-gradient. */
+const TW_COLORS: Record<string, string> = {
+  "blue-600": "#2563eb",
+  "blue-700": "#1d4ed8",
+  "indigo-600": "#4f46e5",
+  "indigo-700": "#4338ca",
+  "purple-600": "#9333ea",
+  "purple-700": "#7e22ce",
+  "emerald-600": "#059669",
+  "emerald-700": "#047857",
+  "rose-600": "#e11d48",
+  "rose-700": "#be123c",
+  "amber-600": "#d97706",
+  "amber-700": "#b45309",
+  "cyan-600": "#0891b2",
+  "cyan-700": "#0e7490",
+};
+
+const gradientFromString = (g: string | undefined): string => {
+  if (!g) return "linear-gradient(to bottom right, #2563eb, #4338ca)";
+  const fromMatch = g.match(/from-([a-z]+-\d{3})/);
+  const toMatch = g.match(/to-([a-z]+-\d{3})/);
+  const fromColor = (fromMatch && TW_COLORS[fromMatch[1]]) || "#2563eb";
+  const toColor = (toMatch && TW_COLORS[toMatch[1]]) || "#4338ca";
+  return `linear-gradient(to bottom right, ${fromColor}, ${toColor})`;
+};
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -32,16 +63,21 @@ const timeAgo = (iso: string) => {
 };
 
 export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
+  const { EDU_TOPICS, EDU_CATEGORIES } = useLearn();
+  const {
+    RECOMMENDED_TOPICS,
+    FEATURED_TOPIC,
+    TRENDING_TOPICS,
+    CONTINUE_READING,
+  } = useLearnContext();
+  if (!FEATURED_TOPIC) return null;
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
       {/* ── Featured Hero ── */}
       <button
         onClick={() => onSelectTopic(FEATURED_TOPIC.id)}
-        className={cn(
-          "w-full rounded-2xl p-6 text-left transition-all cursor-pointer",
-          "bg-gradient-to-br", FEATURED_TOPIC.gradient,
-          "text-white shadow-lg hover:shadow-xl hover:scale-[1.01]"
-        )}
+        style={{ backgroundImage: gradientFromString(FEATURED_TOPIC.gradient) }}
+        className="w-full rounded-2xl p-6 text-left transition-all cursor-pointer text-white shadow-lg hover:shadow-xl hover:scale-[1.01]"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -71,7 +107,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
           {RECOMMENDED_TOPICS.slice(0, 6).map((rec) => {
             const topic = EDU_TOPICS.find((t) => t.id === rec.topicId);
             if (!topic) return null;
-            const Icon = topic.categoryIcon;
+            const Icon = resolveIcon(topic.categoryIcon);
             return (
               <button
                 key={rec.topicId}
@@ -155,7 +191,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
         </div>
         <div className="grid grid-cols-3 gap-2">
           {EDU_CATEGORIES.filter((c) => c.id !== "all").map((cat) => {
-            const Icon = cat.icon;
+            const Icon = resolveIcon(cat.icon);
             const count = EDU_TOPICS.filter((t) => t.category === cat.id).length;
             return (
               <button

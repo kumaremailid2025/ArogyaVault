@@ -1,178 +1,20 @@
 "use client";
 
+/**
+ * Groups page shared types + small UI helpers.
+ *
+ * All mock data (ALL_GROUPS, DIR, GROUP_PERMISSIONS, GROUP_NAMES) now lives in
+ * the backend bundle — consume it via `useGroups()` from `@/data/groups-data`.
+ */
+
 import * as React from "react";
-import {
-  ArrowRightIcon,
-  ArrowLeftIcon,
-  ArrowLeftRightIcon,
-  EyeIcon,
-  UploadCloudIcon,
-  BellIcon,
-  ShieldCheckIcon,
-} from "lucide-react";
 import { Switch } from "@/core/ui/switch";
-import { cn } from "@/lib/utils";
+import type { Permission } from "@/data/groups-data";
 
-/* ── All linked groups (global view) ────────────────────────────── */
-export const ALL_GROUPS = [
-  {
-    id: "ravi",
-    name: "Ravi Kumar",
-    rel: "Family Member",
-    direction: "out" as const,
-    scope: "App Access",
-    canUpload: false,
-    members: 2,
-    joined: "15 Jan 2026",
-    last: "Viewed records 3 days ago",
-    initials: "RK",
-  },
-  {
-    id: "sharma",
-    name: "Dr. Sharma's Clinic",
-    rel: "Doctor",
-    direction: "in" as const,
-    scope: "Group Access",
-    canUpload: true,
-    members: 3,
-    joined: "10 Feb 2026",
-    last: "Uploaded discharge summary 2 days ago",
-    initials: "DS",
-  },
-  {
-    id: "priya",
-    name: "Priya Singh",
-    rel: "Caregiver",
-    direction: "both" as const,
-    scope: "App Access",
-    canUpload: false,
-    members: 2,
-    joined: "01 Mar 2026",
-    last: "Joined 28 days ago",
-    initials: "PS",
-  },
-];
+export type { Group, GroupDirection, DirectionConfig, Permission } from "@/data/groups-data";
+export { useGroups } from "@/data/groups-data";
 
-export const DIR = {
-  out: {
-    icon: ArrowRightIcon,
-    label: "You invited",
-    color: "text-primary",
-    bg: "bg-primary/10",
-    desc: "You can see their records",
-  },
-  in: {
-    icon: ArrowLeftIcon,
-    label: "They invited",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    desc: "They can see your records",
-  },
-  both: {
-    icon: ArrowLeftRightIcon,
-    label: "Mutual",
-    color: "text-emerald-500",
-    bg: "bg-emerald-50",
-    desc: "Both directions active",
-  },
-};
-
-/* ── Per-group permission detail (shown when viewing group settings) ────────────── */
-export type Permission = {
-  icon: React.ElementType;
-  label: string;
-  desc: string;
-  enabled: boolean;
-};
-
-export const GROUP_PERMISSIONS: Record<string, Permission[]> = {
-  ravi: [
-    {
-      icon: EyeIcon,
-      label: "View all records",
-      desc: "Ravi can see all your uploaded medical documents",
-      enabled: false,
-    },
-    {
-      icon: FileIconPlaceholder,
-      label: "View selected categories",
-      desc: "Ravi can see prescriptions and lab reports only",
-      enabled: true,
-    },
-    {
-      icon: UploadCloudIcon,
-      label: "Upload documents",
-      desc: "Ravi can upload documents on your behalf (requires approval)",
-      enabled: false,
-    },
-    {
-      icon: BellIcon,
-      label: "Activity notifications",
-      desc: "You get notified when Ravi views or uploads anything",
-      enabled: true,
-    },
-  ],
-  sharma: [
-    {
-      icon: EyeIcon,
-      label: "View shared group",
-      desc: "Dr. Sharma can see documents you share to this group",
-      enabled: true,
-    },
-    {
-      icon: UploadCloudIcon,
-      label: "Upload on your behalf",
-      desc: "Clinic can upload documents; you approve before they're saved",
-      enabled: true,
-    },
-    {
-      icon: BellIcon,
-      label: "Upload notifications",
-      desc: "You get notified when the clinic uploads anything",
-      enabled: true,
-    },
-    {
-      icon: ShieldCheckIcon,
-      label: "Audit trail",
-      desc: "Every access by the clinic is logged in your activity",
-      enabled: true,
-    },
-  ],
-  priya: [
-    {
-      icon: EyeIcon,
-      label: "Mutual record access",
-      desc: "Both you and Priya can view each other's shared records",
-      enabled: true,
-    },
-    {
-      icon: UploadCloudIcon,
-      label: "Priya can upload",
-      desc: "Priya can upload documents; you approve before they're saved",
-      enabled: false,
-    },
-    {
-      icon: BellIcon,
-      label: "Activity notifications",
-      desc: "You get notified when Priya views or uploads anything",
-      enabled: true,
-    },
-    {
-      icon: ShieldCheckIcon,
-      label: "Emergency access",
-      desc: "Priya can request a one-time emergency view of all records",
-      enabled: false,
-    },
-  ],
-};
-
-export const GROUP_NAMES: Record<string, string> = {
-  ravi: "Ravi Kumar",
-  sharma: "Dr. Sharma's Clinic",
-  priya: "Priya Singh",
-};
-
-/* ── File icon placeholder ────────────────────────────────────────── */
+/* ── File icon placeholder (inline SVG) ─────────────────────────── */
 export const FileIconPlaceholder = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
@@ -205,7 +47,6 @@ export const PermissionRow = ({ perm }: { perm: Permission }) => {
           <p className="text-xs text-muted-foreground leading-snug">{perm.desc}</p>
         </div>
       </div>
-      {/* Toggle */}
       <Switch
         checked={enabled}
         onCheckedChange={setEnabled}

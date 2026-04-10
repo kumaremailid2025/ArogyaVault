@@ -24,10 +24,10 @@ import { GROUP_SLUG_TO_UUID } from "./types";
 
 import { ComposeArea } from "@/components/community/compose-area";
 import { PostCard } from "@/components/community/post-card";
-import { generateRephrasings } from "@/lib/post-utils";
+import { useFavoritesStore } from "@/stores";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
-import { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } from "@/data/linked-member-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 
 /* ── API hooks (community variant) ───────────────────────────────── */
 import {
@@ -72,9 +72,13 @@ export const FeedPageContainer = ({
   variant,
   group,
 }: FeedPageContainerProps) => {
+  const { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } = useLinkedMembers();
   const isCommunity = variant === "community";
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;
+
+  /* ── Favorites ── */
+  const { favoriteIds, toggleFavorite } = useFavoritesStore();
 
   /* ── API hooks (enabled for ALL groups — community + invited) ── */
   const postsQuery = usePosts(groupId, {});
@@ -159,7 +163,7 @@ export const FeedPageContainer = ({
           view: "reply-preview" as const,
           postId: prev.postId,
           original: text,
-          rephrasings: generateRephrasings(text),
+          rephrasings: ["", ""] as [string, string],
         };
       });
     },
@@ -240,9 +244,11 @@ export const FeedPageContainer = ({
                 post={p}
                 isActive={activePostId === p.id}
                 isLiked={likedPosts.has(p.id)}
+                isFavorited={favoriteIds.has(p.id)}
                 onLike={toggleLike}
                 onReplies={openReplies}
                 onSummary={openSummary}
+                onFavorite={toggleFavorite}
               />
             ))}
           </div>

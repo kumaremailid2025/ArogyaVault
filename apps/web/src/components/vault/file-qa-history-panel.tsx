@@ -7,7 +7,7 @@ import {
   StethoscopeIcon, ShieldIcon, FileIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FILE_QA_HISTORY, type FileQAEntry } from "@/data/vault-health-data";
+import { useVaultHealth, type FileQAEntry } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILE Q&A HISTORY PANEL — default right panel when no file selected
@@ -109,6 +109,7 @@ const QACard = ({
 };
 
 export const FileQAHistoryPanel = ({ onFileClick }: FileQAHistoryPanelProps) => {
+  const { FILE_QA_HISTORY } = useVaultHealth();
   // First entry expanded by default
   const [expandedId, setExpandedId] = React.useState<number | null>(
     FILE_QA_HISTORY.length > 0 ? FILE_QA_HISTORY[0].id : null

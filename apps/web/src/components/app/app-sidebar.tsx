@@ -3,27 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { MessageCircleIcon, TagIcon, ThumbsUpIcon, MessageSquareIcon, StarIcon, ActivityIcon } from "lucide-react";
+import { TagIcon, ThumbsUpIcon, MessageSquareIcon, StarIcon, ActivityIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 import { useTagsStore, tagToSlug, useLikesStore, useRepliedStore, useFavoritesStore, useActivityStore } from "@/stores";
-import { COMMUNITY_POSTS } from "@/data/community-data";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
-
-/* ─── ArogyaCommunity section header ────────────────────────────── */
-const COMMUNITY_GROUP = {
-  slug: "community",
-  name: "Community",
-  sub: "ArogyaCommunity",
-  icon: MessageCircleIcon,
-};
-
-/* ─── Linked / conversation groups (nested under Community) ─────── */
-const LINKED_GROUPS = [
-  { slug: "ravi",   name: "Ravi Kumar",          rel: "Family Member", sub: "App Access",   count: 2 },
-  { slug: "sharma", name: "Dr. Sharma's Clinic",  rel: "Doctor",        sub: "Group Access", count: 3 },
-  { slug: "priya",  name: "Priya Singh",           rel: "Caregiver",     sub: "App Access",   count: 2 },
-];
+import { useCommunity } from "@/data/community-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
+import { useSidebar } from "@/data/sidebar-data";
 
 /* Shared active / hover tokens */
 const ACTIVE  = "bg-primary text-primary-foreground";
@@ -46,6 +32,7 @@ const communityHref = (slug: string): string => {
 const CommunitySidebar = () => {
   const pathname = usePathname();
   const params = useParams<{ groupId?: string }>();
+  const { COMMUNITY_GROUP, LINKED_GROUPS } = useSidebar();
 
   const activeGroupId = params.groupId ?? "";
   const isDefaultCommunity = !activeGroupId;
@@ -123,6 +110,8 @@ const TagsSidebar = () => {
   const params = useParams<{ tag?: string }>();
   const activeSlug = params.tag ?? "";
 
+  const { COMMUNITY_POSTS } = useCommunity();
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const { getSortedTags, postsByTag, registerPosts } = useTagsStore();
 
   /* Seed store from static data so sidebar always has items */
@@ -132,7 +121,7 @@ const TagsSidebar = () => {
       ...Object.values(LINKED_MEMBER_DATA).flatMap((m) => m.posts),
     ];
     registerPosts(allPosts);
-  }, [registerPosts]);
+  }, [registerPosts, COMMUNITY_POSTS, LINKED_MEMBER_DATA]);
 
   const sortedTags = getSortedTags();
 

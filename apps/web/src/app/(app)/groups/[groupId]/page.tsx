@@ -6,16 +6,14 @@ import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { ShieldCheckIcon, LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  ALL_GROUPS,
-  DIR,
-  GROUP_PERMISSIONS,
-  GROUP_NAMES,
   PermissionRow,
+  useGroups,
 } from "../_components/groups-shared";
 
 /* ── Group Settings view (single group) ────────────────────────── */
 const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
   const groupId = params.groupId;
+  const { ALL_GROUPS, DIR, GROUP_PERMISSIONS, GROUP_NAMES } = useGroups();
   const group = ALL_GROUPS.find((g) => g.id === groupId);
   const permissions = GROUP_PERMISSIONS[groupId] ?? [];
 

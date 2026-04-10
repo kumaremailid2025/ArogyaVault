@@ -4,11 +4,8 @@ import * as React from "react";
 import { UsersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  CATEGORIES,
-  CATEGORY_COLOR,
   DocCard,
-  GROUP_DOCS,
-  GROUP_NAMES,
+  useRecords,
 } from "../../_components/records-shared";
 import { Button } from "@/core/ui/button";
 
@@ -18,6 +15,7 @@ export default function SharedMemberPage({
   params: { memberId: string };
 }) {
   const { memberId } = params;
+  const { CATEGORIES, CATEGORY_COLOR, GROUP_DOCS, GROUP_NAMES } = useRecords();
   const memberName = GROUP_NAMES[memberId] ?? memberId;
   const docs = GROUP_DOCS[memberId] ?? [];
 
@@ -57,7 +55,7 @@ export default function SharedMemberPage({
 
       <div className="space-y-3">
         {docs.map((doc) => (
-          <DocCard key={doc.id} doc={doc} />
+          <DocCard key={doc.id} doc={doc} categoryColor={CATEGORY_COLOR} />
         ))}
       </div>
     </>

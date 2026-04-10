@@ -10,7 +10,7 @@ import {
   TrendingDownIcon, TrendingUpIcon, MinusIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DRILLDOWN_MAP, CHART_CONFIGS, type DrilldownData, type ChartConfig } from "@/data/vault-health-data";
+import { useVaultHealth, type DrilldownData, type ChartConfig } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    DRILLDOWN PANEL — expanded detail view
@@ -217,6 +217,7 @@ const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () 
 /* ── Main export ───────────────────────────────────────────────── */
 
 export const DrilldownPanel = ({ targetId, onClose }: DrilldownPanelProps) => {
+  const { DRILLDOWN_MAP, CHART_CONFIGS } = useVaultHealth();
   // Try metric drilldown first
   const metricData = DRILLDOWN_MAP[targetId];
   if (metricData) {

@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { BookOpenIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
-import { EDU_TOPICS } from "@/data/learn-data";
-import { MEDICAL_SYSTEMS } from "@/data/medical-systems-data";
+import { useLearn } from "@/data/learn-data";
+import { useMedicalSystems } from "@/data/medical-systems-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    AROGYALEARN BANNER — route-driven tab navigation
@@ -46,6 +46,8 @@ const deriveTab = (pathname: string): LearnTab => {
 };
 
 export const LearnBanner = React.memo(() => {
+  const { EDU_TOPICS } = useLearn();
+  const { MEDICAL_SYSTEMS } = useMedicalSystems();
   const pathname = usePathname();
   const activeTab = deriveTab(pathname);
 

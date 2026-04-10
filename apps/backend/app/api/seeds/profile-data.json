@@ -1,0 +1,47 @@
+{
+  "ACCESS_LOG": [
+    {
+      "who": "Dr. Sharma's Clinic",
+      "action": "Viewed your group records",
+      "time": "Today, 10:42 AM",
+      "icon": "EyeIcon",
+      "color": "text-primary bg-primary/10"
+    },
+    {
+      "who": "Ravi Kumar",
+      "action": "Joined your health group",
+      "time": "Yesterday, 3:15 PM",
+      "icon": "CheckCircle2Icon",
+      "color": "text-emerald-600 bg-emerald-50"
+    },
+    {
+      "who": "You",
+      "action": "Uploaded CBC Lab Report",
+      "time": "15 Mar, 9:00 AM",
+      "icon": "ShieldCheckIcon",
+      "color": "text-violet-600 bg-violet-50"
+    }
+  ],
+  "NOTIFICATIONS": [
+    {
+      "label": "Document processed",
+      "sub": "When AI finishes reading an upload",
+      "on": true
+    },
+    {
+      "label": "New group invite",
+      "sub": "When someone invites you to a group",
+      "on": true
+    },
+    {
+      "label": "Upload pending approval",
+      "sub": "When a member uploads on your behalf",
+      "on": true
+    },
+    {
+      "label": "Weekly health digest",
+      "sub": "Summary of your health activity",
+      "on": false
+    }
+  ]
+}

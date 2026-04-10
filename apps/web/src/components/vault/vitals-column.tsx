@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  HEALTH_SCORE, VITALS, MEDICATIONS, HEALTH_ALERTS,
-  VITAL_CATEGORIES,
+  useVaultHealth,
   type VitalMetric,
+  type HealthScore,
 } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -24,7 +24,13 @@ interface VitalsColumnProps {
 
 /* ── Health Score Ring ─────────────────────────────────────────── */
 
-const HealthScoreRing = ({ score }: { score: number }) => {
+const HealthScoreRing = ({
+  score,
+  breakdown,
+}: {
+  score: number;
+  breakdown: HealthScore["breakdown"];
+}) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -50,7 +56,7 @@ const HealthScoreRing = ({ score }: { score: number }) => {
       <span className="text-xs font-semibold text-muted-foreground">Health Score</span>
       {/* Mini breakdown */}
       <div className="flex flex-wrap justify-center gap-1 max-w-[200px]">
-        {HEALTH_SCORE.breakdown.map((b) => (
+        {breakdown.map((b) => (
           <span
             key={b.label}
             className="text-[10px] px-1.5 py-0.5 rounded-full border"
@@ -118,6 +124,7 @@ const VitalRow = ({
 /* ── Main component ────────────────────────────────────────────── */
 
 export const VitalsColumn = ({ onMetricClick, activeMetricId }: VitalsColumnProps) => {
+  const { HEALTH_SCORE, VITALS, MEDICATIONS, HEALTH_ALERTS, VITAL_CATEGORIES } = useVaultHealth();
   const [category, setCategory] = React.useState("all");
 
   const filtered = category === "all"
@@ -138,7 +145,7 @@ export const VitalsColumn = ({ onMetricClick, activeMetricId }: VitalsColumnProp
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Health score */}
-      <HealthScoreRing score={HEALTH_SCORE.overall} />
+      <HealthScoreRing score={HEALTH_SCORE.overall} breakdown={HEALTH_SCORE.breakdown} />
 
       {/* Category filter chips */}
       <div className="flex flex-wrap gap-1 px-2 pb-2">

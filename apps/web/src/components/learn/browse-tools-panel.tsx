@@ -7,10 +7,10 @@ import {
   AlertTriangleIcon, CheckCircle2Icon, InfoIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LAB_QUICK_REF } from "@/data/learn-data";
+import { useLearn } from "@/data/learn-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 import { lookupInteraction } from "@/lib/drug-utils";
-import { RECOMMENDED_TOPICS } from "@/data/learn-context-data";
-import { EDU_TOPICS } from "@/data/learn-data";
+import { useLearnContext } from "@/data/learn-context-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    BROWSE TOOLS PANEL — right column
@@ -23,7 +23,11 @@ interface BrowseToolsPanelProps {
 }
 
 /* ── Mini Drug Checker ── */
-const MiniDrugChecker = () => {
+interface MiniDrugCheckerProps {
+  interactions: Record<string, any>;
+}
+
+const MiniDrugChecker = ({ interactions }: MiniDrugCheckerProps) => {
   const [drugA, setDrugA] = React.useState("");
   const [drugB, setDrugB] = React.useState("");
   const [result, setResult] = React.useState<ReturnType<typeof lookupInteraction>>(null);
@@ -31,7 +35,7 @@ const MiniDrugChecker = () => {
 
   const handleCheck = () => {
     if (!drugA.trim() || !drugB.trim()) return;
-    const r = lookupInteraction(drugA, drugB);
+    const r = lookupInteraction(drugA, drugB, interactions);
     setResult(r);
     setChecked(true);
   };
@@ -98,7 +102,7 @@ const MiniDrugChecker = () => {
 };
 
 /* ── Lab Quick Reference ── */
-const LabQuickRef = () => {
+const LabQuickRef = ({ labRefs }: { labRefs: Array<{ test: string; normal: string; prediabetes: string; diabetes: string; unit: string }> }) => {
   return (
     <div>
       <div className="flex items-center gap-1.5 px-1 mb-2">
@@ -115,7 +119,7 @@ const LabQuickRef = () => {
             </tr>
           </thead>
           <tbody>
-            {LAB_QUICK_REF.slice(0, 6).map((lab) => (
+            {labRefs.slice(0, 6).map((lab) => (
               <tr key={lab.test} className="border-t border-border/50">
                 <td className="px-2 py-1 font-medium">{lab.test}</td>
                 <td className="px-2 py-1 text-emerald-600">{lab.normal}</td>
@@ -131,6 +135,8 @@ const LabQuickRef = () => {
 
 /* ── Main Panel ── */
 export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPanelProps) => {
+  const { LAB_QUICK_REF, EDU_TOPICS, DRUG_INTERACTIONS } = useLearn();
+  const { RECOMMENDED_TOPICS } = useLearnContext();
   /* Related topics based on active topic or recommendations */
   const relatedTopics = React.useMemo(() => {
     if (activeTopicId) {
@@ -150,10 +156,10 @@ export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPa
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4">
         {/* Mini Drug Checker */}
-        <MiniDrugChecker />
+        <MiniDrugChecker interactions={DRUG_INTERACTIONS} />
 
         {/* Lab Quick Reference */}
-        <LabQuickRef />
+        <LabQuickRef labRefs={LAB_QUICK_REF} />
 
         {/* Related Topics */}
         <div>
@@ -166,7 +172,7 @@ export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPa
           <div className="space-y-1">
             {relatedTopics.map((topic) => {
               if (!topic) return null;
-              const Icon = topic.categoryIcon;
+              const Icon = resolveIcon(topic.categoryIcon);
               return (
                 <button
                   key={topic.id}

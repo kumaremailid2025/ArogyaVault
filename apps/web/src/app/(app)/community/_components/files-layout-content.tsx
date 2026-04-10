@@ -22,7 +22,7 @@ import { FilesContainer } from "@/components/containers/community/files-containe
 import { useFiles, useRecentFileQA, useAskFileQuestion } from "@/hooks/api";
 
 /* ── Mock data ────────────────────────────────────────────────── */
-import { INVITED_FILES, RECENT_FILE_QA } from "@/data/community-files-data";
+import { useCommunityFiles } from "@/data/community-files-data";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
 interface FilesLayoutContentProps {
@@ -33,6 +33,7 @@ interface FilesLayoutContentProps {
 }
 
 export const FilesLayoutContent = ({ variant, group, basePath, children }: FilesLayoutContentProps) => {
+  const { INVITED_FILES, RECENT_FILE_QA } = useCommunityFiles();
   const router = useRouter();
   const pathname = usePathname();
 

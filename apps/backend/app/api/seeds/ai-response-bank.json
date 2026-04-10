@@ -1,0 +1,68 @@
+{
+  "RULES": [
+    {
+      "keywords": ["medication", "medicine", "drug"],
+      "response": {
+        "role": "ai",
+        "text": "I can pull your current medications once the backend medication endpoint is wired up.",
+        "note": "Check the Vault › Medications panel for the latest list."
+      }
+    },
+    {
+      "keywords": ["blood sugar", "hba1c", "sugar", "diabetes"],
+      "response": {
+        "role": "ai",
+        "text": "Your HbA1c trend will be shown from the Vault health data once fetched from the backend.",
+        "note": "Open the Vitals panel for your latest readings."
+      }
+    },
+    {
+      "keywords": ["flag", "abnormal", "alert"],
+      "response": {
+        "role": "ai",
+        "text": "Flagged values will appear here once the backend alerts endpoint is integrated.",
+        "note": "Check the Health Alerts tile on your dashboard."
+      }
+    },
+    {
+      "keywords": ["follow", "appointment", "visit"],
+      "response": {
+        "role": "ai",
+        "text": "Upcoming follow-ups will be surfaced from your appointments service."
+      }
+    },
+    {
+      "keywords": ["diagnos", "condition"],
+      "response": {
+        "role": "ai",
+        "text": "Active conditions will be surfaced from your vault diagnoses."
+      }
+    },
+    {
+      "keywords": ["summar", "new doctor", "specialist"],
+      "response": {
+        "role": "ai",
+        "text": "Use the AI Export in ArogyaAI to generate a doctor-ready summary from your uploaded records."
+      }
+    },
+    {
+      "keywords": ["blood pressure", "bp", "hypertension"],
+      "response": {
+        "role": "ai",
+        "text": "Your latest BP reading will be shown from the Vitals panel."
+      }
+    },
+    {
+      "keywords": ["lab", "report", "result"],
+      "response": {
+        "role": "ai",
+        "text": "Recent lab reports are available under Vault › Files › Lab Reports."
+      }
+    }
+  ],
+  "DEFAULT": {
+    "role": "ai",
+    "text": "I couldn't find a specific match for that question yet.",
+    "note": "Try uploading more records or rephrasing your question."
+  }
+}

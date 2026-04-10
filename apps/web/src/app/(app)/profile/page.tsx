@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
 import {
   SmartphoneIcon, ShieldCheckIcon, BellIcon,
   EyeIcon, KeyRoundIcon, LogOutIcon,
-  CheckCircle2Icon, PaletteIcon,
+  PaletteIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
@@ -10,23 +11,10 @@ import { Badge } from "@/core/ui/badge";
 import { ThemeSwitcher } from "@/components/app/theme-switcher";
 import { NotificationPreferences } from "@/components/app/notification-preferences";
 import { cn } from "@/lib/utils";
-
-export const metadata: Metadata = { title: "Profile & Settings | ArogyaVault" };
-
-const ACCESS_LOG = [
-  { who: "Dr. Sharma's Clinic", action: "Viewed your group records", time: "Today, 10:42 AM",  icon: EyeIcon,          color: "text-primary bg-primary/10" },
-  { who: "Ravi Kumar",           action: "Joined your health group", time: "Yesterday, 3:15 PM", icon: CheckCircle2Icon, color: "text-emerald-600 bg-emerald-50" },
-  { who: "You",                  action: "Uploaded CBC Lab Report",  time: "15 Mar, 9:00 AM",   icon: ShieldCheckIcon,  color: "text-violet-600 bg-violet-50" },
-];
-
-const NOTIFICATIONS = [
-  { label: "Document processed",     sub: "When AI finishes reading an upload",   on: true  },
-  { label: "New group invite",        sub: "When someone invites you to a group",  on: true  },
-  { label: "Upload pending approval", sub: "When a member uploads on your behalf", on: true  },
-  { label: "Weekly health digest",    sub: "Summary of your health activity",      on: false },
-];
+import { useProfile } from "@/data/profile-data";
 
 const ProfilePage = () => {
+  const { ACCESS_LOG, NOTIFICATIONS } = useProfile();
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-5 lg:p-7 space-y-6 max-w-2xl">

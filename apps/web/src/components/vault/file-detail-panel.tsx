@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { VAULT_FILES, type MedFile } from "@/data/vault-health-data";
+import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILE DETAIL PANEL — right sidebar when a file card is clicked
@@ -67,6 +67,7 @@ const formatDate = (iso: string) => {
 };
 
 export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
+  const { VAULT_FILES } = useVaultHealth();
   const file = VAULT_FILES.find((f) => f.id === fileId);
   const [question, setQuestion] = React.useState("");
   const [messages, setMessages] = React.useState<QAMessage[]>([]);

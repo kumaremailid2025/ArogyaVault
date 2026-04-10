@@ -4,7 +4,7 @@ import * as React from "react";
 import { BotIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
-import { VAULT_FILES } from "@/data/vault-health-data";
+import { useVaultHealth } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    AROGYA-AI BANNER — consistent with Vault & Community banners
@@ -25,6 +25,7 @@ const TABS: { key: AiTab; label: string }[] = [
 
 export const ArogyaAiBanner = React.memo(
   ({ activeTab, onTabChange, sessionCount }: ArogyaAiBannerProps) => {
+    const { VAULT_FILES } = useVaultHealth();
     return (
       <div className="shrink-0 px-5 pt-4 pb-3 lg:px-6">
         <div className="rounded-2xl bg-primary p-4 text-primary-foreground">

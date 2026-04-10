@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  AI_CONTEXT_CARDS, AI_CAPABILITIES, SMART_SUGGESTIONS,
+  useAiContext,
   type AiContextCard, type AiCapability,
 } from "@/data/ai-context-data";
-import { HEALTH_SCORE, HEALTH_ALERTS, VAULT_FILES, MEDICATIONS } from "@/data/vault-health-data";
+import { useVaultHealth } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    AI CONTEXT PANEL — right column
@@ -76,6 +76,8 @@ const ContextCard = ({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) 
 /* ── Main panel ────────────────────────────────────────────────── */
 
 export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
+  const { HEALTH_SCORE, HEALTH_ALERTS, VAULT_FILES, MEDICATIONS } = useVaultHealth();
+  const { AI_CAPABILITIES, AI_CONTEXT_CARDS, SMART_SUGGESTIONS } = useAiContext();
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
   return (

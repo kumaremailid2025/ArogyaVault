@@ -7,8 +7,9 @@ import {
   BookOpenIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MEDICAL_SYSTEMS } from "@/data/medical-systems-data";
-import type { MedSystem } from "@/models/learn";
+import { useMedicalSystems } from "@/data/medical-systems-data";
+import type { RawMedSystem } from "@/data/medical-systems-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 
 /* ═══════════════════════════════════════════════════════════════════
    SYSTEMS TAB — three-column layout
@@ -17,17 +18,21 @@ import type { MedSystem } from "@/models/learn";
 
 /* ── Left: System List ── */
 const SystemListPanel = ({
-  activeId, onSelect,
-}: { activeId: string | null; onSelect: (id: string) => void }) => {
+  systems, activeId, onSelect,
+}: {
+  systems: RawMedSystem[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+}) => {
   const [search, setSearch] = React.useState("");
 
   const filtered = React.useMemo(() => {
-    if (!search.trim()) return MEDICAL_SYSTEMS;
+    if (!search.trim()) return systems;
     const q = search.toLowerCase();
-    return MEDICAL_SYSTEMS.filter(
+    return systems.filter(
       (s) => s.name.toLowerCase().includes(q) || s.origin.toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [systems, search]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -48,7 +53,7 @@ const SystemListPanel = ({
       </div>
       <div className="flex-1 overflow-y-auto px-1.5 space-y-0.5 pb-2">
         {filtered.map((sys) => {
-          const Icon = sys.icon;
+          const Icon = resolveIcon(sys.icon);
           return (
             <button
               key={sys.id}
@@ -76,8 +81,8 @@ const SystemListPanel = ({
 };
 
 /* ── Center: System Detail ── */
-const SystemDetail = ({ system }: { system: MedSystem }) => {
-  const Icon = system.icon;
+const SystemDetail = ({ system }: { system: RawMedSystem }) => {
+  const Icon = resolveIcon(system.icon);
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-5">
       {/* Header */}
@@ -160,7 +165,12 @@ const SystemDetail = ({ system }: { system: MedSystem }) => {
 };
 
 /* ── Right: Compare & Info ── */
-const SystemInfoPanel = ({ activeSystem }: { activeSystem: MedSystem | null }) => {
+const SystemInfoPanel = ({
+  systems, activeSystem,
+}: {
+  systems: RawMedSystem[];
+  activeSystem: RawMedSystem | null;
+}) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4">
@@ -171,8 +181,8 @@ const SystemInfoPanel = ({ activeSystem }: { activeSystem: MedSystem | null }) =
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">All Systems</span>
           </div>
           <div className="space-y-1.5">
-            {MEDICAL_SYSTEMS.map((sys) => {
-              const Icon = sys.icon;
+            {systems.map((sys) => {
+              const Icon = resolveIcon(sys.icon);
               return (
                 <div
                   key={sys.id}
@@ -210,7 +220,12 @@ const SystemInfoPanel = ({ activeSystem }: { activeSystem: MedSystem | null }) =
 };
 
 /* ── Landing ── */
-const SystemsLanding = ({ onSelect }: { onSelect: (id: string) => void }) => {
+const SystemsLanding = ({
+  systems, onSelect,
+}: {
+  systems: RawMedSystem[];
+  onSelect: (id: string) => void;
+}) => {
   return (
     <div className="max-w-3xl mx-auto py-6 space-y-6">
       <div className="text-center mb-6">
@@ -221,8 +236,8 @@ const SystemsLanding = ({ onSelect }: { onSelect: (id: string) => void }) => {
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {MEDICAL_SYSTEMS.map((sys) => {
-          const Icon = sys.icon;
+        {systems.map((sys) => {
+          const Icon = resolveIcon(sys.icon);
           return (
             <button
               key={sys.id}
@@ -255,14 +270,22 @@ const SystemsLanding = ({ onSelect }: { onSelect: (id: string) => void }) => {
 
 /* ── Main Tab Component ── */
 export const SystemsTab = () => {
+  const { MEDICAL_SYSTEMS } = useMedicalSystems();
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const activeSystem = MEDICAL_SYSTEMS.find((s) => s.id === activeId) ?? null;
+
+  /* Auto-select the first system once data loads */
+  React.useEffect(() => {
+    if (!activeId && MEDICAL_SYSTEMS.length > 0) {
+      setActiveId(MEDICAL_SYSTEMS[0].id);
+    }
+  }, [MEDICAL_SYSTEMS, activeId]);
 
   return (
     <div className="h-full flex overflow-hidden">
       {/* Left — System list */}
       <div className="w-[240px] shrink-0 border-r border-border overflow-hidden">
-        <SystemListPanel activeId={activeId} onSelect={setActiveId} />
+        <SystemListPanel systems={MEDICAL_SYSTEMS} activeId={activeId} onSelect={setActiveId} />
       </div>
 
       {/* Center — Detail or Landing */}
@@ -270,13 +293,13 @@ export const SystemsTab = () => {
         {activeSystem ? (
           <SystemDetail system={activeSystem} />
         ) : (
-          <SystemsLanding onSelect={setActiveId} />
+          <SystemsLanding systems={MEDICAL_SYSTEMS} onSelect={setActiveId} />
         )}
       </div>
 
       {/* Right — Info panel */}
       <div className="w-[260px] shrink-0 border-l border-border overflow-hidden">
-        <SystemInfoPanel activeSystem={activeSystem} />
+        <SystemInfoPanel systems={MEDICAL_SYSTEMS} activeSystem={activeSystem} />
       </div>
     </div>
   );

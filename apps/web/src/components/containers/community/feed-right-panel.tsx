@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 
 import { ComposeBox } from "@/components/shared/compose-box";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
-import { TRENDING_TOPICS, POST_SUMMARIES, POST_AI_RESPONSES } from "@/data/community-data";
+import { useCommunity } from "@/data/community-data";
+import { useVoiceLanguages } from "@/data/voice-languages";
 import type { CommunityPost, LinkedPost } from "@/models/community";
 import type { CommunityVariant, PanelState } from "./types";
 import { getHasNative, getVoiceLangInfo } from "./right-panel-shared";
@@ -64,8 +65,10 @@ export const FeedRightPanel = React.memo(
     linkedAiResponse = "",
     memberId = "",
   }: FeedRightPanelProps) => {
+    const { TRENDING_TOPICS, POST_SUMMARIES, POST_AI_RESPONSES } = useCommunity();
+    const { VOICE_LANGUAGES } = useVoiceLanguages();
     const hasNative = getHasNative(pendingReply);
-    const voiceLangInfo = getVoiceLangInfo(pendingReply);
+    const voiceLangInfo = getVoiceLangInfo(pendingReply, VOICE_LANGUAGES);
 
     /* ── Helpers ── */
     const postSubtitle = activePost

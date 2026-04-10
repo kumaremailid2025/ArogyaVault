@@ -21,8 +21,8 @@ import { GROUP_SLUG_TO_UUID } from "./types";
 import { FilesContainer } from "./files-container";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
-import { INVITED_FILES, RECENT_FILE_QA } from "@/data/community-files-data";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
+import { useCommunityFiles } from "@/data/community-files-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 
 /* ── API hooks (community variant) ───────────────────────────────── */
 import { useFiles, useRecentFileQA, useAskFileQuestion } from "@/hooks/api";
@@ -53,6 +53,8 @@ export const FilesPageContainer = ({
   variant,
   group,
 }: FilesPageContainerProps) => {
+  const { INVITED_FILES, RECENT_FILE_QA } = useCommunityFiles();
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const isCommunity = variant === "community";
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;

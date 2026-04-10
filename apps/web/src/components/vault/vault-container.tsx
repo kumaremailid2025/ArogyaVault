@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Loader2Icon } from "lucide-react";
 import { VaultBanner, type VaultTab } from "@/components/vault/vault-banner";
 import { FilesColumn } from "@/components/vault/files-column";
-import { VAULT_FILES, HEALTH_ALERTS, VITALS, CHART_CONFIGS } from "@/data/vault-health-data";
+import { useVaultHealth } from "@/data/vault-health-data";
 
 /* ── Lazy-loaded column/panel components ─────────────────────────── */
 
@@ -53,6 +53,7 @@ const FileQAHistoryPanel = dynamic(
 ═══════════════════════════════════════════════════════════════════ */
 
 export const VaultContainer = () => {
+  const { VAULT_FILES, HEALTH_ALERTS, VITALS, CHART_CONFIGS } = useVaultHealth();
   const [activeTab, setActiveTab] = React.useState<VaultTab>("vault");
   /** null = no drilldown (show FilesColumn), string = metricId or chartId */
   const [drilldownTarget, setDrilldownTarget] = React.useState<string | null>(null);

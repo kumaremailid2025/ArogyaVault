@@ -41,7 +41,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import { useFileAttach } from "@/hooks/use-file-attach";
-import { VOICE_LANGUAGES } from "@/data/voice-languages";
+import { useVoiceLanguages } from "@/data/voice-languages";
 import type { InputMode, SmartInputProps } from "@/models/input";
 import type { AttachStep } from "@/models/user";
 
@@ -61,19 +61,19 @@ const MODE_META: Record<InputMode, { icon: React.ReactNode; label: string }> = {
 
 /* ── SmartInput ────────────────────────────────────────────────────── */
 export const SmartInput = ({
-  onSubmit,
-  value = "",
+  value,
   onChange,
-  placeholder = "Type a message…",
-  submitLabel = "Send",
-  disabled = false,
-  modes = ["text", "voice", "image", "attach"],
-  autoFocus = false,
+  onSubmit,
   onModeChange,
-  maxRows = 6,
-  layout = "chat",
+  placeholder = "Ask anything…",
+  disabled = false,
+  autoFocus = false,
   className,
+  modes = ["text", "voice", "image", "attach"],
+  submitLabel = "Send",
+  maxRows = 5,
 }: SmartInputProps) => {
+  const { VOICE_LANGUAGES } = useVoiceLanguages();
   const [mode, setMode]         = React.useState<InputMode>("text");
   const [voiceLang, setVoiceLang] = React.useState("en-IN");
 
@@ -118,7 +118,7 @@ export const SmartInput = ({
   /* ── Submit ───────────────────────────────────────────────────────── */
   const resolveText = (): string => {
     if (mode === "voice") return voice.liveTranscript.trim();
-    return value.trim();
+    return (value ?? "").trim();
   };
 
   const handleSubmit = () => {

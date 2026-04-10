@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { getPdfAiResponse } from "@/lib/pdf-utils";
+import { usePdfLibrary, type PdfLibraryEntry } from "@/data/pdf-library-data";
+import { useSendPdfQuestion } from "@/hooks/api";
 import type { PdfMessage } from "@/models/learn";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -16,27 +17,7 @@ import type { PdfMessage } from "@/models/learn";
    Left: uploaded PDFs list | Center: chat | Right: citations & info
 ═══════════════════════════════════════════════════════════════════ */
 
-type MockPdf = {
-  name: string;
-  pages: number;
-  size: string;
-  uploadedAt: string;
-};
-
-const MOCK_PDFS: MockPdf[] = [
-  { name: "Blood_Report_Jan2026.pdf", pages: 8, size: "1.2 MB", uploadedAt: "2026-01-15" },
-  { name: "Prescription_Dr_Sharma.pdf", pages: 3, size: "420 KB", uploadedAt: "2026-02-20" },
-  { name: "Thyroid_Panel_Results.pdf", pages: 4, size: "680 KB", uploadedAt: "2026-03-10" },
-  { name: "ECG_Report_Apollo.pdf", pages: 2, size: "1.5 MB", uploadedAt: "2026-03-25" },
-];
-
-const SUGGESTION_QUESTIONS = [
-  "What is the dosage mentioned?",
-  "Are there any side effects listed?",
-  "Explain the mechanism of action",
-  "List the contraindications",
-  "Summarize key findings",
-];
+type MockPdf = PdfLibraryEntry;
 
 /* ── Left: PDF List ── */
 const PdfListPanel = ({
@@ -92,12 +73,13 @@ const PdfListPanel = ({
 
 /* ── Center: Chat ── */
 const PdfChat = ({
-  activePdf, messages, isTyping, onSend,
+  activePdf, messages, isTyping, onSend, suggestionQuestions,
 }: {
   activePdf: string | null;
   messages: PdfMessage[];
   isTyping: boolean;
   onSend: (text: string) => void;
+  suggestionQuestions: string[];
 }) => {
   const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
@@ -143,7 +125,7 @@ const PdfChat = ({
                 Ask any question about this document
               </p>
               <div className="flex flex-wrap gap-1.5 justify-center">
-                {SUGGESTION_QUESTIONS.map((q) => (
+                {suggestionQuestions.map((q) => (
                   <button
                     key={q}
                     onClick={() => onSend(q)}
@@ -248,10 +230,12 @@ const PdfChat = ({
 
 /* ── Right: Citations & Info ── */
 const PdfInfoPanel = ({
-  activePdf, messages,
+  activePdf, messages, pdfs, suggestionQuestions,
 }: {
   activePdf: string | null;
   messages: PdfMessage[];
+  pdfs: MockPdf[];
+  suggestionQuestions: string[];
 }) => {
   const allCitations = messages
     .filter((m) => m.role === "ai" && m.citations)
@@ -274,7 +258,7 @@ const PdfInfoPanel = ({
             <div className="rounded-lg border border-border p-2.5">
               <span className="text-xs font-medium">{activePdf}</span>
               {(() => {
-                const pdf = MOCK_PDFS.find((p) => p.name === activePdf);
+                const pdf = pdfs.find((p) => p.name === activePdf);
                 return pdf ? (
                   <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
                     <span>{pdf.pages} pages</span>
@@ -330,7 +314,7 @@ const PdfInfoPanel = ({
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Try Asking</span>
           </div>
           <div className="space-y-1">
-            {SUGGESTION_QUESTIONS.map((q) => (
+            {suggestionQuestions.map((q) => (
               <div key={q} className="px-2.5 py-1.5 rounded-lg text-[11px] text-muted-foreground">
                 {q}
               </div>
@@ -344,9 +328,18 @@ const PdfInfoPanel = ({
 
 /* ── Main Tab Component ── */
 export const PdfQaTab = () => {
+  const { MOCK_PDFS, SUGGESTION_QUESTIONS } = usePdfLibrary();
+  const askPdf = useSendPdfQuestion();
   const [activePdf, setActivePdf] = React.useState<string | null>(null);
   const [messages, setMessages] = React.useState<PdfMessage[]>([]);
-  const [isTyping, setIsTyping] = React.useState(false);
+  const isTyping = askPdf.isPending;
+
+  /* Auto-select the first PDF once the library loads */
+  React.useEffect(() => {
+    if (!activePdf && MOCK_PDFS.length > 0) {
+      setActivePdf(MOCK_PDFS[0].name);
+    }
+  }, [MOCK_PDFS, activePdf]);
 
   const handleSelectPdf = (name: string) => {
     setActivePdf(name);
@@ -357,12 +350,29 @@ export const PdfQaTab = () => {
     if (!activePdf) return;
     const userMsg: PdfMessage = { role: "user", text };
     setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-    setTimeout(() => {
-      const aiMsg = getPdfAiResponse(text, activePdf);
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1200);
+    askPdf.mutate(
+      { question: text, docName: activePdf },
+      {
+        onSuccess: (res) => {
+          const aiMsg: PdfMessage = {
+            role: "ai",
+            text: res.text,
+            citations: res.citations,
+            related: res.related,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        },
+        onError: () => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "ai",
+              text: "Sorry, I couldn't process that question. Please try again.",
+            },
+          ]);
+        },
+      }
+    );
   };
 
   return (
@@ -379,12 +389,18 @@ export const PdfQaTab = () => {
           messages={messages}
           isTyping={isTyping}
           onSend={handleSend}
+          suggestionQuestions={SUGGESTION_QUESTIONS}
         />
       </div>
 
       {/* Right */}
       <div className="w-[260px] shrink-0 border-l border-border overflow-hidden">
-        <PdfInfoPanel activePdf={activePdf} messages={messages} />
+        <PdfInfoPanel
+          activePdf={activePdf}
+          messages={messages}
+          pdfs={MOCK_PDFS}
+          suggestionQuestions={SUGGESTION_QUESTIONS}
+        />
       </div>
     </div>
   );

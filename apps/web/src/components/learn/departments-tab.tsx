@@ -6,8 +6,10 @@ import {
   StethoscopeIcon, ArrowRightIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DEPARTMENTS, BODY_REGIONS } from "@/data/medical-systems-data";
-import type { Department } from "@/models/learn";
+import { useMedicalSystems } from "@/data/medical-systems-data";
+import type { RawDepartment } from "@/data/medical-systems-data";
+import { resolveIcon } from "@/lib/icon-resolver";
+import type { BodyRegionDef } from "@/models/learn";
 
 /* ═══════════════════════════════════════════════════════════════════
    DEPARTMENTS TAB — three-column layout
@@ -18,8 +20,10 @@ import type { Department } from "@/models/learn";
 
 /* ── Left: Department List ── */
 const DeptListPanel = ({
-  activeId, onSelect, regionFilter, onRegionFilter,
+  departments, bodyRegions, activeId, onSelect, regionFilter, onRegionFilter,
 }: {
+  departments: RawDepartment[];
+  bodyRegions: BodyRegionDef[];
   activeId: string | null;
   onSelect: (id: string) => void;
   regionFilter: string | null;
@@ -28,7 +32,7 @@ const DeptListPanel = ({
   const [search, setSearch] = React.useState("");
 
   const filtered = React.useMemo(() => {
-    let depts = DEPARTMENTS;
+    let depts = departments;
     if (regionFilter) {
       depts = depts.filter((d) => d.bodyRegion === regionFilter);
     }
@@ -42,7 +46,7 @@ const DeptListPanel = ({
       );
     }
     return depts;
-  }, [search, regionFilter]);
+  }, [departments, search, regionFilter]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -72,7 +76,7 @@ const DeptListPanel = ({
         >
           All
         </button>
-        {BODY_REGIONS.filter((r) => r.depts.length > 0).map((region) => (
+        {bodyRegions.filter((r) => r.depts.length > 0).map((region) => (
           <button
             key={region.id}
             onClick={() => onRegionFilter(region.id)}
@@ -94,7 +98,7 @@ const DeptListPanel = ({
 
       <div className="flex-1 overflow-y-auto px-1.5 space-y-0.5 pb-2">
         {filtered.map((dept) => {
-          const Icon = dept.icon;
+          const Icon = resolveIcon(dept.icon);
           return (
             <button
               key={dept.id}
@@ -123,8 +127,8 @@ const DeptListPanel = ({
 };
 
 /* ── Center: Department Detail ── */
-const DeptDetail = ({ dept }: { dept: Department }) => {
-  const Icon = dept.icon;
+const DeptDetail = ({ dept }: { dept: RawDepartment }) => {
+  const Icon = resolveIcon(dept.icon);
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-5">
       {/* Header */}
@@ -180,10 +184,15 @@ const DeptDetail = ({ dept }: { dept: Department }) => {
 
 /* ── Right: Body Region Nav ── */
 const DeptInfoPanel = ({
-  activeDept, onSelect,
-}: { activeDept: Department | null; onSelect: (id: string) => void }) => {
+  departments, bodyRegions, activeDept, onSelect,
+}: {
+  departments: RawDepartment[];
+  bodyRegions: BodyRegionDef[];
+  activeDept: RawDepartment | null;
+  onSelect: (id: string) => void;
+}) => {
   const relatedDepts = activeDept
-    ? DEPARTMENTS.filter((d) => d.bodyRegion === activeDept.bodyRegion && d.id !== activeDept.id)
+    ? departments.filter((d) => d.bodyRegion === activeDept.bodyRegion && d.id !== activeDept.id)
     : [];
 
   return (
@@ -196,14 +205,14 @@ const DeptInfoPanel = ({
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Body Regions</span>
           </div>
           <div className="space-y-1">
-            {BODY_REGIONS.filter((r) => r.depts.length > 0).map((region) => {
-              const regionDepts = DEPARTMENTS.filter((d) => d.bodyRegion === region.id);
+            {bodyRegions.filter((r) => r.depts.length > 0).map((region) => {
+              const regionDepts = departments.filter((d) => d.bodyRegion === region.id);
               return (
                 <div key={region.id} className="rounded-lg border border-border p-2">
                   <span className="text-[11px] font-medium">{region.label}</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {regionDepts.map((d) => {
-                      const DIcon = d.icon;
+                      const DIcon = resolveIcon(d.icon);
                       return (
                         <button
                           key={d.id}
@@ -236,7 +245,7 @@ const DeptInfoPanel = ({
             </div>
             <div className="space-y-1">
               {relatedDepts.map((d) => {
-                const DIcon = d.icon;
+                const DIcon = resolveIcon(d.icon);
                 return (
                   <button
                     key={d.id}
@@ -261,7 +270,12 @@ const DeptInfoPanel = ({
 };
 
 /* ── Landing ── */
-const DepartmentsLanding = ({ onSelect }: { onSelect: (id: string) => void }) => {
+const DepartmentsLanding = ({
+  departments, onSelect,
+}: {
+  departments: RawDepartment[];
+  onSelect: (id: string) => void;
+}) => {
   return (
     <div className="max-w-3xl mx-auto py-6 space-y-6">
       <div className="text-center mb-4">
@@ -272,8 +286,8 @@ const DepartmentsLanding = ({ onSelect }: { onSelect: (id: string) => void }) =>
         </p>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {DEPARTMENTS.map((dept) => {
-          const Icon = dept.icon;
+        {departments.map((dept) => {
+          const Icon = resolveIcon(dept.icon);
           return (
             <button
               key={dept.id}
@@ -296,15 +310,25 @@ const DepartmentsLanding = ({ onSelect }: { onSelect: (id: string) => void }) =>
 
 /* ── Main Tab Component ── */
 export const DepartmentsTab = () => {
+  const { DEPARTMENTS, BODY_REGIONS } = useMedicalSystems();
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [regionFilter, setRegionFilter] = React.useState<string | null>(null);
   const activeDept = DEPARTMENTS.find((d) => d.id === activeId) ?? null;
+
+  /* Auto-select the first department once data loads */
+  React.useEffect(() => {
+    if (!activeId && DEPARTMENTS.length > 0) {
+      setActiveId(DEPARTMENTS[0].id);
+    }
+  }, [DEPARTMENTS, activeId]);
 
   return (
     <div className="h-full flex overflow-hidden">
       {/* Left */}
       <div className="w-[240px] shrink-0 border-r border-border overflow-hidden">
         <DeptListPanel
+          departments={DEPARTMENTS}
+          bodyRegions={BODY_REGIONS}
           activeId={activeId}
           onSelect={setActiveId}
           regionFilter={regionFilter}
@@ -317,13 +341,18 @@ export const DepartmentsTab = () => {
         {activeDept ? (
           <DeptDetail dept={activeDept} />
         ) : (
-          <DepartmentsLanding onSelect={setActiveId} />
+          <DepartmentsLanding departments={DEPARTMENTS} onSelect={setActiveId} />
         )}
       </div>
 
       {/* Right */}
       <div className="w-[260px] shrink-0 border-l border-border overflow-hidden">
-        <DeptInfoPanel activeDept={activeDept} onSelect={setActiveId} />
+        <DeptInfoPanel
+          departments={DEPARTMENTS}
+          bodyRegions={BODY_REGIONS}
+          activeDept={activeDept}
+          onSelect={setActiveId}
+        />
       </div>
     </div>
   );

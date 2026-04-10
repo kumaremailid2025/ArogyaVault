@@ -1,0 +1,35 @@
+{
+  "MOCK_PDFS": [
+    {
+      "name": "Blood_Report_Jan2026.pdf",
+      "pages": 8,
+      "size": "1.2 MB",
+      "uploadedAt": "2026-01-15"
+    },
+    {
+      "name": "Prescription_Dr_Sharma.pdf",
+      "pages": 3,
+      "size": "420 KB",
+      "uploadedAt": "2026-02-20"
+    },
+    {
+      "name": "Thyroid_Panel_Results.pdf",
+      "pages": 4,
+      "size": "680 KB",
+      "uploadedAt": "2026-03-10"
+    },
+    {
+      "name": "ECG_Report_Apollo.pdf",
+      "pages": 2,
+      "size": "1.5 MB",
+      "uploadedAt": "2026-03-25"
+    }
+  ],
+  "SUGGESTION_QUESTIONS": [
+    "What is the dosage mentioned?",
+    "Are there any side effects listed?",
+    "Explain the mechanism of action",
+    "List the contraindications",
+    "Summarize key findings"
+  ]
+}

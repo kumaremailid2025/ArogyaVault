@@ -9,9 +9,10 @@ import {
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { cn } from "@/lib/utils";
 
-import { VOICE_LANGUAGES } from "@/data/voice-languages";
+import { useVoiceLanguages } from "@/data/voice-languages";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
 import type { FileQA, MemberActivityType } from "@/models/community";
+import type { VoiceLanguage } from "@/models/user";
 
 /* ── Voice helpers ──────────────────────────────────────────────── */
 
@@ -20,10 +21,13 @@ export const getHasNative = (pendingReply: ComposeSubmitPayload | null): boolean
   pendingReply?.voiceRecording !== undefined &&
   !pendingReply.voiceRecording.lang.startsWith("en");
 
-export const getVoiceLangInfo = (pendingReply: ComposeSubmitPayload | null) => {
+export const getVoiceLangInfo = (
+  pendingReply: ComposeSubmitPayload | null,
+  voiceLanguages: VoiceLanguage[]
+) => {
   const hasNative = getHasNative(pendingReply);
   return hasNative && pendingReply?.voiceRecording
-    ? (VOICE_LANGUAGES.find((l) => l.code === pendingReply.voiceRecording!.lang) ?? null)
+    ? (voiceLanguages.find((l) => l.code === pendingReply.voiceRecording!.lang) ?? null)
     : null;
 };
 

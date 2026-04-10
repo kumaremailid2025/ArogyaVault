@@ -8,9 +8,11 @@ import { Button } from "@/core/ui/button";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
 import { getGreeting } from "@/lib/post-utils";
-import { QUICK_STATS, ACTIVITY_FEED } from "@/data/dashboard-data";
+import { useDashboard } from "@/data/dashboard-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 
 export const YoursContent = () => {
+  const { QUICK_STATS, ACTIVITY_FEED } = useDashboard();
   const greeting = getGreeting();
 
   return (
@@ -57,14 +59,17 @@ export const YoursContent = () => {
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {QUICK_STATS.map((s) => (
+        {QUICK_STATS.map((s) => {
+          const Icon = resolveIcon(s.icon);
+          return (
           <div key={s.label} className="rounded-xl border border-border p-3 bg-background">
-            <s.icon className={cn("size-4 mb-1.5", s.color)} />
+            <Icon className={cn("size-4 mb-1.5", s.color)} />
             <div className="text-xl font-bold">{s.value}</div>
             <div className="text-xs font-medium">{s.label}</div>
             <div className="text-[11px] text-muted-foreground">{s.sub}</div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Empty state */}
@@ -88,15 +93,18 @@ export const YoursContent = () => {
           <span className="text-sm font-semibold">Recent Activity</span>
         </div>
         <div className="space-y-2">
-          {ACTIVITY_FEED.map((a, i) => (
+          {ACTIVITY_FEED.map((a, i) => {
+            const Icon = resolveIcon(a.icon);
+            return (
             <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3 bg-background">
               <div className={cn("flex size-6 shrink-0 items-center justify-center rounded-full", a.color)}>
-                <a.icon className="size-3" />
+                <Icon className="size-3" />
               </div>
               <span className="flex-1 text-sm">{a.text}</span>
               <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </div>

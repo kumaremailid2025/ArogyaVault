@@ -1,80 +1,50 @@
+/**
+ * Community Data — hook-only (data lives in backend store).
+ */
+
+"use client";
+
+import { useAppDataContext } from "@/providers/appdata-provider";
 import type { CommunityPost } from "@/models/community";
 
-export const COMMUNITY_POSTS: CommunityPost[] = [
-  {
-    id: 0, author: "Meena R.", initials: "MR", location: "Chennai", time: "2 hours ago",
-    text: "My father's HbA1c just came down to 6.8% from 8.1% in 3 months — Metformin + diet changes. Anyone else seen similar results?",
-    likes: 14, replyCount: 3, tag: "Diabetes",
-    replies: [
-      { initials: "SK", author: "Suresh K.", time: "1 hr ago",    text: "Excellent! Low GI foods + regular walks made a similar difference for my wife. Keep it consistent." },
-      { initials: "AP", author: "Ananya P.", time: "1.5 hrs ago", text: "Metformin + portion control — 7.2% to 6.5% in 4 months for my mother. It works!" },
-      { initials: "RV", author: "Rahul V.",  time: "45 min ago",  text: "Is he exercising too? 30-min daily walks combined with meds made a huge difference for us." },
-    ],
-  },
-  {
-    id: 1, author: "Suresh K.", initials: "SK", location: "Mumbai", time: "5 hours ago",
-    text: "Has anyone shared records with a cardiologist abroad using ArogyaVault? How does group sharing work for international remote consultations?",
-    likes: 8, replyCount: 2, tag: "Groups",
-    replies: [
-      { initials: "MR", author: "Meena R.", time: "4 hrs ago", text: "Yes! Shared a group with a Singapore cardiologist — read-only access, works perfectly." },
-      { initials: "AP", author: "Ananya P.", time: "3 hrs ago", text: "The AI Summary PDF is especially useful for international consultants needing a quick overview." },
-    ],
-  },
-  {
-    id: 2, author: "Ananya P.", initials: "AP", location: "Hyderabad", time: "Yesterday",
-    text: "Reminder: the AI Health Summary is incredibly useful for new specialists. My oncologist was impressed with the structured format. Hit 'Export' in ArogyaAI.",
-    likes: 31, replyCount: 2, tag: "Tip",
-    replies: [
-      { initials: "SK", author: "Suresh K.", time: "Yesterday", text: "Seconded! Saved 20 minutes of explanation at my last cardiology appointment." },
-      { initials: "PR", author: "Prabhav R.", time: "Yesterday", text: "Does it include imaging reports? My MRI is uploaded but not sure AI reads those." },
-    ],
-  },
-  {
-    id: 3, author: "Divya M.", initials: "DM", location: "Bangalore", time: "2 days ago",
-    text: "Iron deficiency tip: if CBC shows low Hb, ask your doctor about liquid iron vs. tablets. Liquid absorbs much faster for moderate anaemia cases.",
-    likes: 22, replyCount: 4, tag: "Nutrition",
-    replies: [
-      { initials: "MR", author: "Meena R.",  time: "2 days ago", text: "My mother switched to liquid iron — Hb went from 9.1 to 11.3 g/dL in 6 weeks." },
-      { initials: "SK", author: "Suresh K.", time: "2 days ago", text: "IV iron is even faster for severe deficiency. ArogyaVault's trend tracking is great for this." },
-      { initials: "AP", author: "Ananya P.", time: "2 days ago", text: "Liquid iron + Vitamin C together boosts absorption. Always confirm with your doctor." },
-      { initials: "RV", author: "Rahul V.",  time: "2 days ago", text: "Bookmarked. My sister's Hb is 9.8 — will share this with her doctor." },
-    ],
-  },
-];
+export interface TrendingTopic {
+  topic: string;
+  count: number;
+  pct: number;
+}
 
-export const TRENDING_TOPICS = [
-  { topic: "Diabetes Management", count: 342, pct: 100 },
-  { topic: "Blood Pressure",      count: 289, pct: 84  },
-  { topic: "Lab Reports & CBC",   count: 231, pct: 67  },
-  { topic: "Medications",         count: 198, pct: 58  },
-  { topic: "Heart Health",        count: 156, pct: 46  },
-  { topic: "Women's Health",      count: 134, pct: 39  },
-];
+export interface TopContributor {
+  initials: string;
+  name: string;
+  helpful: number;
+}
 
-export const TOP_CONTRIBUTORS = [
-  { initials: "AP", name: "Ananya P.",  helpful: 203 },
-  { initials: "SK", name: "Suresh K.",  helpful: 187 },
-  { initials: "MR", name: "Meena R.",   helpful: 142 },
-];
+export interface RegionActivity {
+  region: string;
+  count: number;
+  pct: number;
+}
 
-export const REGION_ACTIVITY = [
-  { region: "Mumbai",    count: 2341, pct: 100 },
-  { region: "Chennai",   count: 1987, pct: 85  },
-  { region: "Delhi",     count: 1756, pct: 75  },
-  { region: "Bangalore", count: 1543, pct: 66  },
-  { region: "Hyderabad", count: 1234, pct: 53  },
-];
+interface CommunityBundle {
+  COMMUNITY_POSTS: CommunityPost[];
+  TRENDING_TOPICS: TrendingTopic[];
+  TOP_CONTRIBUTORS: TopContributor[];
+  REGION_ACTIVITY: RegionActivity[];
+  POST_SUMMARIES: Record<number, string>;
+  POST_AI_RESPONSES: Record<number, string>;
+}
 
-export const POST_SUMMARIES: Record<number, string> = {
-  0: "Community strongly agrees: Metformin + low-GI diet + daily 30-minute walks produces meaningful HbA1c drops within 3–4 months. Multiple members reported drops from the 7–8% range to 6.5–6.8%. Consistency with both medication and lifestyle is the critical factor.",
-  1: "International group sharing works seamlessly with read-only access for specialists. The AI Summary PDF is particularly valued — it gives unfamiliar doctors structured context quickly, reducing lengthy verbal explanations at appointments.",
-  2: "Strong consensus that the AI Health Summary export saves 15–20 minutes per specialist visit. One open community question: whether uploaded MRI/imaging reports are fully parsed and included in the AI-generated summary.",
-  3: "Liquid iron absorbs significantly faster than tablets for moderate anaemia — one member reported Hb rising from 9.1 to 11.3 g/dL in just 6 weeks. Combining liquid iron with Vitamin C boosts absorption further. IV iron is preferred for severe deficiency.",
-};
-
-export const POST_AI_RESPONSES: Record<number, string> = {
-  0: "Metformin + lifestyle changes (low-GI diet + 150 min/week moderate exercise) reduces HbA1c by 1–2% on average per clinical data. A 1.3% drop in 3 months is excellent. Sustaining daily walks alongside medication adherence is the key to long-term results.",
-  1: "ArogyaVault supports read-only group access for international specialists. The AI Summary PDF export is strongly recommended — it condenses medications, diagnoses, and recent lab trends into a single structured document any doctor can quickly review.",
-  2: "The AI Export includes all uploaded documents. Imaging reports (MRIs, X-rays) are processed if uploaded as PDFs with embedded text — the AI extracts and summarises key findings. Pure image-only scans without accompanying report text may not be fully analysed.",
-  3: "Liquid ferrous sulfate has ~40% higher bioavailability than tablets due to faster dissolution. Taking it alongside 500mg Vitamin C significantly enhances non-haem iron absorption. Avoid tea, coffee, or dairy within 2 hours of dosing as tannins and calcium inhibit absorption.",
+export const useCommunity = (): CommunityBundle => {
+  const { data } = useAppDataContext();
+  const src = (data.community || {}) as Record<string, unknown>;
+  return {
+    COMMUNITY_POSTS: (src.COMMUNITY_POSTS as CommunityPost[]) ?? [],
+    TRENDING_TOPICS: (src.TRENDING_TOPICS as TrendingTopic[]) ?? [],
+    TOP_CONTRIBUTORS: (src.TOP_CONTRIBUTORS as TopContributor[]) ?? [],
+    REGION_ACTIVITY: (src.REGION_ACTIVITY as RegionActivity[]) ?? [],
+    POST_SUMMARIES:
+      (src.POST_SUMMARIES as Record<number, string>) ?? {},
+    POST_AI_RESPONSES:
+      (src.POST_AI_RESPONSES as Record<number, string>) ?? {},
+  };
 };

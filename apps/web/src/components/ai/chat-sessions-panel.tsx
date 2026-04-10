@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { CHAT_SESSIONS, type ChatSession } from "@/data/ai-context-data";
+import { useAiContext, type ChatSession } from "@/data/ai-context-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    CHAT SESSIONS PANEL — left column
@@ -36,6 +36,7 @@ export const ChatSessionsPanel = ({
   onSelectSession,
   onNewChat,
 }: ChatSessionsPanelProps) => {
+  const { CHAT_SESSIONS } = useAiContext();
   const [search, setSearch] = React.useState("");
 
   const filtered = React.useMemo(() => {

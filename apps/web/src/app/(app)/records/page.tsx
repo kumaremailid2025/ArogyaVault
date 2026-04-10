@@ -5,13 +5,12 @@ import { UploadCloudIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  CATEGORIES,
-  CATEGORY_COLOR,
   DocCard,
-  MY_DOCS,
+  useRecords,
 } from "./_components/records-shared";
 
 const RecordsPage = () => {
+  const { CATEGORIES, CATEGORY_COLOR, MY_DOCS } = useRecords();
   return (
     <>
       <div className="flex items-center justify-between">
@@ -46,7 +45,7 @@ const RecordsPage = () => {
 
       <div className="space-y-3">
         {MY_DOCS.map((doc) => (
-          <DocCard key={doc.id} doc={doc} />
+          <DocCard key={doc.id} doc={doc} categoryColor={CATEGORY_COLOR} />
         ))}
       </div>
 

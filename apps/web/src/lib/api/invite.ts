@@ -115,6 +115,32 @@ export interface InviteCountsOut {
   received_total: number;
 }
 
+/* ── Lookup phone (invite modal — verify against store) ── */
+export interface LookupPhoneData {
+  phone: string;
+}
+
+export interface LookupPhoneResponse {
+  registered: boolean;
+  phone_masked: string;
+  name: string | null;
+}
+
+/* ── Register new user via invite OTP flow ── */
+export interface RegisterInviteeData {
+  phone: string;
+  code: string;
+  name?: string;
+}
+
+export interface RegisterInviteeResponse {
+  success: boolean;
+  user_id: string;
+  phone_masked: string;
+  name: string;
+  message: string;
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    API CLIENT
    ══════════════════════════════════════════════════════════════════════ */
@@ -163,5 +189,19 @@ export const inviteApi = {
   revokeInvite: (inviteId: string) =>
     apiClient<InviteActionResponse>(`/invites/${inviteId}`, {
       method: "DELETE",
+    }),
+
+  /* ── Lookup phone — does this number already exist on ArogyaVault? ── */
+  lookupPhone: (data: LookupPhoneData) =>
+    apiClient<LookupPhoneResponse>("/invites/lookup", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  /* ── Register a brand-new user (dev OTP = 123456) ── */
+  registerInvitee: (data: RegisterInviteeData) =>
+    apiClient<RegisterInviteeResponse>("/invites/register-user", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };

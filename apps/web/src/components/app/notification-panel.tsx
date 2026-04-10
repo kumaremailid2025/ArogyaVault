@@ -1,63 +1,13 @@
 "use client";
 
 import * as React from "react";
-import {
-  CheckIcon, AlertTriangleIcon, UploadCloudIcon,
-  UsersIcon, SparklesIcon,
-} from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
-import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
+import { useSidebar, type TopNotification } from "@/data/sidebar-data";
 
 /* ── Notification type ─────────────────────────────────────────────── */
-type Notif = {
-  id: string;
-  icon: React.ElementType;
-  iconBg: string;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
-};
-
-const INITIAL_NOTIFICATIONS: Notif[] = [
-  {
-    id: "n1",
-    icon: UploadCloudIcon,
-    iconBg: "bg-primary/10 text-primary",
-    title: "Dr. Sharma uploaded a file",
-    desc: "Discharge summary added to your shared group",
-    time: "10 min ago",
-    read: false,
-  },
-  {
-    id: "n2",
-    icon: AlertTriangleIcon,
-    iconBg: "bg-rose-100 text-rose-600",
-    title: "Lab value flagged",
-    desc: "CBC report — Haemoglobin 11.2 g/dL (low)",
-    time: "2 hrs ago",
-    read: false,
-  },
-  {
-    id: "n3",
-    icon: UsersIcon,
-    iconBg: "bg-primary/10 text-primary",
-    title: "Ravi Kumar viewed your group",
-    desc: "Ravi accessed the shared records",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "n4",
-    icon: SparklesIcon,
-    iconBg: "bg-amber-100 text-amber-600",
-    title: "ArogyaAI summary ready",
-    desc: "Your weekly health digest is prepared",
-    time: "2 days ago",
-    read: true,
-  },
-];
+type Notif = TopNotification;
 
 /* ═══════════════════════════════════════════════════════════════════
    NOTIFICATION PANEL
@@ -69,8 +19,14 @@ interface NotificationPanelProps {
 }
 
 export const NotificationPanel = ({ onClose }: NotificationPanelProps) => {
-  const [notifications, setNotifications] = React.useState(INITIAL_NOTIFICATIONS);
+  const { TOP_NOTIFICATIONS } = useSidebar();
+  const [notifications, setNotifications] = React.useState<Notif[]>(TOP_NOTIFICATIONS);
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  /* Sync local state when backend data loads */
+  React.useEffect(() => {
+    setNotifications(TOP_NOTIFICATIONS);
+  }, [TOP_NOTIFICATIONS]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

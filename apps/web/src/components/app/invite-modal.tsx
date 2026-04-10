@@ -15,6 +15,7 @@ import {
   SelectContent, SelectItem,
 } from "@/core/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/core/ui/input-otp";
+import { inviteApi } from "@/lib/api/invite";
 
 /* ── Types ───────────────────────────────────────────────────────── */
 type Step =
@@ -51,12 +52,22 @@ const inviteLevelLabel = (id: string): string => {
 };
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
-const simulateLookup = (phone: string): "existing" | "new" => {
-  const digits = phone.replace(/\D/g, "");
-  const last = parseInt(digits[digits.length - 1] ?? "1", 10);
-  return last % 2 === 0 ? "existing" : "new";
+/**
+ * Normalise whatever the user typed into an E.164 Indian number so the
+ * backend (/invites/lookup, /invites/register-user) can validate it.
+ *
+ *   "98765 43210"    → "+919876543210"
+ *   "+91 98765 43210"→ "+919876543210"
+ *   "919876543210"   → "+919876543210"
+ */
+const normalizeIndianPhone = (raw: string): string => {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("91") && digits.length === 12) return `+${digits}`;
+  if (digits.length === 10) return `+91${digits}`;
+  return `+${digits}`;
 };
 
+/** Dev-only registration OTP — matches INVITE_REGISTER_OTP in the backend. */
 const VALID_OTP = "123456";
 
 /* ── Component ───────────────────────────────────────────────────── */
@@ -65,6 +76,8 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
   const [phone,       setPhone]       = React.useState("");
   const [otp,         setOtp]         = React.useState("");
   const [otpError,    setOtpError]    = React.useState(false);
+  const [lookupError, setLookupError] = React.useState<string | null>(null);
+  const [existingName, setExistingName] = React.useState<string | null>(null);
   const [inviteLevel, setInviteLevel] = React.useState<string>(groupContext ?? "app");
 
   /* Re-sync invite level whenever the modal opens with a new context */
@@ -80,19 +93,55 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
         setPhone("");
         setOtp("");
         setOtpError(false);
+        setLookupError(null);
+        setExistingName(null);
       }, 200);
     }
   }, [open]);
 
   /* ── Actions ─────────────────────────────────────────────────── */
-  const handleContinue = () => {
+  /**
+   * Verify the entered number against the store:
+   *   - Found → "existing" (offer in-app invitation)
+   *   - Not found → "new"  (offer WhatsApp or Send OTP to Register)
+   */
+  const handleContinue = async () => {
     if (phone.replace(/\D/g, "").length < 10) return;
+    setLookupError(null);
+    setExistingName(null);
     setStep("checking");
-    setTimeout(() => setStep(simulateLookup(phone)), 900);
+    try {
+      const normalized = normalizeIndianPhone(phone);
+      const result = await inviteApi.lookupPhone({ phone: normalized });
+      if (result.registered) {
+        setExistingName(result.name);
+        setStep("existing");
+      } else {
+        setStep("new");
+      }
+    } catch (err) {
+      console.error("[InviteModal] lookup failed", err);
+      setLookupError("Could not verify this number. Please try again.");
+      setStep("phone");
+    }
   };
 
   const handleSendApp = () => { setStep("sent"); };
-  const handleSendWhatsApp = () => { setStep("sent"); };
+  const handleSendWhatsApp = () => {
+    // Open WhatsApp with a prefilled invite message. The backend will
+    // wire up a proper click-to-chat flow once Twilio/WhatsApp is enabled.
+    const normalized = normalizeIndianPhone(phone);
+    const waNumber = normalized.replace(/\D/g, "");
+    const text = encodeURIComponent(
+      "Hi! I'm sharing my ArogyaVault health records with you. " +
+      "Download the app and sign in with this number to get connected: " +
+      "https://arogyavault.com",
+    );
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${waNumber}?text=${text}`, "_blank", "noopener");
+    }
+    setStep("sent");
+  };
 
   const handleSendOtp = () => {
     setOtp("");
@@ -100,16 +149,28 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
     setStep("otp");
   };
 
-  const handleVerifyOtp = () => {
+  /**
+   * Verify the 123456 OTP and actually create the user on the backend.
+   * After success the new user can sign in via the normal /sign-in flow
+   * and will see empty-state dashboards (no seeded data).
+   */
+  const handleVerifyOtp = async () => {
+    if (otp !== VALID_OTP) {
+      setOtpError(true);
+      return;
+    }
     setStep("verifying");
-    setTimeout(() => {
-      if (otp === VALID_OTP) {
-        setStep("created");
-      } else {
-        setOtpError(true);
-        setStep("otp");
-      }
-    }, 900);
+    try {
+      await inviteApi.registerInvitee({
+        phone: normalizeIndianPhone(phone),
+        code: otp,
+      });
+      setStep("created");
+    } catch (err) {
+      console.error("[InviteModal] register failed", err);
+      setOtpError(true);
+      setStep("otp");
+    }
   };
 
   if (!open) return null;
@@ -178,12 +239,19 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
+                      setLookupError(null);
                       if (step !== "phone") setStep("phone");
                     }}
                     placeholder="+91 98765 43210"
                     disabled={step === "checking"}
-                    onKeyDown={(e) => e.key === "Enter" && step === "phone" && handleContinue()}
+                    onKeyDown={(e) => { if (e.key === "Enter" && step === "phone") void handleContinue(); }}
                   />
+                  {lookupError && (
+                    <div className="flex items-center gap-1.5 text-xs text-destructive">
+                      <AlertCircleIcon className="size-3.5 shrink-0" />
+                      {lookupError}
+                    </div>
+                  )}
                 </div>
 
                 {/* Invite level */}
@@ -225,7 +293,9 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                     <UserCheckIcon className="size-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-primary">ArogyaVault user found</p>
+                    <p className="text-sm font-semibold text-primary">
+                      {existingName ? `${existingName} is on ArogyaVault` : "ArogyaVault user found"}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {isAppLevel
                         ? "Invitation will appear in their app & notifications"
@@ -313,7 +383,7 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
                 </div>
                 <Button
                   className="w-full cursor-pointer"
-                  onClick={handleVerifyOtp}
+                  onClick={() => void handleVerifyOtp()}
                   disabled={otp.length < 6 || step === "verifying"}
                 >
                   {step === "verifying"
@@ -396,7 +466,7 @@ export const InviteModal = ({ open, onClose, groupContext }: InviteModalProps) =
               </Button>
               <Button
                 size="sm"
-                onClick={handleContinue}
+                onClick={() => void handleContinue()}
                 disabled={!phoneReady}
                 className="cursor-pointer"
               >

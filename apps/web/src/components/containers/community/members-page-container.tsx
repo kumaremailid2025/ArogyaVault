@@ -20,8 +20,8 @@ import { GROUP_SLUG_TO_UUID } from "./types";
 import { MembersContainer } from "./members-container";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
-import { INVITED_GROUP_MEMBERS } from "@/data/community-members-data";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
+import { useCommunityMembers } from "@/data/community-members-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 
 /* ── API hooks (community variant) ───────────────────────────────── */
 import { useMembers } from "@/hooks/api";
@@ -52,6 +52,8 @@ export const MembersPageContainer = ({
   variant,
   group,
 }: MembersPageContainerProps) => {
+  const { INVITED_GROUP_MEMBERS } = useCommunityMembers();
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const isCommunity = variant === "community";
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;
   const member = !isCommunity ? LINKED_MEMBER_DATA[group] : null;

@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import {
-  PillIcon, AlertTriangleIcon, CheckCircle2Icon,
-  InfoIcon, ShieldAlertIcon, XIcon, PlusIcon,
-  ArrowRightIcon, BookOpenIcon,
+  PillIcon, AlertTriangleIcon,
+  XIcon, PlusIcon,
+  BookOpenIcon,
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { lookupInteraction } from "@/lib/drug-utils";
-import { DRUG_INTERACTIONS } from "@/data/learn-data";
+import { useLearn } from "@/data/learn-data";
+import { useDrugSuggestions, type SeverityConfig, type DrugSeverityKey } from "@/data/drug-suggestions-data";
 import type { DrugSeverity } from "@/models/learn";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -31,28 +32,15 @@ type CheckResult = {
   advice: string;
 };
 
-const SEVERITY_CONFIG = {
-  none:     { icon: CheckCircle2Icon, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/30", label: "No Interaction" },
-  minor:    { icon: InfoIcon,         color: "text-blue-500",    bg: "bg-blue-50 dark:bg-blue-900/20",       border: "border-blue-200 dark:border-blue-800/30",    label: "Minor" },
-  moderate: { icon: AlertTriangleIcon, color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-900/20",     border: "border-amber-200 dark:border-amber-800/30",  label: "Moderate" },
-  major:    { icon: ShieldAlertIcon,  color: "text-red-500",     bg: "bg-red-50 dark:bg-red-900/20",         border: "border-red-200 dark:border-red-800/30",      label: "Major" },
-  unknown:  { icon: InfoIcon,         color: "text-muted-foreground", bg: "bg-muted/40", border: "border-border", label: "Not Found" },
-};
-
-/* ── Common drugs for quick add ── */
-const COMMON_DRUGS = [
-  "Metformin", "Amlodipine", "Aspirin", "Warfarin",
-  "Simvastatin", "Iron", "Antacid", "Grapefruit",
-];
-
 /* ── Left: Drug Input Panel ── */
 const DrugInputPanel = ({
-  drugs, onAddDrug, onRemoveDrug, onCheck,
+  drugs, onAddDrug, onRemoveDrug, onCheck, commonDrugs,
 }: {
   drugs: string[];
   onAddDrug: (drug: string) => void;
   onRemoveDrug: (index: number) => void;
   onCheck: () => void;
+  commonDrugs: string[];
 }) => {
   const [inputValue, setInputValue] = React.useState("");
 
@@ -89,7 +77,7 @@ const DrugInputPanel = ({
 
         {/* Quick add chips */}
         <div className="flex flex-wrap gap-1 mt-2">
-          {COMMON_DRUGS.filter((d) => !drugs.some((dd) => dd.toLowerCase() === d.toLowerCase())).slice(0, 6).map((drug) => (
+          {commonDrugs.filter((d) => !drugs.some((dd) => dd.toLowerCase() === d.toLowerCase())).slice(0, 6).map((drug) => (
             <button
               key={drug}
               onClick={() => onAddDrug(drug)}
@@ -137,7 +125,13 @@ const DrugInputPanel = ({
 };
 
 /* ── Center: Results ── */
-const ResultsPanel = ({ results }: { results: CheckResult[] }) => {
+const ResultsPanel = ({
+  results,
+  severityConfig,
+}: {
+  results: CheckResult[];
+  severityConfig: Record<DrugSeverityKey, SeverityConfig>;
+}) => {
   if (results.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -178,7 +172,7 @@ const ResultsPanel = ({ results }: { results: CheckResult[] }) => {
       {/* Result cards */}
       <div className="space-y-2">
         {sorted.map((r, i) => {
-          const config = SEVERITY_CONFIG[r.severity];
+          const config = severityConfig[r.severity];
           const SevIcon = config.icon;
           return (
             <div
@@ -203,17 +197,23 @@ const ResultsPanel = ({ results }: { results: CheckResult[] }) => {
 };
 
 /* ── Right: Info Panel ── */
-const DrugInfoPanel = () => {
+const DrugInfoPanel = ({
+  drugInteractions,
+  severityConfig,
+}: {
+  drugInteractions: Record<string, unknown>;
+  severityConfig: Record<DrugSeverityKey, SeverityConfig>;
+}) => {
   /* Extract unique drug names from known interactions */
   const knownDrugs = React.useMemo(() => {
     const drugs = new Set<string>();
-    Object.keys(DRUG_INTERACTIONS).forEach((key) => {
+    Object.keys(drugInteractions).forEach((key) => {
       const [a, b] = key.split("+");
       drugs.add(a.charAt(0).toUpperCase() + a.slice(1));
       drugs.add(b.charAt(0).toUpperCase() + b.slice(1));
     });
     return Array.from(drugs).sort();
-  }, []);
+  }, [drugInteractions]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -226,7 +226,7 @@ const DrugInfoPanel = () => {
           </div>
           <div className="space-y-1.5">
             {(["major", "moderate", "minor", "none"] as const).map((sev) => {
-              const config = SEVERITY_CONFIG[sev];
+              const config = severityConfig[sev];
               const SevIcon = config.icon;
               return (
                 <div key={sev} className={cn("rounded-lg border p-2", config.border, config.bg)}>
@@ -254,7 +254,7 @@ const DrugInfoPanel = () => {
             ))}
           </div>
           <p className="text-[9px] text-muted-foreground mt-2 px-1">
-            {Object.keys(DRUG_INTERACTIONS).length / 2} interaction pairs in database. Always consult your doctor.
+            {Object.keys(drugInteractions).length / 2} interaction pairs in database. Always consult your doctor.
           </p>
         </div>
 
@@ -271,6 +271,8 @@ const DrugInfoPanel = () => {
 
 /* ── Main Tab Component ── */
 export const DrugCheckTab = () => {
+  const { DRUG_INTERACTIONS } = useLearn();
+  const { COMMON_DRUGS, SEVERITY_CONFIG } = useDrugSuggestions();
   const [drugs, setDrugs] = React.useState<string[]>([]);
   const [results, setResults] = React.useState<CheckResult[]>([]);
 
@@ -288,7 +290,7 @@ export const DrugCheckTab = () => {
     const checks: CheckResult[] = [];
     for (let i = 0; i < drugs.length; i++) {
       for (let j = i + 1; j < drugs.length; j++) {
-        const result = lookupInteraction(drugs[i], drugs[j]);
+        const result = lookupInteraction(drugs[i], drugs[j], DRUG_INTERACTIONS);
         if (result) {
           checks.push({ drugA: drugs[i], drugB: drugs[j], ...result });
         } else {
@@ -314,17 +316,18 @@ export const DrugCheckTab = () => {
           onAddDrug={handleAddDrug}
           onRemoveDrug={handleRemoveDrug}
           onCheck={handleCheck}
+          commonDrugs={COMMON_DRUGS}
         />
       </div>
 
       {/* Center — Results */}
       <div className="flex-1 overflow-y-auto px-4">
-        <ResultsPanel results={results} />
+        <ResultsPanel results={results} severityConfig={SEVERITY_CONFIG} />
       </div>
 
       {/* Right — Info */}
       <div className="w-[260px] shrink-0 border-l border-border overflow-hidden">
-        <DrugInfoPanel />
+        <DrugInfoPanel drugInteractions={DRUG_INTERACTIONS} severityConfig={SEVERITY_CONFIG} />
       </div>
     </div>
   );

@@ -1,0 +1,74 @@
+{
+  "COMMUNITY_GROUP": {
+    "slug": "community",
+    "name": "Community",
+    "sub": "ArogyaCommunity",
+    "icon": "MessageCircleIcon"
+  },
+  "LINKED_GROUPS": [
+    {
+      "slug": "ravi",
+      "name": "Ravi Kumar",
+      "rel": "Family Member",
+      "sub": "App Access",
+      "count": 2
+    },
+    {
+      "slug": "sharma",
+      "name": "Dr. Sharma's Clinic",
+      "rel": "Doctor",
+      "sub": "Group Access",
+      "count": 3
+    },
+    {
+      "slug": "priya",
+      "name": "Priya Singh",
+      "rel": "Caregiver",
+      "sub": "App Access",
+      "count": 2
+    }
+  ],
+  "INVITE_GROUPS": [
+    { "id": "ravi", "name": "Ravi Kumar" },
+    { "id": "sharma", "name": "Dr. Sharma's Clinic" },
+    { "id": "priya", "name": "Priya Singh" }
+  ],
+  "TOP_NOTIFICATIONS": [
+    {
+      "id": "n1",
+      "icon": "UploadCloudIcon",
+      "iconBg": "bg-primary/10 text-primary",
+      "title": "Dr. Sharma uploaded a file",
+      "desc": "Discharge summary added to your shared group",
+      "time": "10 min ago",
+      "read": false
+    },
+    {
+      "id": "n2",
+      "icon": "AlertTriangleIcon",
+      "iconBg": "bg-rose-100 text-rose-600",
+      "title": "Lab value flagged",
+      "desc": "CBC report — Haemoglobin 11.2 g/dL (low)",
+      "time": "2 hrs ago",
+      "read": false
+    },
+    {
+      "id": "n3",
+      "icon": "UsersIcon",
+      "iconBg": "bg-primary/10 text-primary",
+      "title": "Ravi Kumar viewed your group",
+      "desc": "Ravi accessed the shared records",
+      "time": "Yesterday",
+      "read": true
+    },
+    {
+      "id": "n4",
+      "icon": "SparklesIcon",
+      "iconBg": "bg-amber-100 text-amber-600",
+      "title": "ArogyaAI summary ready",
+      "desc": "Your weekly health digest is prepared",
+      "time": "2 days ago",
+      "read": true
+    }
+  ]
+}

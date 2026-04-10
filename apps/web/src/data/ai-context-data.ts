@@ -1,7 +1,12 @@
 /**
- * AI Context Data — smart, personalized suggestions & context cards
- * derived from the user's actual vault health data.
+ * AI Context Data — hook-only (data lives in backend store).
+ * Returns smart suggestions, chat sessions, capabilities and contextual cards
+ * for the current user. Empty for invitees / non-seed users.
  */
+
+"use client";
+
+import { useAppDataContext } from "@/providers/appdata-provider";
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
@@ -12,7 +17,6 @@ export interface AiContextCard {
   type: "alert" | "insight" | "recent-file" | "trend";
   title: string;
   description: string;
-  /** Pre-filled question the user can tap to ask */
   suggestedQuestion: string;
   severity?: "normal" | "warning" | "critical";
   meta?: string;
@@ -23,153 +27,15 @@ export interface AiCapability {
   icon: string;
   label: string;
   description: string;
-  /** Example question that demonstrates this capability */
   exampleQuestion: string;
   color: string;
 }
 
 export interface SmartSuggestion {
   text: string;
-  /** Why this is suggested — shown as a subtle label */
   reason: string;
   priority: number;
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   AI CAPABILITIES — what ArogyaAI can do
-═══════════════════════════════════════════════════════════════════ */
-
-export const AI_CAPABILITIES: AiCapability[] = [
-  {
-    id: "health-summary",
-    icon: "📋",
-    label: "Health Summary",
-    description: "Get a plain-English overview of your complete health picture",
-    exampleQuestion: "Give me a complete health summary for my doctor",
-    color: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800",
-  },
-  {
-    id: "lab-trends",
-    icon: "📈",
-    label: "Lab Trends",
-    description: "Understand how your values are changing over time",
-    exampleQuestion: "How are my lab values trending over the last year?",
-    color: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800",
-  },
-  {
-    id: "explain-report",
-    icon: "🔍",
-    label: "Explain Report",
-    description: "Upload any report and get it explained in simple terms",
-    exampleQuestion: "Explain my latest blood test results",
-    color: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800",
-  },
-  {
-    id: "medication-check",
-    icon: "💊",
-    label: "Medication Check",
-    description: "Ask about interactions, side effects, or missed doses",
-    exampleQuestion: "What are the side effects of Metformin?",
-    color: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800",
-  },
-  {
-    id: "risk-assessment",
-    icon: "🛡️",
-    label: "Risk Assessment",
-    description: "Understand your risk factors based on all your data",
-    exampleQuestion: "What are my key health risk factors right now?",
-    color: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800",
-  },
-  {
-    id: "doctor-prep",
-    icon: "🩺",
-    label: "Doctor Visit Prep",
-    description: "Prepare questions and summaries for your next appointment",
-    exampleQuestion: "Help me prepare for my next doctor visit",
-    color: "bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800",
-  },
-];
-
-/* ═══════════════════════════════════════════════════════════════════
-   CONTEXT CARDS — derived from user's health data
-   In production, generated server-side from actual records.
-═══════════════════════════════════════════════════════════════════ */
-
-export const AI_CONTEXT_CARDS: AiContextCard[] = [
-  {
-    id: "ctx-hba1c",
-    type: "alert",
-    title: "HbA1c above target",
-    description: "Your HbA1c is 7.2% — still above the 6.5% target, but trending down from 8.1% over the past year.",
-    suggestedQuestion: "What can I do to bring my HbA1c below 6.5%?",
-    severity: "warning",
-    meta: "Mar 2026",
-  },
-  {
-    id: "ctx-kidney",
-    type: "alert",
-    title: "Kidney function needs monitoring",
-    description: "Creatinine 1.3 mg/dL (slightly elevated) and eGFR 72 mL/min (below 90 target). Gradual decline over 12 months.",
-    suggestedQuestion: "Should I be worried about my kidney function? What steps can I take?",
-    severity: "warning",
-    meta: "Mar 2026",
-  },
-  {
-    id: "ctx-ldl",
-    type: "insight",
-    title: "LDL cholesterol improving",
-    description: "LDL dropped from 145 to 128 mg/dL. Atorvastatin is working, but still above the 100 target.",
-    suggestedQuestion: "My LDL is 128 — how much further does it need to drop and how?",
-    severity: "warning",
-    meta: "Mar 2026",
-  },
-  {
-    id: "ctx-thyroid",
-    type: "insight",
-    title: "Thyroid well controlled",
-    description: "TSH 3.8 mIU/L — within normal range since starting Levothyroxine. Stable for 4 months.",
-    suggestedQuestion: "Is my thyroid condition fully under control now?",
-    severity: "normal",
-    meta: "Feb 2026",
-  },
-  {
-    id: "ctx-vitd",
-    type: "alert",
-    title: "Vitamin D insufficient",
-    description: "Vitamin D 22 ng/mL — below the 30 ng/mL threshold. Supplementation recommended.",
-    suggestedQuestion: "How much Vitamin D should I take and for how long?",
-    severity: "warning",
-    meta: "Jan 2026",
-  },
-  {
-    id: "ctx-recent-upload",
-    type: "recent-file",
-    title: "3 new reports uploaded",
-    description: "HbA1c, Lipid Panel, and Kidney Function tests from Mar 2026 are ready for analysis.",
-    suggestedQuestion: "Summarize the key findings from my March 2026 lab reports",
-    meta: "Mar 15, 2026",
-  },
-];
-
-/* ═══════════════════════════════════════════════════════════════════
-   SMART SUGGESTIONS — contextual, data-driven question suggestions
-   Prioritized by clinical relevance.
-═══════════════════════════════════════════════════════════════════ */
-
-export const SMART_SUGGESTIONS: SmartSuggestion[] = [
-  { text: "What can I do to bring my HbA1c below 6.5%?", reason: "HbA1c is 7.2%", priority: 1 },
-  { text: "Are my kidneys at risk because of diabetes?", reason: "eGFR declining", priority: 2 },
-  { text: "Summarize my March 2026 lab results", reason: "3 new reports", priority: 3 },
-  { text: "What are the side effects of my current medications?", reason: "5 medications", priority: 4 },
-  { text: "Prepare a health summary for my doctor visit", reason: "Follow-up due", priority: 5 },
-  { text: "Is my blood pressure well controlled?", reason: "BP 128/82", priority: 6 },
-  { text: "How is my cholesterol trending?", reason: "LDL improving", priority: 7 },
-  { text: "Do I need to worry about my Vitamin D levels?", reason: "Vit D low", priority: 8 },
-];
-
-/* ═══════════════════════════════════════════════════════════════════
-   CHAT SESSIONS — past conversation history
-═══════════════════════════════════════════════════════════════════ */
 
 export interface ChatSession {
   id: string;
@@ -180,61 +46,20 @@ export interface ChatSession {
   tags: string[];
 }
 
-export const CHAT_SESSIONS: ChatSession[] = [
-  {
-    id: "s1",
-    title: "Diabetes management review",
-    preview: "What can I do to bring my HbA1c below 6.5%?",
-    messageCount: 8,
-    date: "2026-04-03T14:30:00",
-    tags: ["Diabetes", "HbA1c"],
-  },
-  {
-    id: "s2",
-    title: "Kidney function concerns",
-    preview: "Should I be worried about my creatinine levels?",
-    messageCount: 6,
-    date: "2026-04-02T10:15:00",
-    tags: ["Kidney", "Creatinine"],
-  },
-  {
-    id: "s3",
-    title: "Medication side effects",
-    preview: "What are the side effects of Metformin?",
-    messageCount: 4,
-    date: "2026-04-01T09:00:00",
-    tags: ["Medications"],
-  },
-  {
-    id: "s4",
-    title: "Health summary for Dr. Patel",
-    preview: "Prepare a health summary for my upcoming appointment",
-    messageCount: 5,
-    date: "2026-03-30T16:45:00",
-    tags: ["Summary", "Doctor Visit"],
-  },
-  {
-    id: "s5",
-    title: "March 2026 lab results",
-    preview: "Explain my latest blood test results",
-    messageCount: 10,
-    date: "2026-03-28T11:20:00",
-    tags: ["Lab Reports", "CBC"],
-  },
-  {
-    id: "s6",
-    title: "Blood pressure trends",
-    preview: "Is my blood pressure well controlled?",
-    messageCount: 3,
-    date: "2026-03-25T14:00:00",
-    tags: ["Cardiac", "BP"],
-  },
-  {
-    id: "s7",
-    title: "Thyroid follow-up questions",
-    preview: "Do I still need thyroid medication?",
-    messageCount: 4,
-    date: "2026-03-20T09:30:00",
-    tags: ["Thyroid"],
-  },
-];
+interface AiContextBundle {
+  AI_CAPABILITIES: AiCapability[];
+  AI_CONTEXT_CARDS: AiContextCard[];
+  SMART_SUGGESTIONS: SmartSuggestion[];
+  CHAT_SESSIONS: ChatSession[];
+}
+
+export const useAiContext = (): AiContextBundle => {
+  const { data } = useAppDataContext();
+  const src = (data.aiContext || {}) as Record<string, unknown>;
+  return {
+    AI_CAPABILITIES: (src.AI_CAPABILITIES as AiCapability[]) ?? [],
+    AI_CONTEXT_CARDS: (src.AI_CONTEXT_CARDS as AiContextCard[]) ?? [],
+    SMART_SUGGESTIONS: (src.SMART_SUGGESTIONS as SmartSuggestion[]) ?? [],
+    CHAT_SESSIONS: (src.CHAT_SESSIONS as ChatSession[]) ?? [],
+  };
+};

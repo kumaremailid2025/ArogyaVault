@@ -3,7 +3,8 @@
 import * as React from "react";
 import { SearchIcon, BookOpenIcon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EDU_TOPICS, EDU_CATEGORIES, LEVEL_CONFIG } from "@/data/learn-data";
+import { useLearn } from "@/data/learn-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 import type { EduLevel } from "@/models/learn";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -17,6 +18,7 @@ interface BrowseTopicsPanelProps {
 }
 
 export const BrowseTopicsPanel = ({ activeTopicId, onSelectTopic }: BrowseTopicsPanelProps) => {
+  const { EDU_TOPICS, EDU_CATEGORIES, LEVEL_CONFIG } = useLearn();
   const [search, setSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState("all");
   const [selectedLevel, setSelectedLevel] = React.useState<EduLevel | "all">("all");
@@ -114,7 +116,7 @@ export const BrowseTopicsPanel = ({ activeTopicId, onSelectTopic }: BrowseTopics
       {/* Topic list */}
       <div className="flex-1 overflow-y-auto px-1.5 space-y-0.5 pb-2">
         {filtered.map((topic) => {
-          const Icon = topic.categoryIcon;
+          const Icon = resolveIcon(topic.categoryIcon);
           return (
             <button
               key={topic.id}

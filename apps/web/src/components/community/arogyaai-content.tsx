@@ -4,9 +4,11 @@ import { BrainCircuitIcon, SparklesIcon, FileTextIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { AI_MESSAGES, AI_FEATURES, AI_SUGGESTIONS } from "@/data/dashboard-data";
+import { useDashboard } from "@/data/dashboard-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 
 export const ArogyaAIContent = () => {
+  const { AI_MESSAGES, AI_FEATURES, AI_SUGGESTIONS } = useDashboard();
   const [, setQuery] = React.useState("");
 
   return (
@@ -27,17 +29,20 @@ export const ArogyaAIContent = () => {
 
       {/* Feature cards */}
       <div className="grid grid-cols-2 gap-3">
-        {AI_FEATURES.map((f) => (
+        {AI_FEATURES.map((f) => {
+          const Icon = resolveIcon(f.icon);
+          return (
           <Button
             key={f.label}
             variant="ghost"
             className="rounded-xl border border-primary/20 bg-primary/5 p-3 h-auto text-left flex-col items-start hover:border-primary/40 hover:bg-primary/10"
           >
-            <f.icon className="size-4 text-primary mb-1.5" />
+            <Icon className="size-4 text-primary mb-1.5" />
             <p className="text-sm font-semibold">{f.label}</p>
             <p className="text-xs text-muted-foreground leading-snug mt-0.5">{f.desc}</p>
           </Button>
-        ))}
+        );
+        })}
       </div>
 
       {/* Sample conversation */}

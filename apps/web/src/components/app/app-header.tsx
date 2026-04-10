@@ -19,6 +19,7 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores";
 import { useLogout } from "@/hooks/api";
+import { useSidebar } from "@/data/sidebar-data";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -49,15 +50,9 @@ const MY_VAULT_ITEMS = [
   { id: "topics",    label: "My Topics",           href: "/tags/diabetes", icon: TagIcon },
 ] as const;
 
-/* ── Groups available for targeted invites ───────────────────────── */
-const INVITE_GROUPS = [
-  { id: "ravi",   name: "Ravi Kumar" },
-  { id: "sharma", name: "Dr. Sharma's Clinic" },
-  { id: "priya",  name: "Priya Singh" },
-];
-
 export const AppHeader = () => {
   const pathname = usePathname();
+  const { INVITE_GROUPS } = useSidebar();
 
   const [inviteOpen,    setInviteOpen]    = React.useState(false);
   const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);

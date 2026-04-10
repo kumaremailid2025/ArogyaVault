@@ -27,13 +27,15 @@ import { TypeCode, ActionCode } from "@/models/type-codes";
 import type { CommunityPost } from "@/models/community";
 
 /* Static data to seed the store if user navigates directly */
-import { COMMUNITY_POSTS } from "@/data/community-data";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
+import { useCommunity } from "@/data/community-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 
 const TagPage = () => {
   const { tag: tagSlug } = useParams<{ tag: string }>();
   const { slugMap, getPostsBySlug, registerPosts } = useTagsStore();
   const { favoriteIds, toggleFavorite } = useFavoritesStore();
+  const { COMMUNITY_POSTS } = useCommunity();
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
 
   /* Seed store from mock data on first render if empty */
   React.useEffect(() => {
@@ -42,7 +44,7 @@ const TagPage = () => {
       ...Object.values(LINKED_MEMBER_DATA).flatMap((m) => m.posts),
     ];
     registerPosts(allPosts);
-  }, [registerPosts]);
+  }, [registerPosts, COMMUNITY_POSTS, LINKED_MEMBER_DATA]);
 
   const tagLabel = slugToTag(tagSlug, slugMap);
   const posts = getPostsBySlug(tagSlug);

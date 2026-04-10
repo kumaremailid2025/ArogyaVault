@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import { ExpandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CHART_CONFIGS, type ChartConfig } from "@/data/vault-health-data";
+import { useVaultHealth, type ChartConfig } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    CHARTS COLUMN — wide center panel
@@ -227,6 +227,7 @@ const ChartCard = ({
 /* ── Main component ────────────────────────────────────────────── */
 
 export const ChartsColumn = ({ onChartClick, highlightCategory }: ChartsColumnProps) => {
+  const { CHART_CONFIGS } = useVaultHealth();
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 pb-4">
       {CHART_CONFIGS.map((cfg) => (

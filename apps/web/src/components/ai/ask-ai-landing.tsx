@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  AI_CAPABILITIES, AI_CONTEXT_CARDS, SMART_SUGGESTIONS,
+  useAiContext,
   type AiCapability, type AiContextCard,
 } from "@/data/ai-context-data";
-import { HEALTH_SCORE, VAULT_FILES, HEALTH_ALERTS } from "@/data/vault-health-data";
+import { useVaultHealth } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    ASK-AI LANDING — rich, data-aware landing shown before first message.
@@ -114,6 +114,8 @@ const CapabilityCard = ({ cap, onAsk }: { cap: AiCapability; onAsk: (q: string) 
 /* ── Main landing ──────────────────────────────────────────────── */
 
 export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
+  const { AI_CAPABILITIES, AI_CONTEXT_CARDS, SMART_SUGGESTIONS } = useAiContext();
+  const { HEALTH_SCORE, VAULT_FILES, HEALTH_ALERTS } = useVaultHealth();
   const warningAlerts = HEALTH_ALERTS.filter((a) => a.severity !== "info");
 
   return (

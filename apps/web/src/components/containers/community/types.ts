@@ -36,6 +36,13 @@ export interface BannerConfig {
 }
 
 /* ── Route maps ────────────────────────────────────────────────── */
+/*
+ * These are routing aliases — not entity mock data. They map stable
+ * human-readable slugs ("ravi", "sharma") to the UUIDs used in URLs.
+ * They are deliberately kept module-level (not hook-based) because Next.js
+ * server components (layouts, route handlers) cannot call React hooks,
+ * and the alias set is identical for every user at the UI-routing level.
+ */
 
 export const GROUP_UUID_MAP: Record<string, string> = {
   "b3a1f5d2-7e4c-4a8b-9f6e-1c2d3e4f5a6b": "community",

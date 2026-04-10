@@ -1,0 +1,45 @@
+{
+  "SEED_CONVERSATION": [
+    {
+      "role": "user",
+      "text": "What medications am I currently on?"
+    },
+    {
+      "role": "ai",
+      "text": "Based on your uploaded records, you are currently on the following medications:",
+      "list": [
+        "Metformin 500 mg — twice daily (morning & evening with meals)",
+        "Amlodipine 5 mg — once daily (morning)"
+      ],
+      "citations": [
+        "Prescription · Dr. Suresh Reddy · 10 Mar 2026"
+      ],
+      "note": "Always consult your doctor before making any changes to your medication."
+    },
+    {
+      "role": "user",
+      "text": "Is my blood sugar improving?"
+    },
+    {
+      "role": "ai",
+      "text": "Your HbA1c trend based on available records shows controlled levels:",
+      "list": [
+        "HbA1c 7.4 % — 01 Mar 2026 (latest)",
+        "Target range: below 7.0 % for well-controlled Type 2 Diabetes"
+      ],
+      "citations": [
+        "Lab Report · HbA1c & Lipid Profile · 01 Mar 2026",
+        "Prescription · Dr. Suresh Reddy · 10 Mar 2026"
+      ],
+      "note": "Your HbA1c is slightly above target. Your doctor may review Metformin dosage at the next visit."
+    }
+  ],
+  "SUGGESTED_QUESTIONS": [
+    "When is my next follow-up?",
+    "Do I have any flagged lab values?",
+    "What was my last diagnosis?",
+    "Summarise my records for a new doctor",
+    "What is my latest blood pressure reading?",
+    "List all my recent lab reports"
+  ]
+}

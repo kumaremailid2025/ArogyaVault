@@ -12,9 +12,10 @@ import { useParams } from "next/navigation";
 import { SparklesIcon, XIcon, MessageSquareIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { useFeedContext } from "@/app/(app)/community/_context/feed-context";
-import { POST_SUMMARIES, POST_AI_RESPONSES } from "@/data/community-data";
+import { useCommunity } from "@/data/community-data";
 
 const GroupPostSummaryPage = () => {
+  const { POST_SUMMARIES, POST_AI_RESPONSES } = useCommunity();
   const params = useParams<{ postId: string }>();
   const { posts, basePath } = useFeedContext();
 

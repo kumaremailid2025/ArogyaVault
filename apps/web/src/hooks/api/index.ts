@@ -47,3 +47,8 @@ export {
   useVaultTags,
   useTagPosts,
 } from "./use-vault";
+export {
+  useSendAiMessage,
+  useSendPdfQuestion,
+  useRephrasePost,
+} from "./use-mocks";

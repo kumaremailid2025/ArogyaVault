@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { EDU_TOPICS, LEVEL_CONFIG } from "@/data/learn-data";
+import { useLearn } from "@/data/learn-data";
+import { resolveIcon } from "@/lib/icon-resolver";
 import type { EduLevel } from "@/models/learn";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -21,6 +22,7 @@ interface TopicReaderProps {
 }
 
 export const TopicReader = ({ topicId, onBack }: TopicReaderProps) => {
+  const { EDU_TOPICS, LEVEL_CONFIG } = useLearn();
   const topic = EDU_TOPICS.find((t) => t.id === topicId);
   const [activeLevel, setActiveLevel] = React.useState<EduLevel>("patient");
 
@@ -38,7 +40,7 @@ export const TopicReader = ({ topicId, onBack }: TopicReaderProps) => {
     );
   }
 
-  const Icon = topic.categoryIcon;
+  const Icon = resolveIcon(topic.categoryIcon);
 
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-5">

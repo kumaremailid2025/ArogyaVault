@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
-import { VAULT_FILES, FILE_CATEGORIES, type MedFile } from "@/data/vault-health-data";
+import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILES COLUMN — narrow right panel
@@ -33,6 +33,7 @@ const formatDate = (iso: string) => {
 };
 
 export const FilesColumn = ({ onFileClick }: FilesColumnProps) => {
+  const { VAULT_FILES, FILE_CATEGORIES } = useVaultHealth();
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
 

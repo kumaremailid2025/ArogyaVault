@@ -1,15 +1,20 @@
+/**
+ * Voice Languages — hook-only (data lives in backend store).
+ */
+
+"use client";
+
+import { useAppDataContext } from "@/providers/appdata-provider";
 import type { VoiceLanguage } from "@/models/user";
 
-export const VOICE_LANGUAGES: VoiceLanguage[] = [
-  { code: "en-IN", label: "English (India)", native: "English"  },
-  { code: "hi-IN", label: "Hindi",           native: "हिन्दी"  },
-  { code: "te-IN", label: "Telugu",          native: "తెలుగు"  },
-  { code: "ta-IN", label: "Tamil",           native: "தமிழ்"  },
-  { code: "kn-IN", label: "Kannada",         native: "ಕನ್ನಡ"  },
-  { code: "ml-IN", label: "Malayalam",       native: "മലയാളം"  },
-  { code: "mr-IN", label: "Marathi",         native: "मराठी"  },
-  { code: "bn-IN", label: "Bengali",         native: "বাংলা"  },
-  { code: "gu-IN", label: "Gujarati",        native: "ગુજરાતી" },
-  { code: "pa-IN", label: "Punjabi",         native: "ਪੰਜਾਬੀ"  },
-  { code: "ur-IN", label: "Urdu",            native: "اردو"   },
-];
+interface VoiceLanguagesBundle {
+  VOICE_LANGUAGES: VoiceLanguage[];
+}
+
+export const useVoiceLanguages = (): VoiceLanguagesBundle => {
+  const { data } = useAppDataContext();
+  const src = (data.voiceLanguages || {}) as Record<string, unknown>;
+  return {
+    VOICE_LANGUAGES: (src.VOICE_LANGUAGES as VoiceLanguage[]) ?? [],
+  };
+};

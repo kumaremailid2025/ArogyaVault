@@ -19,6 +19,7 @@ import { useFeedContext } from "@/app/(app)/community/_context/feed-context";
 import { getHasNative, getVoiceLangInfo } from "@/components/containers/community/right-panel-shared";
 import { usePostReplies } from "@/hooks/api";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
+import { useVoiceLanguages } from "@/data/voice-languages";
 
 const GroupRepliesPage = () => {
   const params = useParams<{ postId: string }>();
@@ -35,6 +36,7 @@ const GroupRepliesPage = () => {
     replyPreviewState,
   } = useFeedContext();
 
+  const { VOICE_LANGUAGES } = useVoiceLanguages();
   const postId = parseInt(params.postId, 10);
   const activePost = posts.find((p) => p.id === postId) ?? null;
 
@@ -54,7 +56,7 @@ const GroupRepliesPage = () => {
 
   const isShowingPreview = replyPreviewState !== null;
   const hasNative = getHasNative(pendingReply);
-  const voiceLangInfo = getVoiceLangInfo(pendingReply);
+  const voiceLangInfo = getVoiceLangInfo(pendingReply, VOICE_LANGUAGES);
 
   const replyCountLabel = (count: number) =>
     `${count} ${count === 1 ? "Reply" : "Replies"}`;

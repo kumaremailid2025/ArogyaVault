@@ -26,7 +26,7 @@ import {
 import dynamic from "next/dynamic";
 
 import { CommunityBanner } from "@/components/community/community-banner";
-import { LINKED_MEMBER_DATA } from "@/data/linked-member-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 import type { CommunityTab, CommunityVariant, BannerConfig } from "./types";
 import { GROUP_SLUG_TO_UUID } from "./types";
 
@@ -97,8 +97,9 @@ const buildInvitedBanner = (
   group: string,
   tab: CommunityTab,
   onInvite: () => void,
+  linkedMemberData: ReturnType<typeof useLinkedMembers>["LINKED_MEMBER_DATA"],
 ): BannerConfig => {
-  const member = LINKED_MEMBER_DATA[group];
+  const member = linkedMemberData[group];
   if (!member) {
     return {
       icon: null,
@@ -172,6 +173,7 @@ export const CommunityShell = ({
   group,
   children,
 }: CommunityShellProps) => {
+  const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const pathname = usePathname();
   const tab = deriveTab(pathname);
   const [inviteOpen, setInviteOpen] = React.useState(false);
@@ -180,8 +182,8 @@ export const CommunityShell = ({
     const onInvite = () => setInviteOpen(true);
     return variant === "community"
       ? buildCommunityBanner(tab, onInvite)
-      : buildInvitedBanner(group, tab, onInvite);
-  }, [variant, group, tab]);
+      : buildInvitedBanner(group, tab, onInvite, LINKED_MEMBER_DATA);
+  }, [variant, group, tab, LINKED_MEMBER_DATA]);
 
   const member = variant === "invited" ? LINKED_MEMBER_DATA[group] : null;
 

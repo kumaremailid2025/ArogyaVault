@@ -9,10 +9,11 @@ import { Button } from "@/core/ui/button";
 import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { cn } from "@/lib/utils";
-import { ALL_GROUPS, DIR } from "./_components/groups-shared";
+import { useGroups } from "./_components/groups-shared";
 
 /* ── All groups list (default view) ─────────────────────────────── */
 const AllGroupsView = () => {
+  const { ALL_GROUPS, DIR } = useGroups();
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">

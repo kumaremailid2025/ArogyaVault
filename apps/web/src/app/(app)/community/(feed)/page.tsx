@@ -8,9 +8,10 @@
 
 import { MessageSquareIcon, ZapIcon, FlameIcon, SparklesIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
-import { TRENDING_TOPICS } from "@/data/community-data";
+import { useCommunity } from "@/data/community-data";
 
 const CommunityFeedPage = () => {
+  const { TRENDING_TOPICS } = useCommunity();
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-5">
       {/* Community Pulse */}

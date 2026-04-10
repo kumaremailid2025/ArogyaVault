@@ -5,7 +5,7 @@ import { SearchIcon, FileUpIcon, FolderOpenIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { FileCard } from "@/components/community/file-card";
-import { FILE_CATEGORIES } from "@/data/community-files-data";
+import { useCommunityFiles } from "@/data/community-files-data";
 import type { FileCategory } from "@/data/community-files-data";
 import type { CommunityFile } from "@/models/community";
 
@@ -30,6 +30,7 @@ export const FilesContainer = ({
   onAiSummary,
   onQA,
 }: FilesContainerProps) => {
+  const { FILE_CATEGORIES } = useCommunityFiles();
   const [search, setSearch] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<FileCategory>("All");
 
@@ -55,7 +56,7 @@ export const FilesContainer = ({
   const availableCategories = React.useMemo(() => {
     const cats = new Set(files.map((f) => f.category));
     return FILE_CATEGORIES.filter((c) => c === "All" || cats.has(c));
-  }, [files]);
+  }, [files, FILE_CATEGORIES]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden min-h-0">

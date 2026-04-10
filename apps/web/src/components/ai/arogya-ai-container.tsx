@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { SmartInput } from "@/components/shared/smart-input";
 import { ArogyaAiBanner, type AiTab } from "@/components/ai/arogya-ai-banner";
 import { AskAiLanding } from "@/components/ai/ask-ai-landing";
-import { mockAiResponse } from "@/data/ai-conversations";
-import { CHAT_SESSIONS, SMART_SUGGESTIONS } from "@/data/ai-context-data";
-import type { ConversationMessage } from "@/data/ai-conversations";
+import { useAiContext } from "@/data/ai-context-data";
+import type { ChatSession } from "@/data/ai-context-data";
+import type { ConversationMessage, AiMessage } from "@/data/ai-conversations";
 import type { SmartInputSubmitPayload } from "@/models/input";
+import { useSendAiMessage } from "@/hooks/api";
 
 /* ── Sidebar panels — always visible in chat tab, static import ──── */
 import { ChatSessionsPanel } from "@/components/ai/chat-sessions-panel";
@@ -81,11 +82,17 @@ const Bubble = ({ msg }: { msg: ConversationMessage }) => {
    HISTORY VIEW — full-width list of past conversations
 ═══════════════════════════════════════════════════════════════════ */
 
-const HistoryView = ({ onSelectSession }: { onSelectSession: (id: string) => void }) => {
+const HistoryView = ({
+  sessions,
+  onSelectSession,
+}: {
+  sessions: ChatSession[];
+  onSelectSession: (id: string) => void;
+}) => {
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-2">
       <h2 className="text-sm font-semibold px-1 mb-3">All Conversations</h2>
-      {CHAT_SESSIONS.map((session) => (
+      {sessions.map((session) => (
         <button
           key={session.id}
           onClick={() => onSelectSession(session.id)}
@@ -121,14 +128,16 @@ const HistoryView = ({ onSelectSession }: { onSelectSession: (id: string) => voi
 ═══════════════════════════════════════════════════════════════════ */
 
 export const ArogyaAiContainer = () => {
+  const { CHAT_SESSIONS, SMART_SUGGESTIONS } = useAiContext();
+  const askAi = useSendAiMessage();
   const searchParams = useSearchParams();
   const router       = useRouter();
 
   const [activeTab, setActiveTab]           = React.useState<AiTab>("chat");
   const [messages, setMessages]             = React.useState<ConversationMessage[]>([]);
-  const [isTyping, setIsTyping]             = React.useState(false);
   const [inputText, setInputText]           = React.useState("");
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
+  const isTyping = askAi.isPending;
 
   const hasConversation = messages.length > 0;
   const bottomRef  = React.useRef<HTMLDivElement>(null);
@@ -156,11 +165,27 @@ export const ArogyaAiContainer = () => {
   const addToConversation = (text: string) => {
     const userMsg: ConversationMessage = { role: "user", text };
     setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, mockAiResponse(text)]);
-      setIsTyping(false);
-    }, 1400);
+    askAi.mutate(
+      { query: text },
+      {
+        onSuccess: (res) => {
+          const aiMsg: AiMessage = {
+            role: "ai",
+            text: res.text,
+            list: res.list,
+            citations: res.citations,
+            note: res.note,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        },
+        onError: () => {
+          setMessages((prev) => [
+            ...prev,
+            { role: "ai", text: "Sorry, I couldn't process that right now. Please try again." },
+          ]);
+        },
+      }
+    );
   };
 
   const handleInputSubmit = (payload: SmartInputSubmitPayload) => {
@@ -172,7 +197,6 @@ export const ArogyaAiContainer = () => {
 
   const handleNewChat = () => {
     setMessages([]);
-    setIsTyping(false);
     setInputText("");
     setActiveSessionId(null);
     setActiveTab("chat");
@@ -184,11 +208,24 @@ export const ArogyaAiContainer = () => {
     if (!session) return;
     setActiveSessionId(sessionId);
     setActiveTab("chat");
-    // Mock: start the session with its preview as a loaded conversation
-    setMessages([
-      { role: "user", text: session.preview },
-      mockAiResponse(session.preview),
-    ]);
+    /* Load the session with the preview as the user message, then fetch
+       the AI reply from the backend. */
+    setMessages([{ role: "user", text: session.preview }]);
+    askAi.mutate(
+      { query: session.preview },
+      {
+        onSuccess: (res) => {
+          const aiMsg: AiMessage = {
+            role: "ai",
+            text: res.text,
+            list: res.list,
+            citations: res.citations,
+            note: res.note,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        },
+      }
+    );
   };
 
   const handleTabChange = (tab: AiTab) => {
@@ -210,7 +247,7 @@ export const ArogyaAiContainer = () => {
         {activeTab === "history" ? (
           /* ─── HISTORY TAB ─── */
           <div className="h-full overflow-y-auto px-5 lg:px-6">
-            <HistoryView onSelectSession={handleSelectSession} />
+            <HistoryView sessions={CHAT_SESSIONS} onSelectSession={handleSelectSession} />
           </div>
         ) : (
           /* ─── CHAT TAB — three-column layout ─── */

@@ -20,14 +20,13 @@ import type { CommunityVariant, PanelState } from "@/components/containers/commu
 
 import { PostCard } from "@/components/community/post-card";
 import { SmartInput } from "@/components/shared/smart-input";
-import { generateRephrasings } from "@/lib/post-utils";
 import { FeedProvider } from "@/app/(app)/community/_context/feed-context";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 import { useFavoritesStore, useTagsStore, useLikesStore, useRepliedStore, recordActivity } from "@/stores";
 import { TypeCode, ActionCode } from "@/models/type-codes";
 
 /* ── Mock data (invited variant) ─────────────────────────────────── */
-import { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } from "@/data/linked-member-data";
+import { useLinkedMembers } from "@/data/linked-member-data";
 
 import {
   usePosts,
@@ -46,6 +45,7 @@ interface FeedLayoutContentProps {
 }
 
 export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLayoutContentProps) => {
+  const { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } = useLinkedMembers();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -171,32 +171,32 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
     (payload: ComposeSubmitPayload) => {
       const text = payload.text.trim();
       if (!text) return;
+      if (panelState.view !== "replies") return;
 
-      setPanelState((prev) => {
-        if (prev.view !== "replies") return prev;
-        setPendingReply(payload);
-        setSelectedVersion(1);
+      const { postId } = panelState;
 
-        if (isCommunity) {
-          rephraseMut.mutate(text, {
-            onSuccess: (data) => {
-              setPanelState((cur) => {
-                if (cur.view !== "reply-preview") return cur;
-                return { ...cur, rephrasings: data.rephrasings as [string, string] };
-              });
-            },
+      setPendingReply(payload);
+      setSelectedVersion(1);
+      setPanelState({
+        view: "reply-preview",
+        postId,
+        original: text,
+        rephrasings: ["", ""] as [string, string],
+      });
+
+      /* API-backed rephrase for all variants. onSuccess updater is
+         pure (no side effects), so it's safe to call setPanelState
+         from inside it. */
+      rephraseMut.mutate(text, {
+        onSuccess: (data) => {
+          setPanelState((cur) => {
+            if (cur.view !== "reply-preview") return cur;
+            return { ...cur, rephrasings: data.rephrasings as [string, string] };
           });
-        }
-
-        return {
-          view: "reply-preview" as const,
-          postId: prev.postId,
-          original: text,
-          rephrasings: generateRephrasings(text),
-        };
+        },
       });
     },
-    [isCommunity, rephraseMut],
+    [panelState, rephraseMut],
   );
 
   const handleBackToCompose = React.useCallback(() => {
@@ -220,24 +220,29 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
   );
 
   const handleSubmitReply = React.useCallback(() => {
-    setPanelState((prev) => {
-      if (prev.view !== "reply-preview") return prev;
-      const { postId, original, rephrasings } = prev;
-      const versions: string[] = [original, ...rephrasings];
-      const text = versions[selectedVersion];
+    /* Read current panel state from the closure — DO NOT put side
+       effects inside a setState updater. Updaters must be pure:
+       StrictMode runs them twice (causing duplicate replies) and a
+       Zustand set() inside an updater triggers a cross-component
+       update during render ("Cannot update a component while
+       rendering a different component"). */
+    if (panelState.view !== "reply-preview") return;
+    const { postId, original, rephrasings } = panelState;
+    const versions: string[] = [original, ...rephrasings];
+    const text = versions[selectedVersion];
+    if (!text) return;
 
-      /* Record in replied store — backend auto-records REPLY_SUBMIT activity */
-      const repliedPost = posts.find((p) => p.id === postId);
-      if (repliedPost) storeReply(repliedPost, text, groupId);
+    /* Record in replied store — backend auto-records REPLY_SUBMIT activity */
+    const repliedPost = posts.find((p) => p.id === postId);
+    if (repliedPost) storeReply(repliedPost, text, groupId);
 
-      /* API-backed for all groups */
-      submitReplyMut.mutate({ postId, text });
+    /* API-backed for all groups */
+    submitReplyMut.mutate({ postId, text });
 
-      setPendingReply(null);
-      setSelectedVersion(0);
-      return { view: "replies", postId };
-    });
-  }, [selectedVersion, submitReplyMut, posts, storeReply, groupId]);
+    setPendingReply(null);
+    setSelectedVersion(0);
+    setPanelState({ view: "replies", postId });
+  }, [panelState, selectedVersion, submitReplyMut, posts, storeReply, groupId]);
 
   const handlePost = React.useCallback(
     (payload: SmartInputSubmitPayload) => {

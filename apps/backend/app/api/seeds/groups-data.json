@@ -1,0 +1,148 @@
+{
+  "ALL_GROUPS": [
+    {
+      "id": "ravi",
+      "name": "Ravi Kumar",
+      "rel": "Family Member",
+      "direction": "out",
+      "scope": "App Access",
+      "canUpload": false,
+      "members": 2,
+      "joined": "15 Jan 2026",
+      "last": "Viewed records 3 days ago",
+      "initials": "RK"
+    },
+    {
+      "id": "sharma",
+      "name": "Dr. Sharma's Clinic",
+      "rel": "Doctor",
+      "direction": "in",
+      "scope": "Group Access",
+      "canUpload": true,
+      "members": 3,
+      "joined": "10 Feb 2026",
+      "last": "Uploaded discharge summary 2 days ago",
+      "initials": "DS"
+    },
+    {
+      "id": "priya",
+      "name": "Priya Singh",
+      "rel": "Caregiver",
+      "direction": "both",
+      "scope": "App Access",
+      "canUpload": false,
+      "members": 2,
+      "joined": "01 Mar 2026",
+      "last": "Joined 28 days ago",
+      "initials": "PS"
+    }
+  ],
+  "DIR": {
+    "out": {
+      "icon": "ArrowRightIcon",
+      "label": "You invited",
+      "color": "text-primary",
+      "bg": "bg-primary/10",
+      "desc": "You can see their records"
+    },
+    "in": {
+      "icon": "ArrowLeftIcon",
+      "label": "They invited",
+      "color": "text-amber-500",
+      "bg": "bg-amber-50",
+      "desc": "They can see your records"
+    },
+    "both": {
+      "icon": "ArrowLeftRightIcon",
+      "label": "Mutual",
+      "color": "text-emerald-500",
+      "bg": "bg-emerald-50",
+      "desc": "Both directions active"
+    }
+  },
+  "GROUP_PERMISSIONS": {
+    "ravi": [
+      {
+        "icon": "EyeIcon",
+        "label": "View all records",
+        "desc": "Ravi can see all your uploaded medical documents",
+        "enabled": false
+      },
+      {
+        "icon": "FileTextIcon",
+        "label": "View selected categories",
+        "desc": "Ravi can see prescriptions and lab reports only",
+        "enabled": true
+      },
+      {
+        "icon": "UploadCloudIcon",
+        "label": "Upload documents",
+        "desc": "Ravi can upload documents on your behalf (requires approval)",
+        "enabled": false
+      },
+      {
+        "icon": "BellIcon",
+        "label": "Activity notifications",
+        "desc": "You get notified when Ravi views or uploads anything",
+        "enabled": true
+      }
+    ],
+    "sharma": [
+      {
+        "icon": "EyeIcon",
+        "label": "View shared group",
+        "desc": "Dr. Sharma can see documents you share to this group",
+        "enabled": true
+      },
+      {
+        "icon": "UploadCloudIcon",
+        "label": "Upload on your behalf",
+        "desc": "Clinic can upload documents; you approve before they're saved",
+        "enabled": true
+      },
+      {
+        "icon": "BellIcon",
+        "label": "Upload notifications",
+        "desc": "You get notified when the clinic uploads anything",
+        "enabled": true
+      },
+      {
+        "icon": "ShieldCheckIcon",
+        "label": "Audit trail",
+        "desc": "Every access by the clinic is logged in your activity",
+        "enabled": true
+      }
+    ],
+    "priya": [
+      {
+        "icon": "EyeIcon",
+        "label": "Mutual record access",
+        "desc": "Both you and Priya can view each other's shared records",
+        "enabled": true
+      },
+      {
+        "icon": "UploadCloudIcon",
+        "label": "Priya can upload",
+        "desc": "Priya can upload documents; you approve before they're saved",
+        "enabled": false
+      },
+      {
+        "icon": "BellIcon",
+        "label": "Activity notifications",
+        "desc": "You get notified when Priya views or uploads anything",
+        "enabled": true
+      },
+      {
+        "icon": "ShieldCheckIcon",
+        "label": "Emergency access",
+        "desc": "Priya can request a one-time emergency view of all records",
+        "enabled": false
+      }
+    ]
+  },
+  "GROUP_NAMES": {
+    "ravi": "Ravi Kumar",
+    "sharma": "Dr. Sharma's Clinic",
+    "priya": "Priya Singh"
+  }
+}
