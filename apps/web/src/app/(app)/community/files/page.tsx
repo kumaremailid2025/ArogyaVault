@@ -16,6 +16,7 @@ import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 
 import { useFilesContext } from "@/app/(app)/community/_context/files-context";
+import Typography from "@/components/ui/typography";
 
 /* ── Component ────────────────────────────────────────────────── */
 
@@ -26,10 +27,10 @@ export default function FilesDefaultPage() {
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {/* Header */}
-      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+      <Typography variant="overline" color="muted">
         <MessageSquareIcon className="size-3 text-primary" />
         Recent Questions &amp; Answers
-      </p>
+      </Typography>
 
       {/* QA Items */}
       <div className="space-y-3">
@@ -49,7 +50,7 @@ export default function FilesDefaultPage() {
             {/* File reference */}
             <div className="flex items-center gap-1.5">
               <FileTextIcon className="size-3 text-muted-foreground shrink-0" />
-              <span className="text-[10px] text-muted-foreground truncate">{item.fileName}</span>
+              <Typography variant="micro" color="muted" as="span" truncate={true}>{item.fileName}</Typography>
               <Badge variant="outline" className="text-[9px] border-primary/20 text-primary ml-auto shrink-0">
                 {item.fileCategory}
               </Badge>
@@ -63,8 +64,8 @@ export default function FilesDefaultPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <span className="text-[11px] font-semibold">{item.askedBy}</span>
-                <p className="text-xs leading-relaxed font-medium mt-0.5">{item.question}</p>
+                <Typography variant="h5" weight="semibold" as="span" className="!text-[11px]">{item.askedBy}</Typography>
+                <Typography variant="caption" className="font-medium mt-0.5">{item.question}</Typography>
               </div>
             </div>
 
@@ -72,9 +73,9 @@ export default function FilesDefaultPage() {
             <div className="ml-7 rounded-md bg-violet-50/50 border border-violet-100 px-2.5 py-1.5">
               <div className="flex items-center gap-1 mb-0.5">
                 <SparklesIcon className="size-2.5 text-violet-500" />
-                <span className="text-[9px] font-semibold text-violet-600">ArogyaAI</span>
+                <Typography variant="micro" weight="semibold" as="span" className="text-violet-600">ArogyaAI</Typography>
               </div>
-              <p className="text-[11px] leading-relaxed text-foreground/70 line-clamp-2">{item.answer}</p>
+              <Typography variant="micro" className="text-foreground/70 line-clamp-2">{item.answer}</Typography>
             </div>
           </div>
         ))}
@@ -83,9 +84,9 @@ export default function FilesDefaultPage() {
       {/* CTA */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
         <FileTextIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-        <p className="text-xs text-muted-foreground leading-snug">
+        <Typography variant="caption" color="muted">
           Select any file to see its AI summary, ask questions, and view existing Q&amp;A threads.
-        </p>
+        </Typography>
       </div>
     </div>
   );

@@ -79,9 +79,12 @@ const EMPTY_DIR: Record<GroupDirection, DirectionConfig> = {
 
 export const useGroups = (): GroupsBundle => {
   const { data } = useAppDataContext();
-  const src = (data.groups || {}) as Record<string, unknown>;
+  /* Depend on the raw slice reference — NOT on a freshly-constructed
+   * `{} ` fallback, which would bust the memo every render. */
+  const raw = data.groups;
 
   return React.useMemo(() => {
+    const src = (raw || {}) as Record<string, unknown>;
     const rawDir = (src.DIR || {}) as Record<string, RawDirectionConfig>;
     const dir: Record<GroupDirection, DirectionConfig> = { ...EMPTY_DIR };
     (["out", "in", "both"] as const).forEach((k) => {
@@ -101,5 +104,5 @@ export const useGroups = (): GroupsBundle => {
       GROUP_PERMISSIONS: perms,
       GROUP_NAMES: (src.GROUP_NAMES as Record<string, string>) ?? {},
     };
-  }, [src]);
+  }, [raw]);
 };

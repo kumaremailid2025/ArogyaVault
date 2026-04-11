@@ -44,6 +44,7 @@ import { useFileAttach } from "@/hooks/use-file-attach";
 import { useVoiceLanguages } from "@/data/voice-languages";
 import type { InputMode, SmartInputProps } from "@/models/input";
 import type { AttachStep } from "@/models/user";
+import Typography from "@/components/ui/typography";
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 /** Approx line height in px for text-sm (14px) + leading-[22px] */
@@ -236,11 +237,11 @@ export const SmartInput = ({
           {voice.liveTranscript && (
             <div className="rounded-lg border border-border bg-muted/30 p-2.5 text-xs leading-relaxed">
               {voice.voiceRecording && !voice.voiceRecording.lang.startsWith("en") && (
-                <p className="text-muted-foreground mb-1 italic">
+                <Typography variant="body" color="muted" className="mb-1 italic">
                   {voice.voiceRecording.original}
-                </p>
+                </Typography>
               )}
-              <p className="text-foreground">{voice.liveTranscript}</p>
+              <Typography variant="body">{voice.liveTranscript}</Typography>
             </div>
           )}
         </div>
@@ -350,7 +351,7 @@ export const SmartInput = ({
           {attach.attachState.step === "analyzing" && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 text-center">
               <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">Analysing document…</p>
+              <Typography variant="caption" color="muted">Analysing document…</Typography>
             </div>
           )}
 
@@ -360,12 +361,12 @@ export const SmartInput = ({
             return (
               <div className="space-y-2">
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-900 p-2.5">
-                  <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                  <Typography variant="micro" color="success" weight="semibold" className="mb-1">
                     {s.docType}
-                  </p>
-                  <p className="text-[10px] text-foreground/70 leading-snug line-clamp-3">
+                  </Typography>
+                  <Typography variant="micro" className="text-foreground/70 leading-snug line-clamp-3">
                     {s.summary}
-                  </p>
+                  </Typography>
                 </div>
                 <div className="flex gap-1.5">
                   <Button
@@ -401,9 +402,9 @@ export const SmartInput = ({
       {attach.attachedDoc && (
         <div className="mx-3 mb-2 rounded-lg border border-primary/20 bg-primary/5 p-2 flex items-center gap-2">
           <ImageIcon className="size-3.5 text-primary shrink-0" />
-          <span className="text-[10px] font-medium text-primary flex-1 truncate">
+          <Typography variant="micro" weight="medium" color="primary" as="span" truncate={true} className="flex-1">
             {attach.attachedDoc.filename}
-          </span>
+          </Typography>
           <Button
             variant="ghost"
             size="icon-sm"

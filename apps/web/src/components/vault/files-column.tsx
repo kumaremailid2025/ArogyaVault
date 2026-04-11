@@ -8,6 +8,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILES COLUMN — narrow right panel
@@ -51,7 +52,7 @@ export const FilesColumn = ({ onFileClick }: FilesColumnProps) => {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-2 pb-2">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Files</span>
+        <Typography variant="overline" color="muted" as="span">Files</Typography>
         <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2">
           <UploadCloudIcon className="size-3" /> Upload
         </Button>
@@ -97,14 +98,14 @@ export const FilesColumn = ({ onFileClick }: FilesColumnProps) => {
           >
             <div className="mt-0.5 shrink-0">{CATEGORY_ICONS[file.category]}</div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium truncate leading-tight">{file.name}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
+              <Typography variant="caption" weight="medium" truncate={true} as="div">{file.name}</Typography>
+              <Typography variant="micro" color="muted" as="div" className="mt-0.5">
                 {formatDate(file.date)} · {file.size}
-              </div>
+              </Typography>
               {file.aiSummary && (
-                <div className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2 leading-snug">
+                <Typography variant="micro" as="div" truncate="line-clamp-2" className="mt-0.5 text-muted-foreground/70">
                   {file.aiSummary}
-                </div>
+                </Typography>
               )}
             </div>
           </button>

@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { ComposeBox } from "@/components/shared/compose-box";
 import { FileQAAccordionList } from "@/components/containers/community/right-panel-shared";
 import { useFilesContext } from "@/app/(app)/community/_context/files-context";
+import Typography from "@/components/ui/typography";
 
 /* ── Component ────────────────────────────────────────────────── */
 
@@ -40,7 +41,7 @@ export default function FileDetailPage() {
       <div className="flex-1 flex items-center justify-center text-center">
         <div>
           <FileTextIcon className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">File not found</p>
+          <Typography variant="body" color="muted">File not found</Typography>
         </div>
       </div>
     );
@@ -51,7 +52,7 @@ export default function FileDetailPage() {
       {/* ── Pinned header ── */}
       <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold flex-1 truncate">File Details</span>
+          <Typography variant="h4" as="span" className="flex-1 truncate">File Details</Typography>
           <Link href={`${basePath}/files`}>
             <Button
               variant="ghost"
@@ -87,10 +88,10 @@ export default function FileDetailPage() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">{activeFile.name}</p>
-            <p className="text-[10px] text-muted-foreground">
+            <Typography variant="caption" weight="medium" truncate={true}>{activeFile.name}</Typography>
+            <Typography variant="micro" color="muted">
               {activeFile.size} · {activeFile.type.toUpperCase()} · {activeFile.uploadedBy}
-            </p>
+            </Typography>
           </div>
         </div>
       </div>
@@ -104,14 +105,14 @@ export default function FileDetailPage() {
               <div className="flex size-5 items-center justify-center rounded-full bg-violet-100">
                 <SparklesIcon className="size-3 text-violet-600" />
               </div>
-              <span className="text-[11px] font-semibold text-violet-700">AI Summary</span>
+              <Typography variant="caption" weight="semibold" as="span" className="text-violet-700">AI Summary</Typography>
             </div>
-            <p className="text-xs leading-relaxed text-foreground/80">{activeFile.aiSummary}</p>
+            <Typography variant="caption" className="text-foreground/80">{activeFile.aiSummary}</Typography>
           </div>
 
           {/* Q&A Section */}
           <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Typography variant="overline" color="muted">
               <HelpCircleIcon className="size-3 text-primary" />
               Questions &amp; Answers
               {activeFile.qaCount > 0 && (
@@ -119,7 +120,7 @@ export default function FileDetailPage() {
                   {activeFile.qaCount}
                 </Badge>
               )}
-            </p>
+            </Typography>
 
             <FileQAAccordionList questions={activeFile.questions} />
           </div>

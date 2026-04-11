@@ -7,6 +7,7 @@ import { H3, Text, Muted, Eyebrow } from "@/core/primitives/typography";
 import { Surface } from "@/core/primitives/surface";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Badge } from "@/core/ui/badge";
+import Typography from "@/components/ui/typography";
 import {
   Shield,
   Smartphone,
@@ -87,7 +88,7 @@ const FaqPage = () => {
                 <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mb-2">
                   <cat.icon className="h-4 w-4 text-primary" />
                 </div>
-                <div className="text-xs font-medium leading-tight">{cat.label}</div>
+                <Typography variant="caption" weight="medium" as="div">{cat.label}</Typography>
                 <Muted className="text-xs mt-0.5">{cat.count} answers</Muted>
               </Surface>
             ))}

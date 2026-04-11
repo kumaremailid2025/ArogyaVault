@@ -8,6 +8,7 @@ import { Button } from "@/core/ui/button";
 import { Badge } from "@/core/ui/badge";
 import { Container, Section, Stack, Row, Grid } from "@/core/primitives";
 import { H2, H4, Lead, Text, Eyebrow, Muted } from "@/core/primitives";
+import Typography from "@/components/ui/typography";
 import { Surface } from "@/core/primitives";
 
 const GROUP_FEATURES = [
@@ -90,9 +91,9 @@ export const GroupsSection = ({ compact = false }: { compact?: boolean }) => {
 
               {/* Arrow legend */}
               <div className="col-span-3 mt-2 flex justify-center gap-4">
-                <Row gap="xs"><span className="text-xs text-muted-foreground">→ you share</span></Row>
-                <Row gap="xs"><span className="text-xs text-muted-foreground">← they share</span></Row>
-                <Row gap="xs"><span className="text-xs text-muted-foreground">↔ mutual</span></Row>
+                <Row gap="xs"><Typography variant="caption" color="muted" as="span">→ you share</Typography></Row>
+                <Row gap="xs"><Typography variant="caption" color="muted" as="span">← they share</Typography></Row>
+                <Row gap="xs"><Typography variant="caption" color="muted" as="span">↔ mutual</Typography></Row>
               </div>
             </div>
           </div>

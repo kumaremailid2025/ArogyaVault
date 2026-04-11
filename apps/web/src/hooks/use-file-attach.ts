@@ -1,25 +1,59 @@
 "use client";
+
+/**
+ * @file use-file-attach.ts
+ * @description React hook for the full file-attach → preview → AI-analyse → use workflow.
+ *
+ * @packageDocumentation
+ * @category Hooks
+ */
+
 import * as React from "react";
 import type { AttachStep, AttachedDoc } from "@/models/user";
 
 export type { AttachStep, AttachedDoc };
 
+/**
+ * Return value of the {@link useFileAttach} hook.
+ *
+ * @category Hooks
+ */
 export interface UseFileAttachReturn {
+  /** Current step in the attach flow (select → preview → analyzing → analyzed). */
   attachState: AttachStep;
+  /** Setter for `attachState`. */
   setAttachState: React.Dispatch<React.SetStateAction<AttachStep>>;
+  /** The document that has been confirmed for use, or `null` if none. */
   attachedDoc: AttachedDoc;
+  /** Setter for `attachedDoc`. */
   setAttachedDoc: React.Dispatch<React.SetStateAction<AttachedDoc>>;
+  /** Transition to the `preview` step with an object URL for the selected file. */
   handleFileSelect: (file: File) => void;
+  /** Revoke the object URL and reset all attach state back to `select`. */
   resetAttach: () => void;
+  /**
+   * Send the file to the AI analysis endpoint and transition to `analyzed`.
+   * Falls back to `preview` on network error.
+   */
   handleAnalyze: (file: File, previewUrl: string, caption: string) => Promise<void>;
+  /** Mark the analyzed document as the active attached document. */
   handleUseAttachment: (file: File, previewUrl: string, docType: string) => void;
 }
 
 /**
  * Encapsulates the full file-attach → preview → AI-analyse → use flow.
  *
- * Calls POST /api/analyze-image with { filename, mimeType }.
- * In production this should call a real Vision / OCR API.
+ * Calls `POST /api/analyze-image` with `{ filename, mimeType }`.
+ * In production this should be backed by a real Vision / OCR API.
+ *
+ * @returns All state, setters, and handlers needed to drive the attach UI.
+ *
+ * @example
+ * ```tsx
+ * const { attachState, handleFileSelect, resetAttach } = useFileAttach();
+ * ```
+ *
+ * @category Hooks
  */
 export const useFileAttach = (): UseFileAttachReturn => {
   const [attachState, setAttachState] = React.useState<AttachStep>({ step: "select" });

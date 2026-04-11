@@ -12,6 +12,7 @@ import { ThemeSwitcher } from "@/components/app/theme-switcher";
 import { NotificationPreferences } from "@/components/app/notification-preferences";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/data/profile-data";
+import Typography from "@/components/ui/typography";
 
 const ProfilePage = () => {
   const { ACCESS_LOG, NOTIFICATIONS } = useProfile();
@@ -26,31 +27,33 @@ const ProfilePage = () => {
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold">Kumar</h1>
+              <Typography variant="h2" as="h1">Kumar</Typography>
               <Badge className="text-xs bg-primary/10 text-primary border-0">Patient</Badge>
             </div>
             <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
               <SmartphoneIcon className="size-3.5" />
               <span>+91 98765 43210</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">Member since January 2026</p>
+            <Typography variant="caption" color="muted" className="mt-0.5">
+              Member since January 2026
+            </Typography>
           </div>
           <Button variant="outline" size="sm" className="shrink-0 cursor-pointer">Edit Profile</Button>
         </div>
 
         {/* Theme */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
             <PaletteIcon className="size-4 text-primary" /> Appearance
-          </h2>
+          </Typography>
           <ThemeSwitcher />
         </section>
 
         {/* Security settings */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
             <KeyRoundIcon className="size-4 text-primary" /> Security & Access
-          </h2>
+          </Typography>
           <div className="rounded-xl border border-border divide-y divide-border bg-background">
             <SettingRow
               icon={SmartphoneIcon}
@@ -84,17 +87,17 @@ const ProfilePage = () => {
 
         {/* Notification preferences */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
             <BellIcon className="size-4 text-primary" /> Notification Preferences
-          </h2>
+          </Typography>
           <NotificationPreferences items={NOTIFICATIONS} />
         </section>
 
         {/* Access log */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
             <EyeIcon className="size-4 text-primary" /> Recent Access Log
-          </h2>
+          </Typography>
           <div className="rounded-xl border border-border divide-y divide-border bg-background">
             {ACCESS_LOG.map((entry, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3">
@@ -102,10 +105,10 @@ const ProfilePage = () => {
                   <entry.icon className="size-3.5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{entry.who}</p>
-                  <p className="text-xs text-muted-foreground">{entry.action}</p>
+                  <Typography variant="body" weight="medium">{entry.who}</Typography>
+                  <Typography variant="caption" color="muted">{entry.action}</Typography>
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">{entry.time}</span>
+                <Typography variant="caption" color="muted" as="span" className="shrink-0">{entry.time}</Typography>
               </div>
             ))}
           </div>
@@ -113,13 +116,13 @@ const ProfilePage = () => {
 
         {/* Account / Danger zone */}
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-destructive flex items-center gap-1.5">
+          <Typography variant="h4" as="h2" color="destructive" className="flex items-center gap-1.5">
             <LogOutIcon className="size-4" /> Account
-          </h2>
+          </Typography>
           <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Sign Out</p>
-              <p className="text-xs text-muted-foreground">End your current session on this device.</p>
+              <Typography variant="body" weight="medium">Sign Out</Typography>
+              <Typography variant="caption" color="muted">End your current session on this device.</Typography>
             </div>
             <Button
               variant="outline"
@@ -148,8 +151,8 @@ const SettingRow = ({
       <div className="flex items-center gap-3 min-w-0">
         <Icon className="size-4 text-muted-foreground shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-medium">{title}</p>
-          <p className="text-xs text-muted-foreground truncate">{desc}</p>
+          <Typography variant="body" weight="medium">{title}</Typography>
+          <Typography variant="caption" color="muted" truncate={true}>{desc}</Typography>
         </div>
       </div>
       <Button

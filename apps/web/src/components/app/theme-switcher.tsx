@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { SunIcon, MoonIcon, MonitorIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 
 type ThemeOption = {
   id: "light" | "dark" | "system";
@@ -63,13 +64,14 @@ export const ThemeSwitcher = () => {
                 <opt.icon className="size-3.5" />
               </div>
               <div>
-                <p className={cn(
-                  "text-sm font-medium",
-                  isActive && "text-primary"
-                )}>
+                <Typography
+                  variant="body"
+                  weight="medium"
+                  color={isActive ? "primary" : "default"}
+                >
                   {opt.label}
-                </p>
-                <p className="text-xs text-muted-foreground">{opt.sub}</p>
+                </Typography>
+                <Typography variant="caption" color="muted">{opt.sub}</Typography>
               </div>
             </div>
 

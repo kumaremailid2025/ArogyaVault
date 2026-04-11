@@ -1,8 +1,12 @@
 "use client";
 
 /**
- * FilesPageContainer
- * ------------------
+ * Container for the community files tab.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
  * Self-contained container for the files tab (/community/files or /community/[groupId]/files).
  * Owns all files-specific state: file list, selection, Q&A, panel.
  *
@@ -40,19 +44,33 @@ const FilesRightPanel = dynamic(
   { ssr: false, loading: () => <PanelLoader /> },
 );
 
-/* ── Props ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for {@link FilesPageContainer}.
+ */
 interface FilesPageContainerProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
 }
 
-/* ── Component ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render the files tab for the community. Manages all files state and layout.
+ * @param props Component props.
+ * @returns React element.
+ */
 export const FilesPageContainer = ({
   variant,
   group,
-}: FilesPageContainerProps) => {
+}: FilesPageContainerProps): React.ReactElement => {
   const { INVITED_FILES, RECENT_FILE_QA } = useCommunityFiles();
   const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const isCommunity = variant === "community";

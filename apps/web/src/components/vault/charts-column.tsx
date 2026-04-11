@@ -9,6 +9,7 @@ import {
 import { ExpandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type ChartConfig } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    CHARTS COLUMN — wide center panel
@@ -210,8 +211,8 @@ const ChartCard = ({
     >
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h3 className="text-xs font-semibold">{config.title}</h3>
-          <span className="text-[10px] text-muted-foreground">{config.category}</span>
+          <Typography variant="h5" as="h3">{config.title}</Typography>
+          <Typography variant="micro" color="muted" as="span">{config.category}</Typography>
         </div>
         <ExpandIcon className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>

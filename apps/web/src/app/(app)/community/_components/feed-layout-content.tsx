@@ -36,15 +36,28 @@ import {
   usePostSummary,
   useRephrase,
 } from "@/hooks/api";
+import Typography from "@/components/ui/typography";
 
+/**
+ * Props for {@link FeedLayoutContent}.
+ */
 interface FeedLayoutContentProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
-  basePath: string; // "/community" or "/community/<uuid>"
+  /** Base route path: "/community" or "/community/<uuid>". */
+  basePath: string;
+  /** Route-driven right panel (children). */
   children: React.ReactNode;
 }
 
-export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLayoutContentProps) => {
+/**
+ * Render a two-column feed layout (compose + posts | right panel).
+ * @param props Component props.
+ * @returns React element.
+ */
+export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLayoutContentProps): React.ReactElement => {
   const { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } = useLinkedMembers();
   const router = useRouter();
   const pathname = usePathname();
@@ -305,24 +318,24 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
               {posts.length === 0 && !isCommunity ? (
                 <div className="flex flex-col items-center justify-center text-center py-12 px-4 max-w-md mx-auto">
                   <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 mb-3">
-                    <span className="text-lg font-bold text-primary">
+                    <Typography variant="h2" as="span" color="primary">
                       {member?.initials ?? ""}
-                    </span>
+                    </Typography>
                   </div>
-                  <p className="text-base font-semibold mb-1">
+                  <Typography variant="h3" as="p" className="mb-1">
                     Say hi to {member?.name.split(" ")[0] ?? "your group"} 👋
-                  </p>
-                  <p className="text-sm text-muted-foreground leading-snug mb-4">
+                  </Typography>
+                  <Typography variant="body" color="muted" className="leading-snug mb-4">
                     This is your shared space. Share a report, ask a question,
                     or send a quick message using the box below — {member?.name.split(" ")[0] ?? "they"} will see it instantly.
-                  </p>
+                  </Typography>
                   <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
                     <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-left">
-                      <p className="text-xs font-semibold text-primary mb-0.5">Tip</p>
-                      <p className="text-[11px] text-muted-foreground leading-snug">
+                      <Typography variant="h5" as="p" className="text-primary mb-0.5">Tip</Typography>
+                      <Typography variant="micro" color="muted">
                         Use the attach button in the compose box to share a
                         lab report, prescription, or any PDF with the group.
-                      </p>
+                      </Typography>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,21 @@
+/**
+ * @file drug-utils.ts
+ * @description Utility helpers for drug-name normalisation and interaction
+ * lookups used by the Learn / Drug Interactions tab.
+ *
+ * @packageDocumentation
+ * @category Utils
+ */
+
 import type { DrugInteraction } from "@/models/learn";
 
-/** Normalise a drug name for consistent lookup key generation */
+/**
+ * Normalise a drug name to a consistent lowercase ASCII key.
+ * Strips whitespace, converts to lower-case, and removes non-alpha characters.
+ *
+ * @param s - Raw drug name string.
+ * @returns Normalised key string (e.g. `"amoxicillin"`).
+ */
 export const normDrug = (s: string): string => {
   return s.trim().toLowerCase().replace(/[^a-z]/g, "");
 };

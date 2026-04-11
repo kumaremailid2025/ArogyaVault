@@ -10,6 +10,7 @@ import { useMedicalSystems } from "@/data/medical-systems-data";
 import type { RawDepartment } from "@/data/medical-systems-data";
 import { resolveIcon } from "@/lib/icon-resolver";
 import type { BodyRegionDef } from "@/models/learn";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    DEPARTMENTS TAB — three-column layout
@@ -113,9 +114,9 @@ const DeptListPanel = ({
               <div className="flex items-start gap-2">
                 <Icon className={cn("size-4 mt-0.5 shrink-0", dept.color)} />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-medium">{dept.name}</h4>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{dept.focus}</p>
-                  <span className="text-[9px] text-muted-foreground">{dept.conditions.length} conditions</span>
+                  <Typography variant="caption" weight="medium" as="h4">{dept.name}</Typography>
+                  <Typography variant="micro" color="muted">{dept.focus}</Typography>
+                  <Typography variant="micro" color="muted" as="span">{dept.conditions.length} conditions</Typography>
                 </div>
               </div>
             </button>
@@ -137,8 +138,8 @@ const DeptDetail = ({ dept }: { dept: RawDepartment }) => {
           <Icon className={cn("size-5", dept.color)} />
         </div>
         <div>
-          <h1 className="text-xl font-bold">{dept.name}</h1>
-          <p className="text-xs text-muted-foreground">{dept.focus}</p>
+          <Typography variant="h1">{dept.name}</Typography>
+          <Typography variant="caption" color="muted">{dept.focus}</Typography>
         </div>
       </div>
 
@@ -146,7 +147,7 @@ const DeptDetail = ({ dept }: { dept: RawDepartment }) => {
       <div className="rounded-xl border border-border p-4">
         <div className="flex items-center gap-1.5 mb-3">
           <ClipboardListIcon className="size-3.5 text-primary" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Common Conditions</h3>
+          <Typography variant="h5" as="h3">Common Conditions</Typography>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {dept.conditions.map((cond) => (
@@ -162,7 +163,7 @@ const DeptDetail = ({ dept }: { dept: RawDepartment }) => {
       <div className="rounded-xl border border-border p-4">
         <div className="flex items-center gap-1.5 mb-3">
           <StethoscopeIcon className="size-3.5 text-emerald-500" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Procedures</h3>
+          <Typography variant="h5" as="h3">Key Procedures</Typography>
         </div>
         <div className="flex flex-wrap gap-2">
           {dept.keyProcedures.map((proc) => (
@@ -175,8 +176,8 @@ const DeptDetail = ({ dept }: { dept: RawDepartment }) => {
 
       {/* Anatomy */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">Anatomy Overview</h3>
-        <p className="text-sm leading-relaxed">{dept.anatomy}</p>
+        <Typography variant="h5" as="h3">Anatomy Overview</Typography>
+        <Typography variant="body">{dept.anatomy}</Typography>
       </div>
     </div>
   );
@@ -202,14 +203,14 @@ const DeptInfoPanel = ({
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <LayoutGridIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Body Regions</span>
+            <Typography variant="overline" color="muted" as="span">Body Regions</Typography>
           </div>
           <div className="space-y-1">
             {bodyRegions.filter((r) => r.depts.length > 0).map((region) => {
               const regionDepts = departments.filter((d) => d.bodyRegion === region.id);
               return (
                 <div key={region.id} className="rounded-lg border border-border p-2">
-                  <span className="text-[11px] font-medium">{region.label}</span>
+                  <Typography variant="micro" weight="medium" as="span">{region.label}</Typography>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {regionDepts.map((d) => {
                       const DIcon = resolveIcon(d.icon);
@@ -241,7 +242,7 @@ const DeptInfoPanel = ({
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-2">
               <StethoscopeIcon className="size-3 text-muted-foreground" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Related</span>
+              <Typography variant="overline" color="muted" as="span">Related</Typography>
             </div>
             <div className="space-y-1">
               {relatedDepts.map((d) => {
@@ -254,8 +255,8 @@ const DeptInfoPanel = ({
                   >
                     <DIcon className={cn("size-3.5 shrink-0", d.color)} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-[11px] font-medium">{d.name}</span>
-                      <p className="text-[10px] text-muted-foreground truncate">{d.focus}</p>
+                      <Typography variant="micro" weight="medium" as="span">{d.name}</Typography>
+                      <Typography variant="micro" color="muted">{d.focus}</Typography>
                     </div>
                     <ArrowRightIcon className="size-3 text-muted-foreground shrink-0" />
                   </button>
@@ -280,10 +281,10 @@ const DepartmentsLanding = ({
     <div className="max-w-3xl mx-auto py-6 space-y-6">
       <div className="text-center mb-4">
         <StethoscopeIcon className="size-8 mx-auto text-primary mb-2" />
-        <h2 className="text-lg font-bold">Clinical Departments</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <Typography variant="h2" as="h2">Clinical Departments</Typography>
+        <Typography variant="body" color="muted" className="mt-1">
           Explore specialties, conditions, procedures, and anatomy
-        </p>
+        </Typography>
       </div>
       <div className="grid grid-cols-3 gap-3">
         {departments.map((dept) => {
@@ -297,9 +298,9 @@ const DepartmentsLanding = ({
               <div className={cn("flex size-10 items-center justify-center rounded-xl mx-auto", dept.bg)}>
                 <Icon className={cn("size-5", dept.color)} />
               </div>
-              <h3 className="text-xs font-semibold mt-2">{dept.name}</h3>
-              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{dept.focus}</p>
-              <span className="text-[9px] text-muted-foreground mt-1 block">{dept.conditions.length} conditions</span>
+              <Typography variant="h5" as="h3">{dept.name}</Typography>
+              <Typography variant="micro" color="muted">{dept.focus}</Typography>
+              <Typography variant="micro" color="muted" as="span" className="mt-1 block">{dept.conditions.length} conditions</Typography>
             </button>
           );
         })}

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { usePdfLibrary, type PdfLibraryEntry } from "@/data/pdf-library-data";
 import { useSendPdfQuestion } from "@/hooks/api";
 import type { PdfMessage } from "@/models/learn";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    PDF Q&A TAB — three-column layout
@@ -56,7 +57,7 @@ const PdfListPanel = ({
             <div className="flex items-start gap-2">
               <FileTextIcon className="size-3.5 mt-0.5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-medium truncate">{pdf.name}</h4>
+                <Typography variant="caption" weight="medium" as="h4">{pdf.name}</Typography>
                 <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                   <span>{pdf.pages} pages</span>
                   <span>·</span>
@@ -99,10 +100,10 @@ const PdfChat = ({
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
         <FileTextIcon className="size-12 text-muted-foreground/30 mb-4" />
-        <h2 className="text-lg font-bold">PDF Q&A</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-md">
+        <Typography variant="h2" as="h2">PDF Q&A</Typography>
+        <Typography variant="body" color="muted" className="mt-2 max-w-md">
           Select a PDF document from the left panel, then ask questions about its contents. AI will extract answers with page-level citations.
-        </p>
+        </Typography>
       </div>
     );
   }
@@ -112,7 +113,7 @@ const PdfChat = ({
       {/* Header */}
       <div className="shrink-0 px-4 py-2 border-b border-border flex items-center gap-2">
         <FileTextIcon className="size-4 text-primary shrink-0" />
-        <span className="text-sm font-medium truncate">{activePdf}</span>
+        <Typography variant="body" weight="medium" as="span" truncate={true}>{activePdf}</Typography>
       </div>
 
       {/* Messages */}
@@ -121,9 +122,9 @@ const PdfChat = ({
           {messages.length === 0 && (
             <div className="py-8 text-center">
               <BrainCircuitIcon className="size-8 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">
+              <Typography variant="body" color="muted" className="mb-4">
                 Ask any question about this document
-              </p>
+              </Typography>
               <div className="flex flex-wrap gap-1.5 justify-center">
                 {suggestionQuestions.map((q) => (
                   <button
@@ -153,7 +154,7 @@ const PdfChat = ({
                     : "bg-muted border border-border rounded-tl-sm"
                 )}
               >
-                <p className="leading-relaxed">{msg.text}</p>
+                <Typography variant="body" color={msg.role === "user" ? "inverse" : "default"}>{msg.text}</Typography>
 
                 {msg.citations && (
                   <div className="mt-3 flex flex-col gap-1">
@@ -170,7 +171,7 @@ const PdfChat = ({
 
                 {msg.related && (
                   <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
-                    <span className="text-[10px] font-medium text-muted-foreground">Related:</span>
+                    <Typography variant="micro" weight="medium" color="muted" as="span">Related:</Typography>
                     {msg.related.map((r, j) => (
                       <span
                         key={j}
@@ -253,10 +254,10 @@ const PdfInfoPanel = ({
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-2">
               <FileTextIcon className="size-3 text-primary" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>
+              <Typography variant="overline" color="muted" as="span">Document</Typography>
             </div>
             <div className="rounded-lg border border-border p-2.5">
-              <span className="text-xs font-medium">{activePdf}</span>
+              <Typography variant="caption" weight="medium" as="span">{activePdf}</Typography>
               {(() => {
                 const pdf = pdfs.find((p) => p.name === activePdf);
                 return pdf ? (
@@ -276,7 +277,7 @@ const PdfInfoPanel = ({
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-2">
               <BookOpenIcon className="size-3 text-primary" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Citations</span>
+              <Typography variant="overline" color="muted" as="span">Citations</Typography>
             </div>
             <div className="space-y-1">
               {[...new Set(allCitations)].map((c, i) => (
@@ -294,7 +295,7 @@ const PdfInfoPanel = ({
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-2">
               <ExternalLinkIcon className="size-3 text-emerald-500" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Related Research</span>
+              <Typography variant="overline" color="muted" as="span">Related Research</Typography>
             </div>
             <div className="space-y-1">
               {[...new Set(allRelated)].map((r, i) => (
@@ -311,7 +312,7 @@ const PdfInfoPanel = ({
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <BrainCircuitIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Try Asking</span>
+            <Typography variant="overline" color="muted" as="span">Try Asking</Typography>
           </div>
           <div className="space-y-1">
             {suggestionQuestions.map((q) => (

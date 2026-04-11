@@ -3,6 +3,7 @@
 import * as React from "react";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 
 /**
  * RightPanel Props
@@ -78,11 +79,11 @@ export const RightPanel = React.forwardRef<
         {/* Header */}
         <div className="shrink-0 flex items-start justify-between gap-3 p-4 border-b border-border">
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-semibold truncate">{title}</h2>
+            <Typography variant="h4" as="h2" className="truncate">{title}</Typography>
             {subtitle && (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              <Typography variant="caption" color="muted" className="mt-0.5 truncate">
                 {subtitle}
-              </p>
+              </Typography>
             )}
           </div>
           <button

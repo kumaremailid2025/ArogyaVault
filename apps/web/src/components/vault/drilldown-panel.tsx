@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type DrilldownData, type ChartConfig } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    DRILLDOWN PANEL — expanded detail view
@@ -44,8 +45,8 @@ const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () =
       {/* Header */}
       <div className="flex items-start justify-between p-3 border-b border-border">
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold truncate">{data.title}</h2>
-          <p className="text-[11px] text-muted-foreground">{data.subtitle}</p>
+          <Typography variant="h4" as="h2" className="truncate">{data.title}</Typography>
+          <Typography variant="micro" color="muted">{data.subtitle}</Typography>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-muted rounded-md cursor-pointer shrink-0">
           <XIcon className="size-4" />
@@ -60,10 +61,10 @@ const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () =
           data.status === "warning" && "bg-amber-50 dark:bg-amber-950/20",
           data.status === "critical" && "bg-red-50 dark:bg-red-950/20",
         )}>
-          <div className="text-3xl font-bold">
+          <Typography variant="hero" as="div">
             {data.currentValue}
-            <span className="text-base font-normal text-muted-foreground ml-1">{data.unit}</span>
-          </div>
+            <Typography variant="body" color="muted" as="span" className="font-normal ml-1">{data.unit}</Typography>
+          </Typography>
           <div className={cn(
             "text-xs font-medium mt-1",
             data.status === "normal" && "text-green-600",
@@ -72,12 +73,12 @@ const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () =
           )}>
             {data.status === "normal" ? "Within normal range" : data.status === "warning" ? "Needs attention" : "Critical"}
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">{data.range}</div>
+          <Typography variant="micro" color="muted" as="div" className="mt-1">{data.range}</Typography>
         </div>
 
         {/* Trend chart */}
         <div>
-          <h3 className="text-xs font-semibold mb-2">12-Month Trend</h3>
+          <Typography variant="h5" as="h3">12-Month Trend</Typography>
           <div className="h-[180px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               {data.history[0]?.value2 !== undefined ? (
@@ -104,9 +105,9 @@ const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () =
 
         {/* AI Insights */}
         <div>
-          <h3 className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+          <Typography variant="h5" as="h3">
             <LightbulbIcon className="size-3.5 text-amber-500" /> Insights
-          </h3>
+          </Typography>
           <div className="space-y-1.5">
             {data.insights.map((insight, i) => (
               <div key={i} className="flex items-start gap-2 text-[11px] leading-snug">
@@ -119,15 +120,15 @@ const MetricDrilldown = ({ data, onClose }: { data: DrilldownData; onClose: () =
 
         {/* Related metrics */}
         <div className="pb-3">
-          <h3 className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+          <Typography variant="h5" as="h3">
             <LinkIcon className="size-3.5 text-muted-foreground" /> Related Metrics
-          </h3>
+          </Typography>
           <div className="space-y-1.5">
             {data.relatedMetrics.map((rm) => (
               <div key={rm.label} className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/40">
                 <div className="flex items-center gap-2">
                   <StatusDot status={rm.status} />
-                  <span className="text-xs">{rm.label}</span>
+                  <Typography variant="caption" as="span">{rm.label}</Typography>
                 </div>
                 <span className={cn(
                   "text-xs font-semibold",
@@ -153,8 +154,8 @@ const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () 
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-start justify-between p-3 border-b border-border">
         <div>
-          <h2 className="text-sm font-bold">{config.title}</h2>
-          <p className="text-[11px] text-muted-foreground">{config.category} · {config.unit || "Multi-unit"}</p>
+          <Typography variant="h4" as="h2">{config.title}</Typography>
+          <Typography variant="micro" color="muted">{config.category} · {config.unit || "Multi-unit"}</Typography>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-muted rounded-md cursor-pointer shrink-0">
           <XIcon className="size-4" />
@@ -180,7 +181,7 @@ const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () 
         </div>
         {/* Series summary */}
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold">Latest Values</h3>
+          <Typography variant="h5" as="h3">Latest Values</Typography>
           {config.series.map((s) => {
             const latest = config.data[config.data.length - 1];
             const val = latest[s.key as keyof typeof latest];
@@ -190,10 +191,10 @@ const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () 
               <div key={s.key} className="flex items-center justify-between px-2 py-2 rounded-lg bg-muted/40">
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                  <span className="text-xs">{s.label}</span>
+                  <Typography variant="caption" as="span">{s.label}</Typography>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold">{val}</span>
+                  <Typography variant="h5" as="span">{val}</Typography>
                   {diff !== 0 && (
                     <span className={cn("text-[10px]", diff > 0 ? "text-red-500" : "text-green-500")}>
                       {diff > 0 ? "+" : ""}{typeof diff === "number" ? diff.toFixed(1) : diff}
@@ -204,9 +205,9 @@ const ChartDrilldown = ({ config, onClose }: { config: ChartConfig; onClose: () 
             );
           })}
           {config.series.some((s) => s.refLine) && (
-            <div className="text-[10px] text-muted-foreground mt-1">
+            <Typography variant="micro" color="muted" as="div" className="mt-1">
               Dashed lines indicate target / reference values.
-            </div>
+            </Typography>
           )}
         </div>
       </div>
@@ -234,7 +235,7 @@ export const DrilldownPanel = ({ targetId, onClose }: DrilldownPanelProps) => {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-4">
       <AlertCircleIcon className="size-8 text-muted-foreground mb-2" />
-      <p className="text-sm text-muted-foreground">Detailed data not available for this metric.</p>
+      <Typography variant="body" color="muted">Detailed data not available for this metric.</Typography>
       <button onClick={onClose} className="mt-3 text-xs text-primary hover:underline cursor-pointer">
         Close panel
       </button>

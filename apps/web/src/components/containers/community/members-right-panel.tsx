@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * Right panel for the members tab with member-detail and members-default views.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
+ * Handles member-detail (profile card with activity timeline) and members-default
+ * (overview CTA with community pulse) views. Component is memoized to prevent
+ * unnecessary re-renders.
+ */
+
 import * as React from "react";
 import {
   XIcon, MessageSquareIcon, ZapIcon,
@@ -14,28 +26,41 @@ import { cn } from "@/lib/utils";
 import type { CommunityMember } from "@/models/community";
 import type { CommunityVariant, PanelState } from "./types";
 import { ACTIVITY_ICON_MAP } from "./right-panel-shared";
+import Typography from "@/components/ui/typography";
 
-/* ═══════════════════════════════════════════════════════════════════
-   MEMBERS RIGHT PANEL — handles: member-detail and members-default
-   views for the members tab.
-═══════════════════════════════════════════════════════════════════ */
+/* Members panel props */
 
+/**
+ * Props for {@link MembersRightPanel}.
+ *
+ * @category Types
+ */
 interface MembersRightPanelProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Current panel state (which view to render). */
   panelState: PanelState;
+  /** The currently active member (null if no member selected). */
   activeMember: CommunityMember | null;
+  /** Handler to close the panel. */
   onClosePanel: () => void;
 }
 
-/* ── Component ──────────────────────────────────────────────────── */
-
+/**
+ * Render the right panel for the members tab.
+ *
+ * @param props - Component props.
+ * @returns The rendered members right panel.
+ *
+ * @category Containers
+ */
 export const MembersRightPanel = React.memo(
   ({
     variant,
     panelState,
     activeMember,
     onClosePanel,
-  }: MembersRightPanelProps) => {
+  }: MembersRightPanelProps): React.ReactElement => {
     return (
       <div className="w-[360px] shrink-0 flex flex-col overflow-hidden">
 
@@ -45,7 +70,7 @@ export const MembersRightPanel = React.memo(
             {/* ── Pinned header: member profile card ── */}
             <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Member Profile</span>
+                <Typography variant="h4" as="span">Member Profile</Typography>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -74,7 +99,7 @@ export const MembersRightPanel = React.memo(
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold truncate">{activeMember.name}</span>
+                    <Typography variant="h4" as="span" truncate={true}>{activeMember.name}</Typography>
                     <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
                       {activeMember.role}
                     </Badge>
@@ -119,8 +144,8 @@ export const MembersRightPanel = React.memo(
                 ].map((s) => (
                   <div key={s.label} className="rounded-lg border border-border bg-background p-1.5 text-center">
                     <s.icon className="size-3 text-primary/60 mx-auto mb-0.5" />
-                    <p className="text-xs font-bold text-primary leading-tight">{s.value}</p>
-                    <p className="text-[9px] text-muted-foreground">{s.label}</p>
+                    <Typography variant="caption" weight="bold" color="primary">{s.value}</Typography>
+                    <Typography variant="micro" color="muted">{s.label}</Typography>
                   </div>
                 ))}
               </div>
@@ -129,14 +154,14 @@ export const MembersRightPanel = React.memo(
             {/* ── Scrollable activity feed ── */}
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="px-4 py-3">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Typography variant="overline" color="muted">
                   <ZapIcon className="size-3 text-primary" />
                   Recent Activity
-                </p>
+                </Typography>
 
                 {activeMember.activities.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-center">
-                    <p className="text-xs text-muted-foreground">No recent activity.</p>
+                    <Typography variant="caption" color="muted">No recent activity.</Typography>
                   </div>
                 ) : (
                   <div className="relative">
@@ -161,23 +186,23 @@ export const MembersRightPanel = React.memo(
                             {/* Content */}
                             <div className="flex-1 min-w-0 pt-0.5">
                               <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                <Typography variant="overline" color="muted" as="span">
                                   {iconConfig.label}
-                                </span>
+                                </Typography>
                                 {activity.tag && (
                                   <Badge variant="outline" className="text-[9px] border-primary/20 text-primary">
                                     {activity.tag}
                                   </Badge>
                                 )}
-                                <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+                                <Typography variant="micro" color="muted" as="span" className="ml-auto shrink-0">
                                   {activity.time}
-                                </span>
+                                </Typography>
                               </div>
-                              <p className="text-xs leading-relaxed">{activity.text}</p>
+                              <Typography variant="caption">{activity.text}</Typography>
                               {activity.context && (
-                                <p className="text-[10px] text-muted-foreground mt-0.5 italic">
+                                <Typography variant="micro" color="muted">
                                   {activity.context}
-                                </p>
+                                </Typography>
                               )}
                             </div>
                           </div>
@@ -198,9 +223,9 @@ export const MembersRightPanel = React.memo(
               <>
                 {/* Community Pulse */}
                 <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Typography variant="overline" color="muted">
                     <ZapIcon className="size-3 text-primary" /> Community Pulse
-                  </p>
+                  </Typography>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: "Members", value: "12,847" },
@@ -211,8 +236,8 @@ export const MembersRightPanel = React.memo(
                         key={s.label}
                         className="rounded-lg border border-border bg-background p-2 text-center"
                       >
-                        <p className="text-sm font-bold text-primary leading-tight">{s.value}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+                        <Typography variant="body" weight="bold" color="primary">{s.value}</Typography>
+                        <Typography variant="micro" color="muted">{s.label}</Typography>
                       </div>
                     ))}
                   </div>
@@ -221,9 +246,9 @@ export const MembersRightPanel = React.memo(
                 {/* CTA */}
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
                   <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-                  <p className="text-xs text-muted-foreground leading-snug">
+                  <Typography variant="caption" color="muted">
                     Select any member to see their profile, activity history, posts, uploads, and contributions.
-                  </p>
+                  </Typography>
                 </div>
               </>
             )}
@@ -231,9 +256,9 @@ export const MembersRightPanel = React.memo(
             {variant === "invited" && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
                 <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-                <p className="text-xs text-muted-foreground leading-snug">
+                <Typography variant="caption" color="muted">
                   Select a group member to see their activity, shared posts, uploads, and questions.
-                </p>
+                </Typography>
               </div>
             )}
           </div>

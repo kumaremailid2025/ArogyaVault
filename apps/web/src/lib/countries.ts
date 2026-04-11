@@ -1,3 +1,15 @@
+/**
+ * @file countries.ts
+ * @description Country codes, phone validation rules, dial codes, and flag
+ * emoji data for all countries supported by ArogyaVault.
+ *
+ * To add a new country: extend {@link CountryCode}, add its {@link PhoneRule}
+ * to `PHONE_RULES`, and add its entry to {@link COUNTRIES}.
+ *
+ * @packageDocumentation
+ * @category Constants
+ */
+
 import { z } from "zod";
 
 /* ── Country code enum ────────────────────────────────────────────── */

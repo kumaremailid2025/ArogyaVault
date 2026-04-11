@@ -13,6 +13,7 @@ import { FileTextIcon, CalendarIcon, UserIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Doc } from "@/data/records-data";
+import Typography from "@/components/ui/typography";
 
 export type { Category, Doc } from "@/data/records-data";
 export { useRecords } from "@/data/records-data";
@@ -50,9 +51,9 @@ export const DocCard = ({ doc, categoryColor }: DocCardProps) => {
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+          <Typography variant="caption" color="muted" className="mt-1 leading-relaxed line-clamp-2">
             {doc.summary}
-          </p>
+          </Typography>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <CalendarIcon className="size-3" />

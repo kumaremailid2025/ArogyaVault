@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useLearn } from "@/data/learn-data";
 import { useLearnContext } from "@/data/learn-context-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    BROWSE LANDING — personalized dashboard for the Browse tab center
@@ -84,8 +85,8 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
             <span className="text-[10px] uppercase tracking-widest font-semibold opacity-80">
               Featured for you
             </span>
-            <h2 className="text-xl font-bold mt-1">{FEATURED_TOPIC.title}</h2>
-            <p className="text-sm mt-2 opacity-90 leading-relaxed">{FEATURED_TOPIC.subtitle}</p>
+            <Typography variant="h1" as="h2">{FEATURED_TOPIC.title}</Typography>
+            <Typography variant="body" className="mt-2 opacity-90">{FEATURED_TOPIC.subtitle}</Typography>
             <div className="flex items-center gap-3 mt-3">
               <span className="text-xs opacity-70">{FEATURED_TOPIC.category}</span>
               <span className="text-xs opacity-70">·</span>
@@ -100,8 +101,8 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
       <div>
         <div className="flex items-center gap-1.5 mb-3">
           <SparklesIcon className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold">Recommended for You</h3>
-          <span className="text-[10px] text-muted-foreground ml-1">Based on your health data</span>
+          <Typography variant="h4" as="h3">Recommended for You</Typography>
+          <Typography variant="micro" color="muted" as="span" className="ml-1">Based on your health data</Typography>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {RECOMMENDED_TOPICS.slice(0, 6).map((rec) => {
@@ -122,8 +123,8 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
                 <div className="flex items-start gap-2">
                   <Icon className={cn("size-4 mt-0.5 shrink-0", topic.categoryColor)} />
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-medium leading-tight line-clamp-1">{topic.title}</h4>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{rec.reason}</p>
+                    <Typography variant="caption" weight="medium" as="h4">{topic.title}</Typography>
+                    <Typography variant="micro" color="muted">{rec.reason}</Typography>
                     <div className="flex items-center gap-1 mt-1.5">
                       {rec.urgency === "high" && (
                         <AlertTriangleIcon className="size-2.5 text-amber-500" />
@@ -138,7 +139,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
                       )}>
                         {rec.urgency === "high" ? "Priority" : rec.urgency === "medium" ? "Suggested" : "Related"}
                       </span>
-                      <span className="text-[9px] text-muted-foreground ml-auto">{topic.readTime}</span>
+                      <Typography variant="micro" color="muted" as="span" className="ml-auto">{topic.readTime}</Typography>
                     </div>
                   </div>
                 </div>
@@ -153,7 +154,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
         <div>
           <div className="flex items-center gap-1.5 mb-3">
             <ClockIcon className="size-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Continue Reading</h3>
+            <Typography variant="h4" as="h3">Continue Reading</Typography>
           </div>
           <div className="flex gap-2">
             {CONTINUE_READING.map((cr) => {
@@ -165,7 +166,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
                   onClick={() => onSelectTopic(cr.topicId)}
                   className="flex-1 rounded-xl border border-border p-3 text-left transition-all cursor-pointer hover:border-primary/30 hover:shadow-sm"
                 >
-                  <h4 className="text-xs font-medium line-clamp-1">{topic.title}</h4>
+                  <Typography variant="caption" weight="medium" as="h4">{topic.title}</Typography>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
@@ -173,9 +174,9 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
                         style={{ width: `${cr.progress}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{cr.progress}%</span>
+                    <Typography variant="micro" color="muted" as="span" className="shrink-0">{cr.progress}%</Typography>
                   </div>
-                  <span className="text-[9px] text-muted-foreground mt-1 block">{timeAgo(cr.lastRead)}</span>
+                  <Typography variant="micro" color="muted" as="span" className="mt-1 block">{timeAgo(cr.lastRead)}</Typography>
                 </button>
               );
             })}
@@ -187,7 +188,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
       <div>
         <div className="flex items-center gap-1.5 mb-3">
           <BookOpenIcon className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold">Browse by Category</h3>
+          <Typography variant="h4" as="h3">Browse by Category</Typography>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {EDU_CATEGORIES.filter((c) => c.id !== "all").map((cat) => {
@@ -203,8 +204,8 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
                 className="rounded-xl border border-border p-3 text-center transition-all cursor-pointer hover:border-primary/30 hover:shadow-sm group"
               >
                 <Icon className={cn("size-5 mx-auto", cat.color)} />
-                <h4 className="text-xs font-medium mt-1.5">{cat.label}</h4>
-                <span className="text-[10px] text-muted-foreground">{count} topics</span>
+                <Typography variant="caption" weight="medium" as="h4">{cat.label}</Typography>
+                <Typography variant="micro" color="muted" as="span">{count} topics</Typography>
               </button>
             );
           })}
@@ -215,7 +216,7 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
       <div>
         <div className="flex items-center gap-1.5 mb-3">
           <TrendingUpIcon className="size-4 text-emerald-500" />
-          <h3 className="text-sm font-semibold">Trending</h3>
+          <Typography variant="h4" as="h3">Trending</Typography>
         </div>
         <div className="space-y-1.5">
           {TRENDING_TOPICS.map((tt, i) => (
@@ -224,16 +225,16 @@ export const BrowseLanding = ({ onSelectTopic }: BrowseLandingProps) => {
               onClick={() => onSelectTopic(tt.id)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer text-left"
             >
-              <span className="text-sm font-bold text-muted-foreground/50 w-5 text-right shrink-0">
+              <Typography variant="body-sm" weight="bold" as="span" className="text-muted-foreground/50 w-5 text-right shrink-0">
                 {i + 1}
-              </span>
+              </Typography>
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-medium truncate">{tt.title}</h4>
-                <span className="text-[10px] text-muted-foreground">{tt.category}</span>
+                <Typography variant="caption" weight="medium" as="h4">{tt.title}</Typography>
+                <Typography variant="micro" color="muted" as="span">{tt.category}</Typography>
               </div>
-              <span className="text-[10px] text-muted-foreground shrink-0">
+              <Typography variant="micro" color="muted" as="span" className="shrink-0">
                 {(tt.readers / 1000).toFixed(1)}k readers
-              </span>
+              </Typography>
             </button>
           ))}
         </div>

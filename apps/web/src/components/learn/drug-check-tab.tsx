@@ -12,6 +12,7 @@ import { lookupInteraction } from "@/lib/drug-utils";
 import { useLearn } from "@/data/learn-data";
 import { useDrugSuggestions, type SeverityConfig, type DrugSeverityKey } from "@/data/drug-suggestions-data";
 import type { DrugSeverity } from "@/models/learn";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    DRUG CHECK TAB — full-width interaction checker
@@ -57,7 +58,7 @@ const DrugInputPanel = ({
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-center gap-1.5 mb-3">
           <PillIcon className="size-4 text-primary" />
-          <span className="text-xs font-semibold">Your Medications</span>
+          <Typography variant="h5" as="span">Your Medications</Typography>
         </div>
 
         {/* Add drug input */}
@@ -94,7 +95,7 @@ const DrugInputPanel = ({
         {drugs.map((drug, i) => (
           <div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/40 border border-border">
             <PillIcon className="size-3.5 text-primary shrink-0" />
-            <span className="text-xs font-medium flex-1">{drug}</span>
+            <Typography variant="caption" weight="medium" as="span" className="flex-1">{drug}</Typography>
             <button onClick={() => onRemoveDrug(i)} className="cursor-pointer text-muted-foreground hover:text-foreground">
               <XIcon className="size-3" />
             </button>
@@ -136,10 +137,10 @@ const ResultsPanel = ({
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
         <PillIcon className="size-12 text-muted-foreground/30 mb-4" />
-        <h2 className="text-lg font-bold">Drug Interaction Checker</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-md">
+        <Typography variant="h2" as="h2">Drug Interaction Checker</Typography>
+        <Typography variant="body" color="muted" className="mt-2 max-w-md">
           Add your medications on the left and click &quot;Check All Interactions&quot; to see potential drug-drug interactions, severity levels, and clinical advice.
-        </p>
+        </Typography>
       </div>
     );
   }
@@ -156,7 +157,7 @@ const ResultsPanel = ({
     <div className="max-w-3xl mx-auto py-4 space-y-4">
       {/* Summary bar */}
       <div className="flex items-center gap-3 rounded-xl border border-border p-3">
-        <span className="text-sm font-semibold">{results.length} pairs checked</span>
+        <Typography variant="h4" as="span">{results.length} pairs checked</Typography>
         {majorCount > 0 && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
             {majorCount} major
@@ -181,13 +182,13 @@ const ResultsPanel = ({
             >
               <div className="flex items-center gap-2 mb-2">
                 <SevIcon className={cn("size-4", config.color)} />
-                <span className={cn("text-xs font-bold", config.color)}>{config.label}</span>
-                <span className="text-xs text-muted-foreground ml-auto">
+                <Typography variant="caption" weight="bold" as="span" className={config.color}>{config.label}</Typography>
+                <Typography variant="caption" color="muted" as="span" className="ml-auto">
                   {r.drugA} + {r.drugB}
-                </span>
+                </Typography>
               </div>
-              <p className="text-sm leading-relaxed">{r.effect}</p>
-              <p className="text-xs text-muted-foreground mt-2 italic">{r.advice}</p>
+              <Typography variant="body">{r.effect}</Typography>
+              <Typography variant="caption" color="muted" className="mt-2 italic">{r.advice}</Typography>
             </div>
           );
         })}
@@ -222,7 +223,7 @@ const DrugInfoPanel = ({
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <AlertTriangleIcon className="size-3 text-muted-foreground" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Severity Guide</span>
+            <Typography variant="overline" color="muted" as="span">Severity Guide</Typography>
           </div>
           <div className="space-y-1.5">
             {(["major", "moderate", "minor", "none"] as const).map((sev) => {
@@ -244,25 +245,25 @@ const DrugInfoPanel = ({
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <BookOpenIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Database</span>
+            <Typography variant="overline" color="muted" as="span">Database</Typography>
           </div>
           <div className="flex flex-wrap gap-1">
             {knownDrugs.map((drug) => (
-              <span key={drug} className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+              <Typography key={drug} variant="micro" color="muted" as="span" className="px-1.5 py-0.5 rounded-full bg-muted border border-border">
                 {drug}
-              </span>
+              </Typography>
             ))}
           </div>
-          <p className="text-[9px] text-muted-foreground mt-2 px-1">
+          <Typography variant="micro" color="muted" className="mt-2 px-1">
             {Object.keys(drugInteractions).length / 2} interaction pairs in database. Always consult your doctor.
-          </p>
+          </Typography>
         </div>
 
         {/* Disclaimer */}
         <div className="rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20 p-2.5">
-          <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-400">
+          <Typography variant="micro" className="text-amber-700 dark:text-amber-400">
             This tool checks against a curated database and may not cover all interactions. Always consult a healthcare professional before changing medications.
-          </p>
+          </Typography>
         </div>
       </div>
     </div>

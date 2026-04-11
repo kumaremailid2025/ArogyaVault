@@ -21,11 +21,20 @@
  *   useUploadFile       — upload a file to a group
  */
 
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import {
   communityApi,
   type PostListParams,
   type PostListResponse,
+  type PostListOut,
+  type PostOut,
+  type LikeToggleResponse,
   type FileListParams,
   type MemberListParams,
   type ReplyListParams,
@@ -103,7 +112,15 @@ export const useCreatePost = (groupId: string) => {
     mutationFn: (data: { text: string; tag?: string; attachments?: Parameters<typeof communityApi.createPost>[1]["attachments"] }) =>
       communityApi.createPost(groupId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      /* Targeted: only refetch the post feeds for THIS group.
+       * Avoids the catastrophic refetch-everything that
+       * `communityKeys.all` used to trigger. */
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "posts", groupId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "posts-infinite", groupId],
+      });
     },
   });
 };
@@ -138,17 +155,80 @@ export const useSubmitReply = (groupId: string) => {
     }) =>
       communityApi.submitReply(postId, groupId, { text, attachments }),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      /* Targeted: the post detail (with replies) + the paginated replies
+       * list for this post, plus the feed rows to update `replyCount`. */
+      queryClient.invalidateQueries({
+        queryKey: communityKeys.post(groupId, variables.postId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "replies", groupId, variables.postId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "posts", groupId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "posts-infinite", groupId],
+      });
     },
   });
 };
 
+/**
+ * Toggle like with surgical cache patching.
+ *
+ * Instead of invalidating the world (which triggered a full refetch of
+ * every post/file/member/QA page across every group), we patch the
+ * exact cached entries in place using the authoritative `total_likes`
+ * from the server response. No refetch, no flicker.
+ */
 export const useToggleLike = (groupId: string) => {
   const queryClient = useQueryClient();
-  return useMutation({
+
+  return useMutation<LikeToggleResponse, ApiError, number>({
     mutationFn: (postId: number) => communityApi.toggleLike(postId, groupId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: communityKeys.all });
+    onSuccess: (data) => {
+      const { post_id: postId, total_likes: totalLikes } = data;
+
+      /* Patch the simple cursor feed(s) ─────────────────────────── */
+      queryClient.setQueriesData<PostListResponse>(
+        { queryKey: [...communityKeys.all, "posts", groupId] },
+        (old) => {
+          if (!old) return old;
+          let touched = false;
+          const items = old.items.map((p) => {
+            if (p.id !== postId) return p;
+            touched = true;
+            return { ...p, likes: totalLikes } satisfies PostListOut;
+          });
+          return touched ? { ...old, items } : old;
+        },
+      );
+
+      /* Patch the infinite feed(s) ──────────────────────────────── */
+      queryClient.setQueriesData<InfiniteData<PostListResponse>>(
+        { queryKey: [...communityKeys.all, "posts-infinite", groupId] },
+        (old) => {
+          if (!old) return old;
+          let touched = false;
+          const pages = old.pages.map((page) => {
+            let pageTouched = false;
+            const items = page.items.map((p) => {
+              if (p.id !== postId) return p;
+              pageTouched = true;
+              touched = true;
+              return { ...p, likes: totalLikes } satisfies PostListOut;
+            });
+            return pageTouched ? { ...page, items } : page;
+          });
+          return touched ? { ...old, pages } : old;
+        },
+      );
+
+      /* Patch the detail cache if present ───────────────────────── */
+      queryClient.setQueryData<PostOut>(
+        communityKeys.post(groupId, postId),
+        (old) => (old ? { ...old, likes: totalLikes } : old),
+      );
     },
   });
 };

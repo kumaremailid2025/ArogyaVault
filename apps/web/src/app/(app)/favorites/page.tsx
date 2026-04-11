@@ -18,6 +18,7 @@ import { PageBanner } from "@/components/shared/page-banner";
 import { useFavoritesStore } from "@/stores";
 import { TYPE_CODE_LABELS } from "@/models/type-codes";
 import type { CommunityPost } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
 const FavoritesPage = () => {
   const { getFavorites, toggleFavorite } = useFavoritesStore();
@@ -37,9 +38,9 @@ const FavoritesPage = () => {
           { label: `${entries.length} ${entries.length === 1 ? "post" : "posts"}`, icon: <StarIcon className="size-2.5" /> },
         ]}
         description={
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
             Posts you have starred for quick access. Click the star icon on any community post to save it here.
-          </p>
+          </Typography>
         }
       />
 
@@ -48,10 +49,10 @@ const FavoritesPage = () => {
         {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <StarIcon className="size-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No favorites yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+            <Typography variant="body" weight="medium" color="muted">No favorites yet</Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1 max-w-xs">
               Click the star icon on any community post to save it here for quick access.
-            </p>
+            </Typography>
             <Button asChild variant="outline" size="sm" className="mt-4">
               <Link href="/community">Back to Community</Link>
             </Button>
@@ -76,10 +77,10 @@ const FavoritesPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                          <span className="text-sm font-semibold">{post.author}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <Typography variant="h4" as="span">{post.author}</Typography>
+                          <Typography variant="caption" color="muted" as="span">
                             {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
-                          </span>
+                          </Typography>
                           <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
                             {post.tag}
                           </Badge>
@@ -89,12 +90,12 @@ const FavoritesPage = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Typography variant="caption" color="muted" as="span" className="flex items-center gap-1">
                             <ThumbsUpIcon className="size-3" /> {post.likes}
-                          </span>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1">
+                          </Typography>
+                          <Typography variant="caption" color="muted" as="span" className="flex items-center gap-1 ml-1">
                             <MessageSquareIcon className="size-3" /> {post.replyCount}
-                          </span>
+                          </Typography>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -110,10 +111,10 @@ const FavoritesPage = () => {
                           </Tooltip>
                         </div>
                       </div>
-                      <p className="text-sm mt-1 leading-relaxed">{post.text}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1.5">
+                      <Typography variant="body" className="mt-1">{post.text}</Typography>
+                      <Typography variant="micro" color="muted">
                         Favorited {new Date(entry.favoritedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </p>
+                      </Typography>
                     </div>
                   </div>
                 </div>

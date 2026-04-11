@@ -49,9 +49,12 @@ interface RecordsBundle {
 
 export const useRecords = (): RecordsBundle => {
   const { data } = useAppDataContext();
-  const src = (data.records || {}) as Record<string, unknown>;
+  /* Depend on the raw slice reference — NOT on a freshly-constructed
+   * `{} ` fallback, which would bust the memo every render. */
+  const raw = data.records;
 
   return React.useMemo(() => {
+    const src = (raw || {}) as Record<string, unknown>;
     const rawCategories = (src.CATEGORIES as RawCategory[]) ?? [];
     const categories: Category[] = rawCategories.map((c) => ({
       ...c,
@@ -65,5 +68,5 @@ export const useRecords = (): RecordsBundle => {
       GROUP_DOCS: (src.GROUP_DOCS as Record<string, Doc[]>) ?? {},
       GROUP_NAMES: (src.GROUP_NAMES as Record<string, string>) ?? {},
     };
-  }, [src]);
+  }, [raw]);
 };

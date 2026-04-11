@@ -12,6 +12,7 @@ import {
   type AiCapability, type AiContextCard,
 } from "@/data/ai-context-data";
 import { useVaultHealth } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    ASK-AI LANDING — rich, data-aware landing shown before first message.
@@ -73,10 +74,10 @@ const ContextCard = ({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) 
         <div className="mt-0.5 shrink-0">{iconMap[card.type]}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold truncate">{card.title}</h3>
-            {card.meta && <span className="text-[10px] text-muted-foreground shrink-0">{card.meta}</span>}
+            <Typography variant="h5" as="h3" truncate={true}>{card.title}</Typography>
+            {card.meta && <Typography variant="micro" color="muted" as="span" className="shrink-0">{card.meta}</Typography>}
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{card.description}</p>
+          <Typography variant="micro" color="muted" className="mt-0.5 line-clamp-2">{card.description}</Typography>
           <div className="flex items-center gap-1 mt-1.5 text-[10px] text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
             <SparklesIcon className="size-2.5" />
             Ask about this
@@ -102,8 +103,8 @@ const CapabilityCard = ({ cap, onAsk }: { cap: AiCapability; onAsk: (q: string) 
       <div className="flex items-start gap-2.5">
         <span className="text-lg shrink-0">{cap.icon}</span>
         <div className="flex-1 min-w-0">
-          <h3 className="text-xs font-semibold">{cap.label}</h3>
-          <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{cap.description}</p>
+          <Typography variant="h5" as="h3">{cap.label}</Typography>
+          <Typography variant="micro" color="muted" className="mt-0.5">{cap.description}</Typography>
         </div>
         <ChevronRightIcon className="size-3.5 text-muted-foreground mt-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
@@ -133,12 +134,12 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
         <div className="size-14 rounded-full bg-primary flex items-center justify-center mb-4">
           <BrainCircuitIcon className="size-7 text-primary-foreground" />
         </div>
-        <h2 className="text-xl font-bold mb-1.5">Welcome to ArogyaAI</h2>
-        <p className="text-sm text-muted-foreground mb-5 max-w-md leading-relaxed">
+        <Typography variant="h1" as="h2" className="mb-1.5">Welcome to ArogyaAI</Typography>
+        <Typography variant="body" color="muted" className="mb-5 max-w-md">
           Your personal health assistant. Ask me anything about symptoms,
           medications, lab reports, or general wellbeing — or start by
           adding a report to your vault.
-        </p>
+        </Typography>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
           {[
@@ -158,9 +159,9 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
           ))}
         </div>
 
-        <p className="mt-6 text-[11px] text-muted-foreground/80">
+        <Typography variant="micro" color="muted" className="mt-6 opacity-80">
           Type your question in the box below to get started.
-        </p>
+        </Typography>
       </div>
     );
   }
@@ -174,13 +175,13 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
             <BrainCircuitIcon className="size-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-base font-bold">What would you like to know, Kumar?</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <Typography variant="h3" as="h2">What would you like to know, Kumar?</Typography>
+            <Typography variant="caption" color="muted" className="mt-0.5">
               ArogyaAI has analyzed <span className="font-medium text-foreground">{VAULT_FILES.length} documents</span> in your vault
               {warningAlerts.length > 0 && (
                 <> and found <span className="font-medium text-amber-600">{warningAlerts.length} items needing attention</span></>
               )}
-            </p>
+            </Typography>
           </div>
         </div>
         <MiniScoreRing score={HEALTH_SCORE?.overall ?? 0} />
@@ -190,8 +191,8 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
       <div>
         <div className="flex items-center gap-1.5 mb-2.5">
           <ShieldCheckIcon className="size-3.5 text-primary" />
-          <span className="text-xs font-semibold">Your Health Insights</span>
-          <span className="text-[10px] text-muted-foreground ml-auto">Tap any card to ask</span>
+          <Typography variant="h5" as="span">Your Health Insights</Typography>
+          <Typography variant="micro" color="muted" as="span" className="ml-auto">Tap any card to ask</Typography>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {AI_CONTEXT_CARDS.map((card) => (
@@ -204,7 +205,7 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
       <div>
         <div className="flex items-center gap-1.5 mb-2.5">
           <SparklesIcon className="size-3.5 text-primary" />
-          <span className="text-xs font-semibold">What ArogyaAI Can Do</span>
+          <Typography variant="h5" as="span">What ArogyaAI Can Do</Typography>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
           {AI_CAPABILITIES.map((cap) => (
@@ -217,7 +218,7 @@ export const AskAiLanding = ({ onAsk }: AskAiLandingProps) => {
       <div className="pb-2">
         <div className="flex items-center gap-1.5 mb-2.5">
           <SparklesIcon className="size-3.5 text-amber-500" />
-          <span className="text-xs font-semibold">Suggested for You</span>
+          <Typography variant="h5" as="span">Suggested for You</Typography>
         </div>
         <div className="flex flex-wrap gap-2">
           {SMART_SUGGESTIONS.map((s) => (

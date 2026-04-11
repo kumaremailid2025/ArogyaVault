@@ -1,4 +1,15 @@
 "use client";
+
+/**
+ * ArogyaAI feature showcase and sample conversation.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Displays ArogyaAI features and a sample conversation from the dashboard.
+ */
+
 import * as React from "react";
 import { BrainCircuitIcon, SparklesIcon, FileTextIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
@@ -6,8 +17,16 @@ import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/data/dashboard-data";
 import { resolveIcon } from "@/lib/icon-resolver";
+import Typography from "@/components/ui/typography";
 
-export const ArogyaAIContent = () => {
+/**
+ * Render ArogyaAI feature showcase and sample conversation.
+ *
+ * @returns The rendered content.
+ *
+ * @category Components
+ */
+export const ArogyaAIContent = (): React.ReactElement => {
   const { AI_MESSAGES, AI_FEATURES, AI_SUGGESTIONS } = useDashboard();
   const [, setQuery] = React.useState("");
 
@@ -22,9 +41,9 @@ export const ArogyaAIContent = () => {
           <span className="font-bold text-lg">ArogyaAI</span>
           <Badge className="bg-white/20 text-primary-foreground border-0 text-[10px]">GPT-4o · RAG</Badge>
         </div>
-        <p className="text-sm text-primary-foreground/80 leading-relaxed mt-1">
+        <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed mt-1">
           Your personal AI health assistant. Answers are drawn exclusively from your uploaded documents.
-        </p>
+        </Typography>
       </div>
 
       {/* Feature cards */}
@@ -38,8 +57,8 @@ export const ArogyaAIContent = () => {
             className="rounded-xl border border-primary/20 bg-primary/5 p-3 h-auto text-left flex-col items-start hover:border-primary/40 hover:bg-primary/10"
           >
             <Icon className="size-4 text-primary mb-1.5" />
-            <p className="text-sm font-semibold">{f.label}</p>
-            <p className="text-xs text-muted-foreground leading-snug mt-0.5">{f.desc}</p>
+            <Typography variant="h4" as="p">{f.label}</Typography>
+            <Typography variant="caption" color="muted" className="leading-snug mt-0.5">{f.desc}</Typography>
           </Button>
         );
         })}
@@ -47,7 +66,7 @@ export const ArogyaAIContent = () => {
 
       {/* Sample conversation */}
       <div className="rounded-xl border border-border p-4 space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample conversation</p>
+        <Typography variant="h5" as="p" className="text-muted-foreground uppercase tracking-wider">Sample conversation</Typography>
         {AI_MESSAGES.map((m, i) => (
           <div key={i} className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}>
             {m.role === "ai" && (
@@ -61,7 +80,7 @@ export const ArogyaAIContent = () => {
                 ? "bg-primary text-primary-foreground rounded-tr-sm"
                 : "bg-muted border border-border rounded-tl-sm"
             )}>
-              <p className="leading-relaxed">{m.text}</p>
+              <Typography variant="body" color={m.role === "user" ? "inverse" : "default"}>{m.text}</Typography>
               {m.citation && (
                 <span className="inline-flex items-center gap-1 mt-1.5 rounded bg-background border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   <FileTextIcon className="size-2.5" />{m.citation}
@@ -77,9 +96,9 @@ export const ArogyaAIContent = () => {
 
       {/* Suggested questions */}
       <div>
-        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+        <Typography variant="caption" color="muted" className="mb-2 flex items-center gap-1">
           <SparklesIcon className="size-3 text-primary" /> Try asking…
-        </p>
+        </Typography>
         <div className="flex flex-wrap gap-2">
           {AI_SUGGESTIONS.map((q) => (
             <Button
@@ -95,9 +114,9 @@ export const ArogyaAIContent = () => {
         </div>
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <Typography variant="caption" color="muted" className="text-center">
         Type your question in the bar at the bottom ↓
-      </p>
+      </Typography>
     </div>
   );
 };

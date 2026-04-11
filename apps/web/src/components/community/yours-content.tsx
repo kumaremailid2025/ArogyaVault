@@ -1,4 +1,15 @@
 "use client";
+
+/**
+ * User dashboard content with welcome banner, health summary, and activity feed.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Displays user welcome banner, AI health summary, and activity feed from the dashboard.
+ */
+
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -10,8 +21,16 @@ import { cn } from "@/lib/utils";
 import { getGreeting } from "@/lib/post-utils";
 import { useDashboard } from "@/data/dashboard-data";
 import { resolveIcon } from "@/lib/icon-resolver";
+import Typography from "@/components/ui/typography";
 
-export const YoursContent = () => {
+/**
+ * Render user welcome banner, AI health summary, and activity feed.
+ *
+ * @returns The rendered content.
+ *
+ * @category Components
+ */
+export const YoursContent = (): React.ReactElement => {
   const { QUICK_STATS, ACTIVITY_FEED } = useDashboard();
   const greeting = getGreeting();
 
@@ -19,11 +38,11 @@ export const YoursContent = () => {
     <div className="space-y-5">
       {/* Welcome banner */}
       <div className="rounded-2xl bg-primary p-5 text-primary-foreground">
-        <p className="text-xs text-primary-foreground/70 font-medium mb-0.5">{greeting} 👋</p>
-        <h1 className="text-xl font-bold">Welcome to ArogyaVault, Kumar</h1>
-        <p className="mt-1.5 text-primary-foreground/80 text-sm leading-relaxed">
+        <Typography variant="micro" color="inverse" weight="medium" className="mb-0.5 opacity-70">{greeting} 👋</Typography>
+        <Typography variant="h1" color="inverse">Welcome to ArogyaVault, Kumar</Typography>
+        <Typography variant="body" color="inverse" className="mt-1.5 opacity-80">
           Your personal health vault is ready. Upload your first medical document to get started.
-        </p>
+        </Typography>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button asChild size="sm" variant="secondary">
             <Link href="/records" className="flex items-center gap-1.5">
@@ -43,7 +62,7 @@ export const YoursContent = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <BrainCircuitIcon className="size-4 text-primary" />
-            <span className="text-sm font-semibold">AI Health Summary</span>
+            <Typography variant="h4" as="span">AI Health Summary</Typography>
             <Badge variant="outline" className="text-xs">GPT-4o</Badge>
           </div>
           <Link href="/records" className="text-xs text-primary hover:underline flex items-center gap-0.5">
@@ -51,9 +70,9 @@ export const YoursContent = () => {
           </Link>
         </div>
         <div className="rounded-lg bg-muted/50 border border-border/50 p-3">
-          <p className="text-sm text-muted-foreground italic leading-relaxed">
+          <Typography variant="body" color="muted" className="italic leading-relaxed">
             Upload your medical documents to generate your personalised AI Health Summary.
-          </p>
+          </Typography>
         </div>
       </div>
 
@@ -64,9 +83,9 @@ export const YoursContent = () => {
           return (
           <div key={s.label} className="rounded-xl border border-border p-3 bg-background">
             <Icon className={cn("size-4 mb-1.5", s.color)} />
-            <div className="text-xl font-bold">{s.value}</div>
-            <div className="text-xs font-medium">{s.label}</div>
-            <div className="text-[11px] text-muted-foreground">{s.sub}</div>
+            <Typography variant="h1" as="div">{s.value}</Typography>
+            <Typography variant="caption" weight="medium" as="div">{s.label}</Typography>
+            <Typography variant="micro" color="muted" as="div">{s.sub}</Typography>
           </div>
         );
         })}
@@ -75,10 +94,10 @@ export const YoursContent = () => {
       {/* Empty state */}
       <div className="rounded-xl border border-dashed border-border p-7 text-center">
         <UploadCloudIcon className="size-9 text-muted-foreground/40 mx-auto mb-2" />
-        <h3 className="font-semibold text-sm mb-1">No documents yet</h3>
-        <p className="text-xs text-muted-foreground mb-3 max-w-xs mx-auto">
+        <Typography variant="h4" as="h3" className="mb-1">No documents yet</Typography>
+        <Typography variant="caption" color="muted" className="mb-3 max-w-xs mx-auto">
           Upload a prescription, lab report, or any medical document to get started.
-        </p>
+        </Typography>
         <Button asChild size="sm">
           <Link href="/records" className="flex items-center gap-1.5">
             <UploadCloudIcon className="size-3.5" /> Upload your first document
@@ -90,7 +109,7 @@ export const YoursContent = () => {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <ActivityIcon className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">Recent Activity</span>
+          <Typography variant="h4" as="span">Recent Activity</Typography>
         </div>
         <div className="space-y-2">
           {ACTIVITY_FEED.map((a, i) => {
@@ -100,8 +119,8 @@ export const YoursContent = () => {
               <div className={cn("flex size-6 shrink-0 items-center justify-center rounded-full", a.color)}>
                 <Icon className="size-3" />
               </div>
-              <span className="flex-1 text-sm">{a.text}</span>
-              <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
+              <Typography variant="body-sm" as="span" className="flex-1">{a.text}</Typography>
+              <Typography variant="caption" color="muted" as="span" className="shrink-0">{a.time}</Typography>
             </div>
           );
           })}

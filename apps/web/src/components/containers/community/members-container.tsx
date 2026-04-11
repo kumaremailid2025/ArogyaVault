@@ -1,25 +1,52 @@
 "use client";
 
+/**
+ * Left panel container for the members tab.
+ *
+ * @packageDocumentation
+ * @category Containers
+ */
+
 import * as React from "react";
 import { SearchIcon, UsersIcon } from "lucide-react";
+import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { MemberCard } from "@/components/community/member-card";
 import { useCommunityMembers } from "@/data/community-members-data";
 import type { MemberStatusFilter } from "@/data/community-members-data";
 import type { CommunityMember } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
-/* ── Props ─────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for the members container component.
+ *
+ * @category Types
+ */
 interface MembersContainerProps {
+  /** Header title. */
   title: string;
+  /** Count of members (for display in header). */
   memberCount: number | string;
+  /** List of members to display. */
   members: CommunityMember[];
+  /** Currently selected member ID. */
   selectedMemberId: string | null;
+  /** Handler when a member is selected. */
   onSelectMember: (memberId: string) => void;
 }
 
-/* ── Status filter → member.status mapping ─────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Map from status filter name to allowed member statuses.
+ * "All" (null) matches any status; others match specific statuses.
+ */
 const STATUS_FILTER_MAP: Record<MemberStatusFilter, CommunityMember["status"][] | null> = {
   All: null,
   Online: ["online"],
@@ -27,15 +54,30 @@ const STATUS_FILTER_MAP: Record<MemberStatusFilter, CommunityMember["status"][] 
   Offline: ["offline"],
 };
 
-/* ── Component ─────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render the left panel for the members tab with list, search, and filters.
+ *
+ * @param props - Component props.
+ * @param props.title - Header title.
+ * @param props.memberCount - Count of members.
+ * @param props.members - Members to display.
+ * @param props.selectedMemberId - Currently selected member ID.
+ * @param props.onSelectMember - Callback when member is selected.
+ * @returns The rendered container.
+ *
+ * @category Containers
+ */
 export const MembersContainer = ({
   title,
   memberCount,
   members,
   selectedMemberId,
   onSelectMember,
-}: MembersContainerProps) => {
+}: MembersContainerProps): React.ReactElement => {
   const { MEMBER_STATUS_FILTERS } = useCommunityMembers();
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<MemberStatusFilter>("All");
@@ -73,10 +115,10 @@ export const MembersContainer = ({
         {/* Title row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">{title}</h2>
-            <span className="text-xs text-muted-foreground">
+            <Typography variant="h4" as="h2">{title}</Typography>
+            <Typography variant="caption" color="muted" as="span">
               {memberCount} members
-            </span>
+            </Typography>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs text-green-600">
             <span className="size-2 rounded-full bg-green-500" />
@@ -99,19 +141,17 @@ export const MembersContainer = ({
         {/* Status filter chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {MEMBER_STATUS_FILTERS.map((f) => (
-            <button
+            <Button
               key={f}
-              type="button"
+              variant={statusFilter === f ? "default" : "outline"}
+              size="sm"
               onClick={() => setStatusFilter(f)}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors border",
-                statusFilter === f
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-primary/30 hover:text-foreground",
+                "shrink-0 rounded-full h-6 px-3 py-0 text-[11px] font-medium",
               )}
             >
               {f}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -121,10 +161,10 @@ export const MembersContainer = ({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <UsersIcon className="size-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No members found</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
+            <Typography variant="body" weight="medium" color="muted">No members found</Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1">
               Try adjusting your search or filter.
-            </p>
+            </Typography>
           </div>
         ) : (
           <div className="space-y-2 pt-1">

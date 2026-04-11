@@ -24,6 +24,7 @@ import {
   TypeCode, ActionCode,
   TYPE_CODE_LABELS, ACTION_CODE_LABELS,
 } from "@/models/type-codes";
+import Typography from "@/components/ui/typography";
 
 /* ── Icon + color mapping per ActionCode ──────────────────────────── */
 
@@ -115,9 +116,9 @@ const ActivityPage = () => {
           { label: `${activities.length} ${activities.length === 1 ? "action" : "actions"}`, icon: <ActivityIcon className="size-2.5" /> },
         ]}
         description={
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
             A chronological record of every action you have taken across the app.
-          </p>
+          </Typography>
         }
       />
 
@@ -144,14 +145,14 @@ const ActivityPage = () => {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <ActivityIcon className="size-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">
+            <Typography variant="body" weight="medium" color="muted">
               {filter === "all" ? "No activity yet" : "No matching activity"}
-            </p>
-            <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+            </Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1 max-w-xs">
               {filter === "all"
                 ? "Your actions across the app will be recorded here."
                 : "Try a different filter to see other activities."}
-            </p>
+            </Typography>
             {filter !== "all" && (
               <Button variant="outline" size="sm" className="mt-4" onClick={() => setFilter("all")}>
                 Show all
@@ -163,9 +164,9 @@ const ActivityPage = () => {
             {Array.from(grouped.entries()).map(([dateLabel, items]) => (
               <div key={dateLabel}>
                 {/* Date group header */}
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
+                <Typography variant="overline" color="muted">
                   {dateLabel}
-                </p>
+                </Typography>
 
                 {/* Timeline */}
                 <div className="relative ml-3 border-l-2 border-border/60 pl-4 space-y-0">
@@ -183,18 +184,18 @@ const ActivityPage = () => {
                         {/* Content */}
                         <div className="flex items-start justify-between gap-3 min-w-0">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium leading-snug">
+                            <Typography variant="caption" weight="medium" className="leading-snug">
                               {ACTION_CODE_LABELS[activity.actionCode]}
-                            </p>
+                            </Typography>
                             {activity.description && (
-                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                              <Typography variant="micro" color="muted">
                                 {activity.description}
-                              </p>
+                              </Typography>
                             )}
                             {activity.meta?.textSnippet && (
-                              <p className="text-[11px] text-muted-foreground/70 mt-0.5 italic line-clamp-1">
+                              <Typography variant="micro" color="muted">
                                 &ldquo;{String(activity.meta.textSnippet)}&rdquo;
-                              </p>
+                              </Typography>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                               <Badge variant="outline" className="text-[9px] px-1.5 py-0">
@@ -207,9 +208,9 @@ const ActivityPage = () => {
                               )}
                             </div>
                           </div>
-                          <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
+                          <Typography variant="micro" color="muted" as="span" className="shrink-0 mt-0.5">
                             {formatTime(activity.datetime)}
-                          </span>
+                          </Typography>
                         </div>
                       </div>
                     );

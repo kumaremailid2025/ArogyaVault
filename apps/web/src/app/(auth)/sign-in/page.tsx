@@ -1,15 +1,31 @@
 "use client";
 
 /**
- * Sign-In Page
- * ------------
- * Thin wrapper that handles layout and step routing.
- * All business logic lives in the containers.
+ * Two-step sign-in page with phone and OTP entry.
  *
- * Mobile: Full-width centered form, TrustPanelContainer hidden.
- * Desktop (lg+): Split layout — trust panel left, form right.
+ * @packageDocumentation
+ * @category Pages
  *
- * Architecture ref: ARCHITECTURE.md — **Page** → Container → Component → Core UI
+ * @remarks
+ * Thin page wrapper that handles the two-step sign-in layout and the
+ * tiny bit of step-routing state needed to swap between the phone-entry
+ * and OTP-entry containers. All real business logic — validation,
+ * network requests, cooldowns, error handling — lives inside the two
+ * containers this page renders.
+ *
+ * Responsive layout:
+ * - Mobile: full-width centered form, TrustPanelContainer hidden.
+ * - Desktop (lg+): split layout — trust panel left, form right.
+ *
+ * Flow:
+ * 1. {@link MobileNumberContainer} collects phone → calls `onOtpSent`
+ *    with the confirmed (phone, dialCode) tuple once the backend has
+ *    accepted the send-OTP request.
+ * 2. {@link OtpContainer} verifies the 6-digit code. On success it
+ *    redirects to the app; on "change number" it calls back here to
+ *    reset to step 1.
+ *
+ * @see ARCHITECTURE.md
  */
 
 import * as React from "react";
@@ -20,22 +36,66 @@ import { MobileNumberContainer } from "@/components/containers/sign-in/mobile-nu
 import { OtpContainer } from "@/components/containers/sign-in/otp-container";
 import { StepIndicator } from "@/components/shared/step-indicator";
 
-/* ── Page ─────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
-const SignInPage = () => {
+/**
+ * Phone number payload captured from step 1 and passed to step 2.
+ *
+ * @category Types
+ */
+interface ConfirmedPhone {
+  /** Local digits only, e.g. `"9876543210"`. Country code lives in `dialCode`. */
+  phone: string;
+  /** International dial code with the leading `+`, e.g. `"+91"`. */
+  dialCode: string;
+}
+
+/** Total number of steps in the indicator at the top of the form. */
+const TOTAL_SIGN_IN_STEPS = 2 as const;
+
+/* ══════════════════════════════════════════════════════════════════════
+   PAGE
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Render the sign-in flow page with two-step authentication.
+ *
+ * @returns The rendered sign-in page.
+ *
+ * @category Pages
+ */
+const SignInPage = (): React.ReactElement => {
+  /** Current step the user is on — drives which container renders. */
   const [step, setStep] = React.useState<SignInStep>(SignInStep.PHONE);
-  const [confirmedPhone, setConfirmedPhone] = React.useState("");
-  const [confirmedDialCode, setConfirmedDialCode] = React.useState("");
+  /** Phone captured from step 1 and re-displayed in step 2. */
+  const [confirmed, setConfirmed] = React.useState<ConfirmedPhone>({
+    phone: "",
+    dialCode: "",
+  });
 
-  const handleOtpSent = (phone: string, dialCode: string) => {
-    setConfirmedPhone(phone);
-    setConfirmedDialCode(dialCode);
+  /**
+   * Invoked by {@link MobileNumberContainer} once the send-OTP mutation
+   * has resolved successfully. Locks in the phone/dialCode tuple and
+   * advances the form to the OTP entry step.
+   */
+  const handleOtpSent = React.useCallback((phone: string, dialCode: string): void => {
+    setConfirmed({ phone, dialCode });
     setStep(SignInStep.OTP);
-  };
+  }, []);
 
-  const handleChangeNumber = () => {
+  /**
+   * Invoked by {@link OtpContainer} when the user taps "Change number".
+   * Resets the step back to phone entry. The number itself stays in
+   * state so the user doesn't have to retype it.
+   */
+  const handleChangeNumber = React.useCallback((): void => {
     setStep(SignInStep.PHONE);
-  };
+  }, []);
+
+  /** Index shown by the 1-based step indicator. */
+  const currentStepIndex: 1 | 2 = step === SignInStep.PHONE ? 1 : 2;
 
   return (
     <Row className="h-full w-full flex-col lg:flex-row" gap="xs" align="stretch">
@@ -48,8 +108,8 @@ const SignInPage = () => {
       <Flex className="flex-1 items-center justify-center overflow-y-auto px-5 py-8 sm:px-8 lg:px-12 lg:py-0">
         <Stack gap="lg" className="w-full max-w-md">
           <StepIndicator
-            totalSteps={2}
-            currentStep={step === SignInStep.PHONE ? 1 : 2}
+            totalSteps={TOTAL_SIGN_IN_STEPS}
+            currentStep={currentStepIndex}
           />
 
           {step === SignInStep.PHONE && (
@@ -58,8 +118,8 @@ const SignInPage = () => {
 
           {step === SignInStep.OTP && (
             <OtpContainer
-              phone={confirmedPhone}
-              dialCode={confirmedDialCode}
+              phone={confirmed.phone}
+              dialCode={confirmed.dialCode}
               onChangeNumber={handleChangeNumber}
             />
           )}

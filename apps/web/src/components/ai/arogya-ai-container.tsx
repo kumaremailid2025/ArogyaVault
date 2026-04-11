@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SmartInput } from "@/components/shared/smart-input";
 import { ArogyaAiBanner, type AiTab } from "@/components/ai/arogya-ai-banner";
+import Typography from "@/components/ui/typography";
 import { AskAiLanding } from "@/components/ai/ask-ai-landing";
 import { useAiContext } from "@/data/ai-context-data";
 import type { ChatSession } from "@/data/ai-context-data";
@@ -40,7 +41,7 @@ const Bubble = ({ msg }: { msg: ConversationMessage }) => {
             : "bg-muted border border-border rounded-tl-sm"
         )}
       >
-        <p className="leading-relaxed">{msg.text}</p>
+        <Typography variant="body" color={isUser ? "inverse" : "default"}>{msg.text}</Typography>
         {"list" in msg && msg.list && (
           <ul className="mt-2 space-y-1">
             {msg.list.map((item, j) => (
@@ -64,9 +65,9 @@ const Bubble = ({ msg }: { msg: ConversationMessage }) => {
           </div>
         )}
         {"note" in msg && msg.note && (
-          <p className="mt-2 text-xs text-muted-foreground border-t border-border/50 pt-2 italic">
+          <Typography variant="caption" color="muted" className="border-t border-border/50 pt-2 italic">
             {msg.note}
-          </p>
+          </Typography>
         )}
       </div>
       {isUser && (
@@ -91,7 +92,7 @@ const HistoryView = ({
 }) => {
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-2">
-      <h2 className="text-sm font-semibold px-1 mb-3">All Conversations</h2>
+      <Typography variant="h4" as="h2" className="px-1 mb-3">All Conversations</Typography>
       {sessions.map((session) => (
         <button
           key={session.id}
@@ -100,21 +101,21 @@ const HistoryView = ({
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium">{session.title}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{session.preview}</p>
+              <Typography variant="body" weight="medium" as="h3">{session.title}</Typography>
+              <Typography variant="caption" color="muted" truncate={true} className="mt-0.5">{session.preview}</Typography>
               <div className="flex items-center gap-1.5 mt-2">
                 {session.tags.map((tag) => (
-                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  <Typography key={tag} variant="micro" color="muted" as="span" className="px-1.5 py-0.5 rounded-full bg-muted">
                     {tag}
-                  </span>
+                  </Typography>
                 ))}
               </div>
             </div>
             <div className="text-right shrink-0">
-              <div className="text-[10px] text-muted-foreground">
+              <Typography variant="micro" color="muted" as="div">
                 {new Date(session.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{session.messageCount} messages</div>
+              </Typography>
+              <Typography variant="micro" color="muted" as="div" className="mt-0.5">{session.messageCount} messages</Typography>
             </div>
           </div>
         </button>

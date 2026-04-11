@@ -8,6 +8,7 @@ import {
   DocCard,
   useRecords,
 } from "./_components/records-shared";
+import Typography from "@/components/ui/typography";
 
 const RecordsPage = () => {
   const { CATEGORIES, CATEGORY_COLOR, MY_DOCS } = useRecords();
@@ -15,10 +16,10 @@ const RecordsPage = () => {
     <>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">My Documents</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <Typography variant="h1">My Documents</Typography>
+          <Typography variant="body" color="muted" className="mt-0.5">
             All your documents, organised and searchable.
-          </p>
+          </Typography>
         </div>
         <Button size="sm" className="flex items-center gap-1.5">
           <UploadCloudIcon className="size-4" /> Upload
@@ -51,10 +52,10 @@ const RecordsPage = () => {
 
       <div className="rounded-xl border border-dashed border-border p-6 text-center">
         <UploadCloudIcon className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">
+        <Typography variant="body" color="muted">
           Use the <strong>Upload</strong> button above or the toolbar below to
           add more documents.
-        </p>
+        </Typography>
       </div>
     </>
   );

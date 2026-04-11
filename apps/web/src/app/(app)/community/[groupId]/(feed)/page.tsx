@@ -23,6 +23,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { useFeedContext } from "@/app/(app)/community/_context/feed-context";
 import { useLinkedMembers } from "@/data/linked-member-data";
+import Typography from "@/components/ui/typography";
 
 const GroupFeedPage = () => {
   const { posts, group } = useFeedContext();
@@ -43,20 +44,20 @@ const GroupFeedPage = () => {
           <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10">
             <SparklesIcon className="size-5 text-primary" />
           </div>
-          <p className="text-sm font-semibold mb-1">
+          <Typography variant="h4" as="p" className="mb-1">
             Welcome {memberName ? `— say hi to ${welcomeTarget}` : "to your shared group"}
-          </p>
-          <p className="text-[11px] text-muted-foreground leading-snug">
+          </Typography>
+          <Typography variant="micro" color="muted">
             This is where you and {welcomeTarget} can share records, chat
             about health updates, and keep each other informed. Start by
             adding a report or a quick note.
-          </p>
+          </Typography>
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+          <Typography variant="overline" color="muted">
             <ZapIcon className="size-3 text-primary" /> Get started
-          </p>
+          </Typography>
           <div className="space-y-2">
             <Button
               size="sm"
@@ -88,10 +89,10 @@ const GroupFeedPage = () => {
         <div className="rounded-xl border border-border bg-background p-3">
           <div className="flex items-start gap-2">
             <MessageSquareIcon className="size-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-[11px] text-muted-foreground leading-snug">
+            <Typography variant="micro" color="muted">
               Use the compose box below to send your first message. {welcomeTarget}{" "}
               will see it as soon as they open ArogyaVault.
-            </p>
+            </Typography>
           </div>
         </div>
       </div>
@@ -102,9 +103,9 @@ const GroupFeedPage = () => {
     <div className="flex-1 overflow-y-auto p-4 space-y-5">
       {/* Group Pulse */}
       <div>
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+        <Typography variant="overline" color="muted">
           <ZapIcon className="size-3 text-primary" /> Group Pulse
-        </p>
+        </Typography>
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "Members", value: "—" },
@@ -115,8 +116,8 @@ const GroupFeedPage = () => {
               key={s.label}
               className="rounded-lg border border-border bg-background p-2 text-center"
             >
-              <p className="text-sm font-bold text-primary leading-tight">{s.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+              <Typography variant="body" weight="bold" color="primary">{s.value}</Typography>
+              <Typography variant="micro" color="muted">{s.label}</Typography>
             </div>
           ))}
         </div>
@@ -125,11 +126,11 @@ const GroupFeedPage = () => {
       {/* Help CTA */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
         <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-        <p className="text-xs text-muted-foreground mb-2 leading-snug">
+        <Typography variant="caption" color="muted" className="mb-2 leading-snug">
           Click any post to read replies or tap{" "}
           <SparklesIcon className="size-3 inline-block text-violet-500 mx-0.5" /> AI
           Summary for a quick digest.
-        </p>
+        </Typography>
         <Button size="sm" variant="outline" className="text-xs border-primary/30 text-primary w-full">
           Ask the Group
         </Button>

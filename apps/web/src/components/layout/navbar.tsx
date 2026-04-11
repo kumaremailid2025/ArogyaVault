@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/core/ui/button";
 import { Sheet, SheetTrigger } from "@/core/ui/sheet";
 import { Container, Row } from "@/core/primitives";
+import Typography from "@/components/ui/typography";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -85,7 +86,7 @@ export const Navbar = () => {
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <HeartPulseIcon className="size-4" />
             </div>
-            <span className="text-lg tracking-tight">ArogyaVault</span>
+            <Typography variant="h4" as="span" className="tracking-tight">ArogyaVault</Typography>
           </Link>
 
           {/* Desktop nav */}
@@ -116,12 +117,12 @@ export const Navbar = () => {
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{displayName}</span>
+                    <Typography variant="body" weight="medium" as="span">{displayName}</Typography>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>
-                    <span className="font-semibold">{displayName}</span>
+                    <Typography variant="body" weight="semibold" as="span">{displayName}</Typography>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>

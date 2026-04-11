@@ -17,6 +17,7 @@ import { Button } from "@/core/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
 import { useLikesStore, useFavoritesStore, tagToSlug } from "@/stores";
 import type { CommunityPost } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
 const LikesPage = () => {
   const { getLikes, toggleLike } = useLikesStore();
@@ -37,9 +38,9 @@ const LikesPage = () => {
           { label: `${entries.length} ${entries.length === 1 ? "post" : "posts"}`, icon: <ThumbsUpIcon className="size-2.5" /> },
         ]}
         description={
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
             All the posts you have liked across the community. Like a post to save it here.
-          </p>
+          </Typography>
         }
       />
 
@@ -48,10 +49,10 @@ const LikesPage = () => {
         {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <ThumbsUpIcon className="size-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No liked posts yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+            <Typography variant="body" weight="medium" color="muted">No liked posts yet</Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1 max-w-xs">
               Like posts in the community and they will appear here.
-            </p>
+            </Typography>
             <Button asChild variant="outline" size="sm" className="mt-4">
               <Link href="/community">Back to Community</Link>
             </Button>
@@ -77,10 +78,10 @@ const LikesPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                          <span className="text-sm font-semibold">{post.author}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <Typography variant="h4" as="span">{post.author}</Typography>
+                          <Typography variant="caption" color="muted" as="span">
                             {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
-                          </span>
+                          </Typography>
                           <Link href={`/tags/${tagToSlug(post.tag)}`}>
                             <Badge variant="outline" className="text-[10px] text-primary border-primary/30 hover:bg-primary/10 cursor-pointer transition-colors">
                               {post.tag}
@@ -116,15 +117,15 @@ const LikesPage = () => {
                             </TooltipTrigger>
                             <TooltipContent side="bottom">Unlike</TooltipContent>
                           </Tooltip>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1">
+                          <Typography variant="caption" color="muted" as="span" className="flex items-center gap-1 ml-1">
                             <MessageSquareIcon className="size-3" /> {post.replyCount}
-                          </span>
+                          </Typography>
                         </div>
                       </div>
-                      <p className="text-sm mt-1 leading-relaxed">{post.text}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1.5">
+                      <Typography variant="body" className="mt-1">{post.text}</Typography>
+                      <Typography variant="micro" color="muted">
                         Liked {new Date(entry.likedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </p>
+                      </Typography>
                     </div>
                   </div>
                 </div>

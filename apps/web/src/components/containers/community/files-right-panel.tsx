@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * Right panel for the files tab with file-detail, file-qa, and files-default views.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
+ * Handles file-detail (AI summary and Q&A), file-qa (ask question about a file),
+ * and files-default (recent Q&A across all files) views. Component is memoized
+ * to prevent unnecessary re-renders.
+ */
+
 import * as React from "react";
 import {
   SparklesIcon, XIcon, MessageSquareIcon,
@@ -17,23 +29,38 @@ import type { CommunityFile } from "@/models/community";
 import type { PanelState } from "./types";
 import type { RecentFileQA } from "@/data/community-files-data";
 import { FileQAAccordionList } from "./right-panel-shared";
+import Typography from "@/components/ui/typography";
 
-/* ═══════════════════════════════════════════════════════════════════
-   FILES RIGHT PANEL — handles: file-detail, file-qa,
-   and the files-default view (recent Q&A across all files).
-═══════════════════════════════════════════════════════════════════ */
+/* Files panel props */
 
+/**
+ * Props for {@link FilesRightPanel}.
+ *
+ * @category Types
+ */
 interface FilesRightPanelProps {
+  /** Current panel state (which view to render). */
   panelState: PanelState;
+  /** The currently active file (null if no file selected). */
   activeFile: CommunityFile | null;
+  /** Recent Q&A across all files. */
   recentFileQA: RecentFileQA[];
+  /** Handler to close the panel. */
   onClosePanel: () => void;
+  /** Handler to submit a question about a file. */
   onAskFileQuestion?: (payload: ComposeSubmitPayload) => void;
+  /** Handler to select a file from the recent Q&A list. */
   onSelectFileFromQA?: (fileId: number) => void;
 }
 
-/* ── Component ──────────────────────────────────────────────────── */
-
+/**
+ * Render the right panel for the files tab.
+ *
+ * @param props - Component props.
+ * @returns The rendered files right panel.
+ *
+ * @category Containers
+ */
 export const FilesRightPanel = React.memo(
   ({
     panelState,
@@ -42,7 +69,7 @@ export const FilesRightPanel = React.memo(
     onClosePanel,
     onAskFileQuestion,
     onSelectFileFromQA,
-  }: FilesRightPanelProps) => {
+  }: FilesRightPanelProps): React.ReactElement => {
     return (
       <div className="w-[360px] shrink-0 flex flex-col overflow-hidden">
 
@@ -52,7 +79,7 @@ export const FilesRightPanel = React.memo(
             {/* ── Pinned header ── */}
             <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold flex-1 truncate">File Details</span>
+                <Typography variant="h4" as="span" className="flex-1 truncate">File Details</Typography>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -76,10 +103,10 @@ export const FilesRightPanel = React.memo(
                   {(activeFile.type === "jpg" || activeFile.type === "png") && <ImageIcon className="size-4 text-amber-500" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{activeFile.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <Typography variant="caption" weight="medium" truncate={true}>{activeFile.name}</Typography>
+                  <Typography variant="micro" color="muted">
                     {activeFile.size} · {activeFile.type.toUpperCase()} · {activeFile.uploadedBy}
-                  </p>
+                  </Typography>
                 </div>
               </div>
             </div>
@@ -95,12 +122,12 @@ export const FilesRightPanel = React.memo(
                     </div>
                     <span className="text-[11px] font-semibold text-violet-700">AI Summary</span>
                   </div>
-                  <p className="text-xs leading-relaxed text-foreground/80">{activeFile.aiSummary}</p>
+                  <Typography variant="caption" className="text-foreground/80">{activeFile.aiSummary}</Typography>
                 </div>
 
                 {/* Q&A Section */}
                 <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Typography variant="overline" color="muted">
                     <HelpCircleIcon className="size-3 text-primary" />
                     Questions &amp; Answers
                     {activeFile.qaCount > 0 && (
@@ -108,7 +135,7 @@ export const FilesRightPanel = React.memo(
                         {activeFile.qaCount}
                       </Badge>
                     )}
-                  </p>
+                  </Typography>
 
                   <FileQAAccordionList questions={activeFile.questions} />
                 </div>
@@ -137,7 +164,7 @@ export const FilesRightPanel = React.memo(
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <HelpCircleIcon className="size-4 text-primary" />
-                  <span className="text-sm font-semibold">Q&amp;A</span>
+                  <Typography variant="h4" as="span">Q&amp;A</Typography>
                 </div>
                 <Button
                   variant="ghost"
@@ -149,9 +176,9 @@ export const FilesRightPanel = React.memo(
                 </Button>
               </div>
               {/* Compact file reference */}
-              <p className="text-xs text-muted-foreground mt-1.5 truncate">
+              <Typography variant="caption" color="muted" className="mt-1.5 truncate">
                 {activeFile.name}
-              </p>
+              </Typography>
             </div>
 
             {/* ── Scrollable Q&A list ── */}
@@ -178,10 +205,10 @@ export const FilesRightPanel = React.memo(
         {/* ══════════════ FILES DEFAULT — Recent Q&A across all files ══════════════ */}
         {panelState.view === "default" && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Typography variant="overline" color="muted">
               <MessageSquareIcon className="size-3 text-primary" />
               Recent Questions &amp; Answers
-            </p>
+            </Typography>
 
             <div className="space-y-3">
               {recentFileQA.map((item, i) => (
@@ -196,7 +223,7 @@ export const FilesRightPanel = React.memo(
                   {/* File reference */}
                   <div className="flex items-center gap-1.5">
                     <FileTextIcon className="size-3 text-muted-foreground shrink-0" />
-                    <span className="text-[10px] text-muted-foreground truncate">{item.fileName}</span>
+                    <Typography variant="micro" color="muted" as="span" truncate={true}>{item.fileName}</Typography>
                     <Badge variant="outline" className="text-[9px] border-primary/20 text-primary ml-auto shrink-0">
                       {item.fileCategory}
                     </Badge>
@@ -209,8 +236,8 @@ export const FilesRightPanel = React.memo(
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[11px] font-semibold">{item.askedBy}</span>
-                      <p className="text-xs leading-relaxed font-medium mt-0.5">{item.question}</p>
+                      <Typography variant="h5" weight="semibold" as="span" className="!text-[11px]">{item.askedBy}</Typography>
+                      <Typography variant="caption" className="font-medium mt-0.5">{item.question}</Typography>
                     </div>
                   </div>
                   {/* Truncated answer */}
@@ -219,7 +246,7 @@ export const FilesRightPanel = React.memo(
                       <SparklesIcon className="size-2.5 text-violet-500" />
                       <span className="text-[9px] font-semibold text-violet-600">ArogyaAI</span>
                     </div>
-                    <p className="text-[11px] leading-relaxed text-foreground/70 line-clamp-2">{item.answer}</p>
+                    <Typography variant="micro" className="text-foreground/70 line-clamp-2">{item.answer}</Typography>
                   </div>
                 </div>
               ))}
@@ -228,9 +255,9 @@ export const FilesRightPanel = React.memo(
             {/* CTA */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
               <FileTextIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-              <p className="text-xs text-muted-foreground leading-snug">
+              <Typography variant="caption" color="muted">
                 Select any file to see its AI summary, ask questions, and view existing Q&amp;A threads.
-              </p>
+              </Typography>
             </div>
           </div>
         )}

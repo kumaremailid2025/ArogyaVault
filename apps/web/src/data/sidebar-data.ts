@@ -72,9 +72,12 @@ const DEFAULT_COMMUNITY_GROUP: CommunityGroupHeader = {
 
 export const useSidebar = (): SidebarBundle => {
   const { data } = useAppDataContext();
-  const src = (data.sidebar || {}) as Record<string, unknown>;
+  /* Depend on the raw slice reference — NOT on a freshly-constructed
+   * `{} ` fallback, which would bust the memo every render. */
+  const raw = data.sidebar;
 
   return React.useMemo(() => {
+    const src = (raw || {}) as Record<string, unknown>;
     const rawHeader = (src.COMMUNITY_GROUP || {}) as {
       slug?: string;
       name?: string;
@@ -102,5 +105,5 @@ export const useSidebar = (): SidebarBundle => {
       INVITE_GROUPS: (src.INVITE_GROUPS as InviteGroup[]) ?? [],
       TOP_NOTIFICATIONS: notifs,
     };
-  }, [src]);
+  }, [raw]);
 };

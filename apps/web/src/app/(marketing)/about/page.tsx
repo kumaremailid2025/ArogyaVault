@@ -19,6 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
+import Typography from "@/components/ui/typography";
 
 export const metadata: Metadata = {
   title: "About ArogyaVault | Our Mission to Secure India's Health Records",
@@ -175,7 +176,7 @@ const AboutPage = () => {
                 { value: "∞", label: "Storage", sub: "Lifetime of records, no cap" },
               ].map((stat) => (
                 <Surface key={stat.label} variant="muted" padding="md" className="rounded-xl text-center">
-                  <div className="text-3xl font-bold text-primary">{stat.value}</div>
+                  <Typography variant="hero" as="div" color="primary">{stat.value}</Typography>
                   <div className="font-semibold text-sm mt-1">{stat.label}</div>
                   <Muted className="text-xs mt-1">{stat.sub}</Muted>
                 </Surface>
@@ -223,7 +224,7 @@ const AboutPage = () => {
                 <Row key={i} gap="lg" className="items-start">
                   {/* Date badge */}
                   <div className="hidden md:flex flex-col items-end shrink-0 w-20 pt-1">
-                    <span className="text-xs font-semibold text-primary">{m.year}</span>
+                    <Typography variant="h5" as="span" color="primary">{m.year}</Typography>
                     <Badge variant="outline" className="text-xs mt-1">{m.quarter}</Badge>
                   </div>
                   {/* Dot */}
@@ -267,7 +268,7 @@ const AboutPage = () => {
                     <Row gap="md" className="items-start p-1">
                       <Award className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <div>
-                        <div className="text-sm font-semibold">{p.label}</div>
+                        <Typography variant="h4" as="div">{p.label}</Typography>
                         <Muted className="text-xs">{p.description}</Muted>
                       </div>
                     </Row>

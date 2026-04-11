@@ -4,6 +4,7 @@ import * as React from "react";
 import { ShieldCheckIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    VAULT BANNER — mimics CommunityBanner with Vault/Files pill tabs
@@ -59,11 +60,11 @@ export const VaultBanner = React.memo(
             </div>
           </div>
           {/* Row 2 — Contextual description */}
-          <p className="mt-2 text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="mt-2 opacity-80">
             {activeTab === "vault"
               ? "Your complete health picture — vitals, trends, and AI insights from all uploaded documents."
               : "All medical documents uploaded to your ArogyaVault."}
-          </p>
+          </Typography>
         </div>
       </div>
     );

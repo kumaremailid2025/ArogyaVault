@@ -10,6 +10,7 @@
 import * as React from "react";
 import { Switch } from "@/core/ui/switch";
 import type { Permission } from "@/data/groups-data";
+import Typography from "@/components/ui/typography";
 
 export type { Group, GroupDirection, DirectionConfig, Permission } from "@/data/groups-data";
 export { useGroups } from "@/data/groups-data";
@@ -43,8 +44,8 @@ export const PermissionRow = ({ perm }: { perm: Permission }) => {
           <perm.icon className="size-3.5 text-muted-foreground" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium">{perm.label}</p>
-          <p className="text-xs text-muted-foreground leading-snug">{perm.desc}</p>
+          <Typography variant="body" weight="medium">{perm.label}</Typography>
+          <Typography variant="caption" color="muted">{perm.desc}</Typography>
         </div>
       </div>
       <Switch

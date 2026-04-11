@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type FileQAEntry } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILE Q&A HISTORY PANEL — default right panel when no file selected
@@ -66,12 +67,13 @@ const QACard = ({
             <UserIcon className="size-2.5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={cn(
-              "text-xs font-medium leading-snug",
-              expanded ? "" : "line-clamp-2"
-            )}>
+            <Typography
+              variant="caption"
+              weight="medium"
+              truncate={expanded ? false : "line-clamp-2"}
+            >
               {entry.question}
-            </p>
+            </Typography>
             {/* File badge */}
             <button
               onClick={(e) => { e.stopPropagation(); onFileClick(); }}
@@ -82,7 +84,7 @@ const QACard = ({
             </button>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(entry.askedAt)}</span>
+            <Typography variant="micro" color="muted" as="span" className="whitespace-nowrap">{timeAgo(entry.askedAt)}</Typography>
             {expanded
               ? <ChevronUpIcon className="size-3.5 text-muted-foreground" />
               : <ChevronDownIcon className="size-3.5 text-muted-foreground" />
@@ -98,9 +100,9 @@ const QACard = ({
             <div className="size-5 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
               <BotIcon className="size-2.5 text-muted-foreground" />
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <Typography variant="caption" className="text-muted-foreground">
               {entry.answer}
-            </p>
+            </Typography>
           </div>
         </div>
       )}
@@ -125,12 +127,12 @@ export const FileQAHistoryPanel = ({ onFileClick }: FileQAHistoryPanelProps) => 
       <div className="flex items-center gap-2 px-3 py-3 border-b border-border shrink-0">
         <MessageCircleQuestionIcon className="size-4 text-primary" />
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold">Recent Questions</h2>
-          <p className="text-[10px] text-muted-foreground">Questions asked on your uploaded files</p>
+          <Typography variant="h4" as="h2">Recent Questions</Typography>
+          <Typography variant="micro" color="muted">Questions asked on your uploaded files</Typography>
         </div>
-        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+        <Typography variant="micro" color="muted" as="span" className="bg-muted px-1.5 py-0.5 rounded-full">
           {FILE_QA_HISTORY.length}
-        </span>
+        </Typography>
       </div>
 
       {/* Q&A list */}
@@ -148,10 +150,10 @@ export const FileQAHistoryPanel = ({ onFileClick }: FileQAHistoryPanelProps) => 
         {FILE_QA_HISTORY.length === 0 && (
           <div className="py-10 text-center">
             <MessageCircleQuestionIcon className="size-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">No questions asked yet.</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">
+            <Typography variant="caption" color="muted">No questions asked yet.</Typography>
+            <Typography variant="micro" color="muted">
               Select a file and ask a question to get started.
-            </p>
+            </Typography>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
   PermissionRow,
   useGroups,
 } from "../_components/groups-shared";
+import Typography from "@/components/ui/typography";
 
 /* ── Group Settings view (single group) ────────────────────────── */
 const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
@@ -21,7 +22,7 @@ const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
     return (
       <div className="space-y-5">
         <div className="rounded-xl border border-border bg-background p-4 text-center">
-          <p className="text-sm text-muted-foreground">Group not found</p>
+          <Typography variant="body" color="muted">Group not found</Typography>
         </div>
       </div>
     );
@@ -34,10 +35,10 @@ const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Group Settings</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <Typography variant="h1">Group Settings</Typography>
+          <Typography variant="body" color="muted" className="mt-0.5">
             Manage permissions and access for <strong>{memberName}</strong>
-          </p>
+          </Typography>
         </div>
       </div>
 
@@ -64,16 +65,18 @@ const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
               <span className={cfg.color}>{cfg.label}</span>
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">{group.last}</p>
+          <Typography variant="caption" color="muted" className="mt-1">
+            {group.last}
+          </Typography>
         </div>
       </div>
 
       {/* Permission toggles */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold flex items-center gap-1.5">
+        <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
           <ShieldCheckIcon className="size-4 text-primary" />
           Access Permissions
-        </h2>
+        </Typography>
         <div className="rounded-xl border border-border bg-background divide-y divide-border">
           {permissions.map((perm, i) => (
             <PermissionRow key={i} perm={perm} />
@@ -83,16 +86,16 @@ const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
 
       {/* Access scope */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold flex items-center gap-1.5">
+        <Typography variant="h4" as="h2" className="flex items-center gap-1.5">
           <LayersIcon className="size-4 text-primary" />
           Access Scope
-        </h2>
+        </Typography>
         <div className="rounded-xl border border-border bg-background p-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium">{group.scope}</p>
-            <p className="text-xs text-muted-foreground">
+            <Typography variant="body" weight="medium">{group.scope}</Typography>
+            <Typography variant="caption" color="muted">
               Current access level for this group
-            </p>
+            </Typography>
           </div>
           <Button variant="outline" size="sm" className="text-xs shrink-0">
             Change
@@ -102,13 +105,13 @@ const GroupSettingsPage = ({ params }: { params: { groupId: string } }) => {
 
       {/* Danger zone */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-destructive">Danger Zone</h2>
+        <Typography variant="h4" as="h2" color="destructive">Danger Zone</Typography>
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium">Revoke Access</p>
-            <p className="text-xs text-muted-foreground">
+            <Typography variant="body" weight="medium">Revoke Access</Typography>
+            <Typography variant="caption" color="muted">
               Remove this person from your vault completely.
-            </p>
+            </Typography>
           </div>
           <Button
             variant="outline"

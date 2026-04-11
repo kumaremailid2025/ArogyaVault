@@ -9,6 +9,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { Input } from "@/core/ui/input";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 
 type UploadFile = { name: string; size: string; status: "uploading" | "done" };
 
@@ -103,8 +104,8 @@ export const AppBottomBar = () => {
                 <CheckCircle2Icon className="size-3.5 text-primary shrink-0" />
               )}
               <FileTextIcon className="size-3.5 text-muted-foreground shrink-0" />
-              <span className="truncate flex-1 font-medium">{u.name}</span>
-              <span className="text-muted-foreground shrink-0">{u.size}</span>
+              <Typography variant="caption" weight="medium" as="span" className="truncate flex-1">{u.name}</Typography>
+              <Typography variant="caption" color="muted" as="span" className="shrink-0">{u.size}</Typography>
               {u.status === "done" && (
                 <Button
                   variant="ghost"

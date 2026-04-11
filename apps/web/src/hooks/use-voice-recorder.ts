@@ -1,28 +1,63 @@
 "use client";
+
+/**
+ * @file use-voice-recorder.ts
+ * @description React hook that wraps the Web Speech API for in-browser voice
+ * input with optional multilingual translation via the backend `/api/translate`
+ * route.
+ *
+ * @packageDocumentation
+ * @category Hooks
+ */
+
 import * as React from "react";
 import type { VoiceState, VoiceRecording } from "@/models/user";
 
 export type { VoiceState, VoiceRecording };
 
+/**
+ * Return value of the {@link useVoiceRecorder} hook.
+ *
+ * @category Hooks
+ */
 export interface UseVoiceRecorderReturn {
+  /** Current state of the recorder (`idle` | `recording` | `translating` | `done`). */
   voiceState: VoiceState;
+  /** The running transcript shown while recording is in progress. */
   liveTranscript: string;
+  /** Number of seconds elapsed since recording started. */
   recordingSeconds: number;
+  /** Finalised recording metadata, or `null` before the first recording. */
   voiceRecording: VoiceRecording | null;
+  /**
+   * Format a seconds count as `MM:SS`.
+   * @param s - Total seconds to format.
+   */
   formatSeconds: (s: number) => string;
+  /** Start the Web Speech API recognition session. */
   startRecording: () => Promise<void>;
+  /** Stop the recognition session and clear transient state. */
   stopRecording: () => void;
+  /** Stop recording and clear the saved {@link voiceRecording}. */
   reset: () => void;
 }
 
 /**
  * Encapsulates all Web Speech API logic for voice input.
  *
- * - Uses window.SpeechRecognition / webkitSpeechRecognition
- * - Translates non-English transcripts via /api/translate
- * - Cleans up recognition and timer on unmount
+ * - Uses `window.SpeechRecognition` / `webkitSpeechRecognition`
+ * - Translates non-English transcripts via `GET /api/translate`
+ * - Cleans up recognition and the timer interval on unmount
  *
- * @param lang  BCP-47 language code, e.g. "en-IN", "hi-IN"
+ * @param lang - BCP-47 language code passed to the recogniser (e.g. `"en-IN"`, `"hi-IN"`).
+ * @returns Recorder state and control handlers.
+ *
+ * @example
+ * ```tsx
+ * const { voiceState, startRecording, stopRecording } = useVoiceRecorder("en-IN");
+ * ```
+ *
+ * @category Hooks
  */
 export const useVoiceRecorder = (lang: string): UseVoiceRecorderReturn => {
   const [voiceState, setVoiceState]             = React.useState<VoiceState>("idle");

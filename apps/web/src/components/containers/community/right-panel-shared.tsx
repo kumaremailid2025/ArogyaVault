@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * Shared helpers and components for right-panel views.
+ *
+ * @packageDocumentation
+ * @category Helpers
+ *
+ * @remarks
+ * Provides voice language detection and resolution, file Q&A accordion component,
+ * and activity type icon mapping. Used across feed, files, and members right panels.
+ */
+
 import * as React from "react";
 import {
   SparklesIcon, HelpCircleIcon, ChevronDownIcon,
@@ -13,29 +24,65 @@ import { useVoiceLanguages } from "@/data/voice-languages";
 import type { ComposeSubmitPayload } from "@/components/shared/compose-box";
 import type { FileQA, MemberActivityType } from "@/models/community";
 import type { VoiceLanguage } from "@/models/user";
+import Typography from "@/components/ui/typography";
 
-/* ── Voice helpers ──────────────────────────────────────────────── */
+/* Voice language helpers */
 
+/**
+ * Check if the pending reply has a non-English voice recording.
+ *
+ * @param pendingReply - The reply being composed.
+ * @returns True if non-English voice recording is present.
+ *
+ * @category Helpers
+ */
 export const getHasNative = (pendingReply: ComposeSubmitPayload | null): boolean =>
   pendingReply?.voiceRecording !== null &&
   pendingReply?.voiceRecording !== undefined &&
   !pendingReply.voiceRecording.lang.startsWith("en");
 
+/**
+ * Resolve the language info for a non-English voice recording.
+ *
+ * @param pendingReply - The reply being composed.
+ * @param voiceLanguages - Available voice languages.
+ * @returns The language info, or null if no non-English voice recording.
+ *
+ * @category Helpers
+ */
 export const getVoiceLangInfo = (
   pendingReply: ComposeSubmitPayload | null,
   voiceLanguages: VoiceLanguage[]
-) => {
+): VoiceLanguage | null => {
   const hasNative = getHasNative(pendingReply);
   return hasNative && pendingReply?.voiceRecording
     ? (voiceLanguages.find((l) => l.code === pendingReply.voiceRecording!.lang) ?? null)
     : null;
 };
 
-/* ── File Q&A Accordion ────────────────────────────────────────── */
+/* File Q&A accordion */
 
-/** Renders questions in reverse chronological order with expand/collapse.
- *  The most recent question (first in reversed list) is expanded by default. */
-export const FileQAAccordionList = ({ questions }: { questions: FileQA[] }) => {
+/**
+ * Props for {@link FileQAAccordionList}.
+ *
+ * @category Types
+ */
+interface FileQAAccordionListProps {
+  /** File Q&A entries to display. */
+  questions: FileQA[];
+}
+
+/**
+ * Render questions in reverse chronological order with expand/collapse.
+ *
+ * The most recent question is expanded by default; others expand on demand.
+ *
+ * @param props - Component props.
+ * @returns The rendered accordion list.
+ *
+ * @category Components
+ */
+export const FileQAAccordionList = ({ questions }: FileQAAccordionListProps): React.ReactElement => {
   /* Reverse: most recent first */
   const reversed = React.useMemo(() => [...questions].reverse(), [questions]);
 
@@ -67,9 +114,9 @@ export const FileQAAccordionList = ({ questions }: { questions: FileQA[] }) => {
     return (
       <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-center">
         <HelpCircleIcon className="size-6 text-muted-foreground/40 mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">
+        <Typography variant="caption" color="muted">
           No questions yet — be the first to ask.
-        </p>
+        </Typography>
       </div>
     );
   }
@@ -95,10 +142,10 @@ export const FileQAAccordionList = ({ questions }: { questions: FileQA[] }) => {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[11px] font-semibold">{qa.askedBy}</span>
-                  <span className="text-[10px] text-muted-foreground">{qa.askedAt}</span>
+                  <Typography variant="h5" weight="semibold" as="span" className="!text-[11px]">{qa.askedBy}</Typography>
+                  <Typography variant="micro" color="muted" as="span">{qa.askedAt}</Typography>
                 </div>
-                <p className="text-xs leading-relaxed font-medium">{qa.question}</p>
+                <Typography variant="caption" className="font-medium">{qa.question}</Typography>
               </div>
               <ChevronDownIcon
                 className={cn(
@@ -116,7 +163,7 @@ export const FileQAAccordionList = ({ questions }: { questions: FileQA[] }) => {
                     <SparklesIcon className="size-3 text-violet-500" />
                     <span className="text-[10px] font-semibold text-violet-600">ArogyaAI</span>
                   </div>
-                  <p className="text-xs leading-relaxed text-foreground/80">{qa.answer}</p>
+                  <Typography variant="caption" className="text-foreground/80">{qa.answer}</Typography>
                 </div>
               </div>
             )}
@@ -129,8 +176,15 @@ export const FileQAAccordionList = ({ questions }: { questions: FileQA[] }) => {
 
 FileQAAccordionList.displayName = "FileQAAccordionList";
 
-/* ── Activity type icon/color map ──────────────────────────────── */
+/* Activity icon configuration */
 
+/**
+ * Map of member activity types to icon, color, background, and label.
+ *
+ * Used to render activity feed entries in member profiles.
+ *
+ * @category Constants
+ */
 export const ACTIVITY_ICON_MAP: Record<
   MemberActivityType,
   { icon: typeof MessageSquareIcon; color: string; bg: string; label: string }

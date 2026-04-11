@@ -38,9 +38,12 @@ interface ProfileBundle {
 
 export const useProfile = (): ProfileBundle => {
   const { data } = useAppDataContext();
-  const src = (data.profile || {}) as Record<string, unknown>;
+  /* Depend on the raw slice reference — NOT on a freshly-constructed
+   * `{} ` fallback, which would bust the memo every render. */
+  const raw = data.profile;
 
   return React.useMemo(() => {
+    const src = (raw || {}) as Record<string, unknown>;
     const rawAccess = (src.ACCESS_LOG as RawAccessLogEntry[]) ?? [];
     const accessLog: AccessLogEntry[] = rawAccess.map((e) => ({
       ...e,
@@ -51,5 +54,5 @@ export const useProfile = (): ProfileBundle => {
       ACCESS_LOG: accessLog,
       NOTIFICATIONS: (src.NOTIFICATIONS as NotificationPref[]) ?? [],
     };
-  }, [src]);
+  }, [raw]);
 };

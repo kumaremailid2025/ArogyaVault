@@ -12,6 +12,7 @@ import {
   type AiContextCard, type AiCapability,
 } from "@/data/ai-context-data";
 import { useVaultHealth } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    AI CONTEXT PANEL — right column
@@ -30,7 +31,7 @@ const MiniScore = ({ score }: { score: number }) => {
   return (
     <div className="flex items-center gap-1.5">
       <span className={cn("text-lg font-bold", color)}>{score}</span>
-      <span className="text-[10px] text-muted-foreground">/100</span>
+      <Typography variant="micro" color="muted" as="span">/100</Typography>
     </div>
   );
 };
@@ -62,8 +63,8 @@ const ContextCard = ({ card, onAsk }: { card: AiContextCard; onAsk: (q: string) 
       <div className="flex items-start gap-2">
         <div className="mt-0.5 shrink-0">{iconMap[card.type]}</div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-[11px] font-semibold leading-tight">{card.title}</h4>
-          <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{card.description}</p>
+          <Typography variant="overline" as="h4">{card.title}</Typography>
+          <Typography variant="micro" color="muted">{card.description}</Typography>
           <div className="flex items-center gap-1 mt-1 text-[9px] text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
             <SparklesIcon className="size-2.5" /> Ask <ArrowRightIcon className="size-2.5" />
           </div>
@@ -95,19 +96,19 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
             <SparklesIcon className="size-5 text-primary mx-auto mb-1.5" />
-            <p className="text-xs font-semibold mb-1">ArogyaAI is ready</p>
-            <p className="text-[11px] text-muted-foreground leading-snug">
+            <Typography variant="h5" as="p" className="mb-1">ArogyaAI is ready</Typography>
+            <Typography variant="micro" color="muted">
               Ask me any health question — I&apos;ll use whatever you add to
               your vault to give you better answers over time.
-            </p>
+            </Typography>
           </div>
 
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-1.5">
               <SparklesIcon className="size-3 text-primary" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <Typography variant="overline" color="muted" as="span">
                 Try these prompts
-              </span>
+              </Typography>
             </div>
             <div className="space-y-1">
               {[
@@ -130,15 +131,15 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
           <div>
             <div className="flex items-center gap-1.5 px-1 mb-1.5">
               <FileTextIcon className="size-3 text-muted-foreground" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <Typography variant="overline" color="muted" as="span">
                 Next step
-              </span>
+              </Typography>
             </div>
             <div className="rounded-lg border border-dashed border-border p-3 text-center">
-              <p className="text-[11px] text-muted-foreground leading-snug">
+              <Typography variant="micro" color="muted">
                 Add your first report in <span className="font-medium">My Vault</span>{" "}
                 to unlock personalised insights.
-              </p>
+              </Typography>
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <HeartPulseIcon className="size-3.5 text-primary" />
-            <span className="text-xs font-semibold">Health Score</span>
+            <Typography variant="h5" as="span">Health Score</Typography>
           </div>
           <MiniScore score={overallScore} />
         </div>
@@ -177,7 +178,7 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-1.5">
             <ShieldCheckIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Insights</span>
+            <Typography variant="overline" color="muted" as="span">Insights</Typography>
             {warningAlerts.length > 0 && (
               <span className="text-[9px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full ml-auto">
                 {warningAlerts.length} alerts
@@ -195,7 +196,7 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-1.5">
             <SparklesIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">AI Can Help With</span>
+            <Typography variant="overline" color="muted" as="span">AI Can Help With</Typography>
           </div>
           <div className="space-y-1">
             {AI_CAPABILITIES.slice(0, 4).map((cap) => (
@@ -206,8 +207,8 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
               >
                 <span className="text-sm shrink-0">{cap.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[11px] font-medium">{cap.label}</span>
-                  <p className="text-[10px] text-muted-foreground truncate">{cap.description}</p>
+                  <Typography variant="micro" weight="medium" as="span">{cap.label}</Typography>
+                  <Typography variant="micro" color="muted">{cap.description}</Typography>
                 </div>
               </button>
             ))}
@@ -218,24 +219,24 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-1.5">
             <FileTextIcon className="size-3 text-muted-foreground" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Your Data</span>
+            <Typography variant="overline" color="muted" as="span">Your Data</Typography>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <div className="rounded-lg bg-muted/40 px-2.5 py-2 text-center">
-              <div className="text-sm font-bold">{VAULT_FILES.length}</div>
-              <div className="text-[10px] text-muted-foreground">Documents</div>
+              <Typography variant="body" weight="bold" as="div">{VAULT_FILES.length}</Typography>
+              <Typography variant="micro" color="muted" as="div">Documents</Typography>
             </div>
             <div className="rounded-lg bg-muted/40 px-2.5 py-2 text-center">
-              <div className="text-sm font-bold">{MEDICATIONS.length}</div>
-              <div className="text-[10px] text-muted-foreground">Medications</div>
+              <Typography variant="body" weight="bold" as="div">{MEDICATIONS.length}</Typography>
+              <Typography variant="micro" color="muted" as="div">Medications</Typography>
             </div>
             <div className="rounded-lg bg-muted/40 px-2.5 py-2 text-center">
-              <div className="text-sm font-bold">{warningAlerts.length}</div>
-              <div className="text-[10px] text-muted-foreground">Alerts</div>
+              <Typography variant="body" weight="bold" as="div">{warningAlerts.length}</Typography>
+              <Typography variant="micro" color="muted" as="div">Alerts</Typography>
             </div>
             <div className="rounded-lg bg-muted/40 px-2.5 py-2 text-center">
-              <div className="text-sm font-bold">6</div>
-              <div className="text-[10px] text-muted-foreground">Panels tracked</div>
+              <Typography variant="body" weight="bold" as="div">6</Typography>
+              <Typography variant="micro" color="muted" as="div">Panels tracked</Typography>
             </div>
           </div>
         </div>
@@ -244,7 +245,7 @@ export const AiContextPanel = ({ onAsk }: AiContextPanelProps) => {
         <div className="pb-2">
           <div className="flex items-center gap-1.5 px-1 mb-1.5">
             <BotIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Try Asking</span>
+            <Typography variant="overline" color="muted" as="span">Try Asking</Typography>
           </div>
           <div className="space-y-1">
             {SMART_SUGGESTIONS.slice(0, 5).map((s) => (

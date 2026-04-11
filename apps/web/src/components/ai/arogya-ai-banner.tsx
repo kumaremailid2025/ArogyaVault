@@ -5,6 +5,7 @@ import { BotIcon } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
 import { useVaultHealth } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    AROGYA-AI BANNER — consistent with Vault & Community banners
@@ -60,11 +61,11 @@ export const ArogyaAiBanner = React.memo(
             </div>
           </div>
           {/* Row 2 — Description */}
-          <p className="mt-2 text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="mt-2 opacity-80">
             {activeTab === "chat"
               ? "Your personal health AI — ask anything about your medical records, lab results, and medications."
               : "Browse your past conversations and pick up where you left off."}
-          </p>
+          </Typography>
         </div>
       </div>
     );

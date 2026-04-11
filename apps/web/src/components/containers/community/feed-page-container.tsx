@@ -1,8 +1,12 @@
 "use client";
 
 /**
- * FeedPageContainer
- * -----------------
+ * Container for the community feed tab.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
  * Self-contained container for the feed tab (/community or /community/[groupId]).
  * Owns all feed-specific state: posts, compose, likes, panel, rephrase.
  *
@@ -59,19 +63,33 @@ if (typeof window !== "undefined") {
   feedPanelImport();
 }
 
-/* ── Props ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for {@link FeedPageContainer}.
+ */
 interface FeedPageContainerProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
 }
 
-/* ── Component ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render the feed tab for the community. Manages all feed state and layout.
+ * @param props Component props.
+ * @returns React element.
+ */
 export const FeedPageContainer = ({
   variant,
   group,
-}: FeedPageContainerProps) => {
+}: FeedPageContainerProps): React.ReactElement => {
   const { LINKED_MEMBER_DATA, LINKED_POST_SUMMARIES, LINKED_POST_AI_RESPONSES } = useLinkedMembers();
   const isCommunity = variant === "community";
   const groupId = GROUP_SLUG_TO_UUID[group] ?? group;

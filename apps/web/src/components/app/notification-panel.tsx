@@ -5,6 +5,7 @@ import { CheckIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useSidebar, type TopNotification } from "@/data/sidebar-data";
+import Typography from "@/components/ui/typography";
 
 /* ── Notification type ─────────────────────────────────────────────── */
 type Notif = TopNotification;
@@ -95,18 +96,18 @@ export const NotificationPanel = ({ onClose }: NotificationPanelProps) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className={cn(
-                  "text-xs leading-snug",
-                  !n.read ? "font-semibold" : "font-medium"
-                )}>
+                <Typography
+                  variant="caption"
+                  weight={!n.read ? "semibold" : "medium"}
+                >
                   {n.title}
-                </p>
+                </Typography>
                 {!n.read && (
                   <span className="size-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{n.desc}</p>
-              <p className="text-[10px] text-muted-foreground/70 mt-1">{n.time}</p>
+              <Typography variant="caption" color="muted" className="mt-0.5 leading-snug">{n.desc}</Typography>
+              <Typography variant="micro" color="muted">{n.time}</Typography>
             </div>
           </Button>
         ))}

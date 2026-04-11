@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * Community member card component.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Displays a single community member with name, role, status, and location.
+ * Shows online/offline status with a colored dot. Component is memoized for performance.
+ */
+
 import * as React from "react";
 import {
   MessageSquareIcon, FileUpIcon, HelpCircleIcon, ThumbsUpIcon,
@@ -7,28 +18,48 @@ import {
 import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 import type { CommunityMember } from "@/models/community";
 
-/* ── Status dot color map ──────────────────────────────────────── */
+/* Status indicator styles */
 
+/**
+ * Map of member status to status dot background color CSS class.
+ *
+ * @category Constants
+ */
 const STATUS_DOT: Record<CommunityMember["status"], string> = {
   online:   "bg-green-500",
   recently: "bg-amber-400",
   offline:  "bg-muted-foreground/40",
 };
 
-/* ── Props ─────────────────────────────────────────────────────── */
+/* Component props */
 
+/**
+ * Props for {@link MemberCard}.
+ *
+ * @category Types
+ */
 interface MemberCardProps {
+  /** Member to display. */
   member: CommunityMember;
+  /** Whether this member is currently selected. */
   isActive: boolean;
+  /** Handler when the member card is clicked. */
   onSelect: (memberId: string) => void;
 }
 
-/* ── Component ─────────────────────────────────────────────────── */
-
+/**
+ * Render a community member card with status and role.
+ *
+ * @param props - Component props.
+ * @returns The rendered member card.
+ *
+ * @category Components
+ */
 export const MemberCard = React.memo(
-  ({ member, isActive, onSelect }: MemberCardProps) => {
+  ({ member, isActive, onSelect }: MemberCardProps): React.ReactElement => {
     return (
       <div
         onClick={() => onSelect(member.id)}
@@ -58,7 +89,7 @@ export const MemberCard = React.memo(
           <div className="flex-1 min-w-0">
             {/* Row 1 — Name + role badge */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium truncate">{member.name}</span>
+              <Typography variant="body" weight="medium" as="span" truncate={true}>{member.name}</Typography>
               <Badge
                 variant="outline"
                 className="text-[10px] border-primary/30 text-primary"
@@ -69,11 +100,11 @@ export const MemberCard = React.memo(
 
             {/* Row 2 — Status + location */}
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[11px] text-muted-foreground">{member.statusLabel}</span>
+              <Typography variant="micro" color="muted" as="span">{member.statusLabel}</Typography>
               {member.location && (
                 <>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{member.location}</span>
+                  <Typography variant="micro" color="muted" as="span">·</Typography>
+                  <Typography variant="micro" color="muted" as="span">{member.location}</Typography>
                 </>
               )}
             </div>

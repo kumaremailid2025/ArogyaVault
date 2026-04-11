@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * Left panel container for the files tab.
+ *
+ * @packageDocumentation
+ * @category Containers
+ */
+
 import * as React from "react";
 import { SearchIcon, FileUpIcon, FolderOpenIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
@@ -8,20 +15,50 @@ import { FileCard } from "@/components/community/file-card";
 import { useCommunityFiles } from "@/data/community-files-data";
 import type { FileCategory } from "@/data/community-files-data";
 import type { CommunityFile } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
-/* ── Props ─────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for the files container component.
+ *
+ * @category Types
+ */
 interface FilesContainerProps {
+  /** Header title. */
   title: string;
+  /** List of files to display. */
   files: CommunityFile[];
+  /** Currently selected file ID. */
   selectedFileId: number | null;
+  /** Handler when a file is selected. */
   onSelectFile: (fileId: number) => void;
+  /** Handler to view AI summary for a file. */
   onAiSummary: (fileId: number) => void;
+  /** Handler to open Q&A for a file. */
   onQA: (fileId: number) => void;
 }
 
-/* ── Component ─────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render the left panel for the files tab with list, search, and filters.
+ *
+ * @param props - Component props.
+ * @param props.title - Header title.
+ * @param props.files - Files to display.
+ * @param props.selectedFileId - Currently selected file ID.
+ * @param props.onSelectFile - Callback when file is selected.
+ * @param props.onAiSummary - Callback to view file summary.
+ * @param props.onQA - Callback to open file Q&A.
+ * @returns The rendered container.
+ *
+ * @category Containers
+ */
 export const FilesContainer = ({
   title,
   files,
@@ -29,7 +66,7 @@ export const FilesContainer = ({
   onSelectFile,
   onAiSummary,
   onQA,
-}: FilesContainerProps) => {
+}: FilesContainerProps): React.ReactElement => {
   const { FILE_CATEGORIES } = useCommunityFiles();
   const [search, setSearch] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<FileCategory>("All");
@@ -66,10 +103,10 @@ export const FilesContainer = ({
         {/* Title row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">{title}</h2>
-            <span className="text-xs text-muted-foreground">
+            <Typography variant="h4" as="h2">{title}</Typography>
+            <Typography variant="caption" color="muted" as="span">
               {files.length} {files.length === 1 ? "file" : "files"}
-            </span>
+            </Typography>
           </div>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs">
             <FileUpIcon className="size-3.5" /> Upload
@@ -92,19 +129,17 @@ export const FilesContainer = ({
         {availableCategories.length > 2 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             {availableCategories.map((cat) => (
-              <button
+              <Button
                 key={cat}
-                type="button"
+                variant={activeCategory === cat ? "default" : "outline"}
+                size="sm"
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors border",
-                  activeCategory === cat
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:border-primary/30 hover:text-foreground",
+                  "shrink-0 rounded-full h-6 px-3 py-0 text-[11px] font-medium",
                 )}
               >
                 {cat}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -115,12 +150,12 @@ export const FilesContainer = ({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <FolderOpenIcon className="size-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No files found</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
+            <Typography variant="body" weight="medium" color="muted">No files found</Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1">
               {search.trim()
                 ? "Try adjusting your search or filter."
                 : "No files have been uploaded yet."}
-            </p>
+            </Typography>
           </div>
         ) : (
           <div className="space-y-2 pt-1">

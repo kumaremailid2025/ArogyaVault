@@ -8,6 +8,7 @@
 
 import { ZapIcon, MessageSquareIcon } from "lucide-react";
 import { useMembersContext } from "@/app/(app)/community/_context/members-context";
+import Typography from "@/components/ui/typography";
 
 const GroupMembersDefaultPage = () => {
   const { memberCount } = useMembersContext();
@@ -16,9 +17,9 @@ const GroupMembersDefaultPage = () => {
     <div className="flex-1 overflow-y-auto p-4 space-y-5">
       {/* Group Pulse */}
       <div>
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+        <Typography variant="overline" color="muted">
           <ZapIcon className="size-3 text-primary" /> Group Pulse
-        </p>
+        </Typography>
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "Members", value: String(memberCount) },
@@ -29,8 +30,8 @@ const GroupMembersDefaultPage = () => {
               key={s.label}
               className="rounded-lg border border-border bg-background p-2 text-center"
             >
-              <p className="text-sm font-bold text-primary leading-tight">{s.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+              <Typography variant="body" weight="bold" color="primary">{s.value}</Typography>
+              <Typography variant="micro" color="muted">{s.label}</Typography>
             </div>
           ))}
         </div>
@@ -39,9 +40,9 @@ const GroupMembersDefaultPage = () => {
       {/* CTA */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
         <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-        <p className="text-xs text-muted-foreground leading-snug">
+        <Typography variant="caption" color="muted">
           Select any member to see their profile, activity history, posts, uploads, and contributions.
-        </p>
+        </Typography>
       </div>
     </div>
   );

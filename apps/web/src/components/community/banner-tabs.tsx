@@ -1,24 +1,55 @@
 "use client";
 
+/**
+ * Tab navigation for the community banner.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Tab navigation row for the community banner. Component is memoized for performance.
+ */
+
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { CommunityTab } from "@/components/containers/community/types";
 
+/**
+ * Tab descriptor.
+ *
+ * @category Types
+ */
 interface TabDef {
   readonly key: CommunityTab;
   readonly label: string;
   readonly href: string;
 }
 
+/**
+ * Props for {@link BannerTabs}.
+ *
+ * @category Types
+ */
 interface BannerTabsProps {
+  /** Tab definitions. */
   tabs: readonly TabDef[];
+  /** Currently active tab key. */
   activeTab: CommunityTab;
+  /** Optional CSS class name. */
   className?: string;
 }
 
+/**
+ * Render a tab navigation row for the community banner.
+ *
+ * @param props - Component props.
+ * @returns The rendered tab navigation.
+ *
+ * @category Components
+ */
 export const BannerTabs = React.memo(
-  ({ tabs, activeTab, className }: BannerTabsProps) => {
+  ({ tabs, activeTab, className }: BannerTabsProps): React.ReactElement => {
     return (
       <div className={cn("flex items-center gap-0.5", className)}>
         {tabs.map((t) => (

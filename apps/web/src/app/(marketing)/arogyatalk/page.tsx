@@ -4,6 +4,7 @@ import {
   GlobeIcon, SparklesIcon, BookOpenIcon, CheckCircle2Icon,
   TrendingUpIcon, BrainCircuitIcon,
 } from "lucide-react";
+import Typography from "@/components/ui/typography";
 
 export const metadata: Metadata = {
   title: "ArogyaTalk — Community | ArogyaVault",
@@ -88,13 +89,13 @@ const ArogyaTalkPage = () => {
             <GlobeIcon className="size-3.5" />
             Public Community · 12,847 members
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          <Typography variant="hero" color="inverse">
             ArogyaTalk
-          </h1>
-          <p className="text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto mb-6">
+          </Typography>
+          <Typography variant="body-lg" color="inverse" className="opacity-80 leading-relaxed max-w-2xl mx-auto mb-6">
             A safe, anonymous space where ArogyaVault members ask questions, share health experiences,
             and support each other — without ever sharing personal medical data.
-          </p>
+          </Typography>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a
               href="/community"
@@ -112,8 +113,8 @@ const ArogyaTalkPage = () => {
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {STATS.map((s) => (
             <div key={s.label}>
-              <p className="text-3xl font-bold text-primary">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
+              <Typography variant="hero" as="p" color="primary">{s.value}</Typography>
+              <Typography variant="body" color="muted" className="mt-1">{s.label}</Typography>
             </div>
           ))}
         </div>
@@ -126,21 +127,21 @@ const ArogyaTalkPage = () => {
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
               <MessageSquareIcon className="size-5 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold">What is ArogyaTalk?</h2>
+            <Typography variant="h1" as="h2">What is ArogyaTalk?</Typography>
           </div>
-          <p className="text-muted-foreground leading-relaxed max-w-2xl mb-6">
+          <Typography variant="body" color="muted" className="leading-relaxed max-w-2xl mb-6">
             ArogyaTalk is the community layer of ArogyaVault — a moderated, public forum where members
             share practical health tips, ask questions about managing conditions, and support each other
             through health journeys. Think of it as a trusted neighbourhood health group, scaled nationally.
-          </p>
+          </Typography>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="rounded-xl border border-border p-4 bg-background">
                 <div className={`inline-flex size-9 items-center justify-center rounded-xl mb-3 ${f.color}`}>
                   <f.icon className="size-4" />
                 </div>
-                <h3 className="font-semibold mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <Typography variant="h4" as="h3" className="mb-1">{f.title}</Typography>
+                <Typography variant="body" color="muted">{f.desc}</Typography>
               </div>
             ))}
           </div>
@@ -150,8 +151,8 @@ const ArogyaTalkPage = () => {
       {/* ── Active Topics ── */}
       <section className="py-14 px-4 bg-muted/20 border-y border-border">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-2">Active Topics</h2>
-          <p className="text-muted-foreground mb-6">Browse conversations by health category</p>
+          <Typography variant="h1" as="h2" className="mb-2">Active Topics</Typography>
+          <Typography variant="body" color="muted" className="mb-6">Browse conversations by health category</Typography>
           <div className="flex flex-wrap gap-3">
             {TOPICS.map((t) => (
               <a
@@ -174,17 +175,17 @@ const ArogyaTalkPage = () => {
             <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-100">
               <ShieldCheckIcon className="size-5 text-emerald-600" />
             </div>
-            <h2 className="text-2xl font-bold">Community Guidelines</h2>
+            <Typography variant="h1" as="h2">Community Guidelines</Typography>
           </div>
-          <p className="text-muted-foreground mb-6">
+          <Typography variant="body" color="muted" className="mb-6">
             ArogyaTalk works because every member respects these simple rules. Violations are reviewed
             and may result in post removal or account suspension.
-          </p>
+          </Typography>
           <div className="grid sm:grid-cols-2 gap-3">
             {GUIDELINES.map((g, i) => (
               <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
                 <CheckCircle2Icon className="size-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground leading-relaxed">{g}</p>
+                <Typography variant="body" color="muted">{g}</Typography>
               </div>
             ))}
           </div>
@@ -195,11 +196,11 @@ const ArogyaTalkPage = () => {
       <section className="py-14 px-4 bg-primary text-primary-foreground text-center">
         <div className="max-w-xl mx-auto">
           <HeartPulseIcon className="size-10 mx-auto mb-4 opacity-80" />
-          <h2 className="text-2xl font-bold mb-3">Join 12,847 members on ArogyaTalk</h2>
-          <p className="text-primary-foreground/80 mb-6 leading-relaxed">
+          <Typography variant="h1" as="h2" className="mb-3">Join 12,847 members on ArogyaTalk</Typography>
+          <Typography variant="body" color="inverse" className="opacity-80 mb-6 leading-relaxed">
             Your experience managing a health condition is valuable. Share it anonymously and help
             someone else on their journey.
-          </p>
+          </Typography>
           <a
             href="/community"
             className="inline-flex items-center gap-2 rounded-xl bg-white text-primary font-semibold px-6 py-3 text-sm hover:bg-white/90 transition-colors"

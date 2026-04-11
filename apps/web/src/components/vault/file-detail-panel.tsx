@@ -9,6 +9,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILE DETAIL PANEL — right sidebar when a file card is clicked
@@ -91,7 +92,7 @@ export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-center">
         <FileIcon className="size-8 text-muted-foreground/40 mb-2" />
-        <p className="text-sm text-muted-foreground">File not found.</p>
+        <Typography variant="body" color="muted">File not found.</Typography>
         <button onClick={onClose} className="mt-2 text-xs text-primary hover:underline cursor-pointer">Close</button>
       </div>
     );
@@ -127,8 +128,8 @@ export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
       <div className="flex items-start gap-2 p-3 border-b border-border shrink-0">
         <div className="mt-0.5 shrink-0">{CATEGORY_ICONS[file.category]}</div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold leading-tight truncate">{file.name}</h2>
-          <span className="text-[10px] text-muted-foreground">{CATEGORY_LABELS[file.category] || file.category}</span>
+          <Typography variant="h4" as="h2" className="leading-tight truncate">{file.name}</Typography>
+          <Typography variant="micro" color="muted" as="span">{CATEGORY_LABELS[file.category] || file.category}</Typography>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-muted rounded-md cursor-pointer shrink-0">
           <XIcon className="size-4" />
@@ -158,11 +159,11 @@ export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-1.5 mb-2">
               <SparklesIcon className="size-3.5 text-primary" />
-              <span className="text-xs font-semibold">AI Summary</span>
+              <Typography variant="h5" as="span">AI Summary</Typography>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <Typography variant="caption" className="text-muted-foreground">
               {file.aiSummary}
-            </p>
+            </Typography>
           </div>
         )}
 
@@ -170,7 +171,7 @@ export const FileDetailPanel = ({ fileId, onClose }: FileDetailPanelProps) => {
         <div className="p-3 space-y-3">
           <div className="flex items-center gap-1.5 mb-1">
             <BotIcon className="size-3.5 text-primary" />
-            <span className="text-xs font-semibold">Ask about this file</span>
+            <Typography variant="h5" as="span">Ask about this file</Typography>
           </div>
 
           {/* Suggestion chips (show when no messages yet) */}

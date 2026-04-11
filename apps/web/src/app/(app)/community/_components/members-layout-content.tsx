@@ -25,14 +25,26 @@ import { useLinkedMembers } from "@/data/linked-member-data";
 import { useCommunityMembers } from "@/data/community-members-data";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
+/**
+ * Props for {@link MembersLayoutContent}.
+ */
 interface MembersLayoutContentProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
-  basePath: string; // "/community" or "/community/<uuid>"
+  /** Base route path: "/community" or "/community/<uuid>". */
+  basePath: string;
+  /** Route-driven right panel (children). */
   children: React.ReactNode;
 }
 
-export const MembersLayoutContent = ({ variant, group, basePath, children }: MembersLayoutContentProps) => {
+/**
+ * Render a two-column members layout (member list | right panel).
+ * @param props Component props.
+ * @returns React element.
+ */
+export const MembersLayoutContent = ({ variant, group, basePath, children }: MembersLayoutContentProps): React.ReactElement => {
   const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const { INVITED_GROUP_MEMBERS } = useCommunityMembers();
   const router = useRouter();

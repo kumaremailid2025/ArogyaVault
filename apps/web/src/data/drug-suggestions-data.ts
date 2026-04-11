@@ -56,9 +56,12 @@ const EMPTY_BUNDLE: DrugSuggestionsBundle = {
 
 export const useDrugSuggestions = (): DrugSuggestionsBundle => {
   const { data } = useAppDataContext();
-  const src = (data.drugSuggestions || {}) as Record<string, unknown>;
+  /* Depend on the raw slice reference — NOT on a freshly-constructed
+   * `{} ` fallback, which would bust the memo every render. */
+  const raw = data.drugSuggestions;
 
   return React.useMemo(() => {
+    const src = (raw || {}) as Record<string, unknown>;
     const rawSeverity = (src.SEVERITY_CONFIG || {}) as Record<string, RawSeverityConfig>;
     if (Object.keys(rawSeverity).length === 0) return EMPTY_BUNDLE;
 
@@ -72,5 +75,5 @@ export const useDrugSuggestions = (): DrugSuggestionsBundle => {
       COMMON_DRUGS: (src.COMMON_DRUGS as string[]) ?? [],
       SEVERITY_CONFIG: severity,
     };
-  }, [src]);
+  }, [raw]);
 };

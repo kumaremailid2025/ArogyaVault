@@ -1,20 +1,41 @@
 "use client";
 
+/**
+ * Community banner header with tabs, badges, and description.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Config-driven header banner displaying icon, title, badges, description, and tabs.
+ * Used by CommunityShell for both community and invited group views. Component is
+ * memoized for performance.
+ */
+
 import * as React from "react";
 import { Badge } from "@/core/ui/badge";
 import { BannerTabs } from "@/components/community/banner-tabs";
 import type { BannerConfig } from "@/components/containers/community/types";
 
-/* ═══════════════════════════════════════════════════════════════════
-   COMMUNITY BANNER — config-driven header banner
-   Used by CommunityWrapperContainer for both community & invited views.
-═══════════════════════════════════════════════════════════════════ */
-
+/**
+ * Props for {@link CommunityBanner}.
+ *
+ * @category Types
+ */
 interface CommunityBannerProps {
+  /** Banner configuration object. */
   config: BannerConfig;
 }
 
-export const CommunityBanner = React.memo(({ config }: CommunityBannerProps) => {
+/**
+ * Render the community banner with title, tabs, badges, and description.
+ *
+ * @param props - Component props.
+ * @returns The rendered banner.
+ *
+ * @category Components
+ */
+export const CommunityBanner = React.memo(({ config }: CommunityBannerProps): React.ReactElement => {
   return (
     <div className="shrink-0 px-5 pt-4 pb-3 lg:px-6">
       <div className="rounded-2xl bg-primary p-4 text-primary-foreground">

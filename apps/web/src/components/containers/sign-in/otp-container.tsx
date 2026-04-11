@@ -1,21 +1,33 @@
 "use client";
 
 /**
- * OtpContainer
- * ------------
+ * Sign-in container for OTP verification.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
  * Container that owns all business logic for the OTP verification step
- * of the sign-in flow: form state, Zod validation, verify action, and
- * the resend / change-number interactions.
+ * of the sign-in flow: form state, Zod validation, auto-submit on
+ * completion, terminal verify mutation, and the resend / change-number
+ * interactions (including the resend cooldown timer).
  *
- * Uses TanStack React Query:
- *   - useVerifyOtp (mutation)  — verify OTP → stores JWT + redirects
- *   - useResendOtp (mutation)  — resend with a new OTP code
+ * TanStack React Query is used for all network state:
+ * - {@link useVerifyOtp} (mutation) — verify OTP → stores JWT + redirects
+ * - {@link useResendOtp} (mutation) — resend a fresh OTP
  *
- * Architecture ref: ARCHITECTURE.md — Page → **Container** → Component → Core UI
+ * UX notes:
+ * - The 6-digit code is auto-submitted as soon as the last digit is entered.
+ *   On failure the slots are cleared and focus is returned to the first slot.
+ * - Error and success banners are local state (not derived from the mutation
+ *   lifecycle) so clearing the slots does not wipe the message.
+ * - A countdown gate (30s) prevents resend spamming.
+ *
+ * @see ARCHITECTURE.md
  */
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle2Icon, Loader2Icon, AlertCircleIcon } from "lucide-react";
@@ -31,74 +43,138 @@ import {
 } from "@/core/ui/form";
 import { useVerifyOtp, useResendOtp } from "@/hooks/api";
 import type { ApiError } from "@/lib/api";
+import Typography from "@/components/ui/typography";
 
-/* ── Zod schema ───────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════════════════ */
 
+/** Exact length of the OTP code required by the backend. */
+const OTP_LENGTH = 6 as const;
+
+/**
+ * Number of seconds the "Resend OTP" action is disabled after each
+ * successful resend. Protects the SMS gateway and prevents abuse.
+ */
+const RESEND_COOLDOWN_SECONDS = 30;
+
+/** Delay before the initial autofocus of the hidden input-otp field. */
+const INITIAL_FOCUS_DELAY_MS = 50;
+
+/** Tick interval for the resend cooldown countdown. */
+const COOLDOWN_TICK_MS = 1_000;
+
+/** Fixed array of slot indices used to render the OTP cells. */
+const OTP_SLOT_INDICES: readonly number[] = Array.from(
+  { length: OTP_LENGTH },
+  (_, i) => i,
+);
+
+/** Fallback error messages surfaced when the API returns no `detail`. */
+const DEFAULT_VERIFY_ERROR = "Invalid OTP. Please try again.";
+const DEFAULT_RESEND_ERROR = "Failed to resend OTP";
+
+/** Feedback strings for the resend flow. */
+const RESEND_SUCCESS_MESSAGE = "New OTP sent successfully";
+
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Zod schema for the OTP form.
+ *
+ * Enforces an exact 6-digit numeric code. Using both `min(6)` and `max(6)`
+ * gives us the friendlier "Enter the complete 6-digit OTP" error while the user
+ * is still typing partial input, and still rejects anything non-numeric on
+ * full-length entry.
+ *
+ * @category Types
+ */
 const otpSchema = z.object({
   otp: z
     .string()
-    .min(6, "Enter the complete 6-digit OTP")
-    .max(6)
+    .min(OTP_LENGTH, "Enter the complete 6-digit OTP")
+    .max(OTP_LENGTH)
     .regex(/^\d{6}$/, "OTP must be 6 digits"),
 });
 
+/**
+ * Strongly-typed form values inferred from the Zod schema.
+ *
+ * @category Types
+ */
 type OtpFormValues = z.infer<typeof otpSchema>;
 
-/* ── Types ────────────────────────────────────────────────────────── */
-
+/**
+ * Props for the OTP verification container.
+ *
+ * @category Types
+ */
 export interface OtpContainerProps {
   /** The phone number the OTP was sent to (local digits only). */
   phone: string;
-  /** The dial code displayed alongside the phone (e.g. "+91"). */
+  /** The dial code displayed alongside the phone (e.g. `"+91"`). */
   dialCode: string;
-  /** Called when the user wants to go back and change the number. */
+  /** Called when the user taps "Change" to go back to the phone step. */
   onChangeNumber: () => void;
 }
 
-/* ── Constants ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   CONTAINER
+   ══════════════════════════════════════════════════════════════════════ */
 
-const RESEND_COOLDOWN_SECONDS = 30;
-
-/* ── Container ────────────────────────────────────────────────────── */
-
+/**
+ * Render the OTP verification form for sign-in.
+ *
+ * @param props - Component props.
+ * @param props.phone - Phone number OTP was sent to.
+ * @param props.dialCode - International dial code.
+ * @param props.onChangeNumber - Callback to return to phone entry step.
+ * @returns The rendered container.
+ *
+ * @category Containers
+ */
 export const OtpContainer = ({
   phone,
   dialCode,
   onChangeNumber,
-}: OtpContainerProps) => {
-  // ── TanStack mutations ──
+}: OtpContainerProps): React.ReactElement => {
+  /* ── TanStack Mutations ───────────────────────────────────────── */
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
 
-  // Resend cooldown
-  const [resendCooldown, setResendCooldown] = React.useState(0);
+  /* ── Resend cooldown timer ────────────────────────────────────── */
+  const [resendCooldown, setResendCooldown] = React.useState<number>(0);
 
-  // Local error & success state — decoupled from mutation lifecycle
-  // so clearing OTP programmatically doesn't wipe the error message
-  const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
-  const [successMessage, setSuccessMessage] = React.useState<
-    string | undefined
-  >();
+  /**
+   * Local feedback state — decoupled from the mutation lifecycle so
+   * that programmatically clearing the OTP field (after an error) does
+   * not also wipe the error message the user just read.
+   */
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>(undefined);
+  const [successMessage, setSuccessMessage] = React.useState<string | undefined>(undefined);
 
-  // Ref for InputOTP to manage focus programmatically
+  /** Ref to the hidden `<input>` inside InputOTP for programmatic focus. */
   const otpRef = React.useRef<HTMLInputElement>(null);
 
-  const form = useForm<OtpFormValues>({
+  /* ── Form ─────────────────────────────────────────────────────── */
+  const form: UseFormReturn<OtpFormValues> = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
     defaultValues: { otp: "" },
     mode: "onChange",
   });
 
-  // ── Focus on mount (robust fallback for autoFocus) ──
+  /* ── Focus on mount (robust fallback for autoFocus) ──────────── */
   React.useEffect(() => {
     // Small delay ensures the input-otp hidden input is rendered and ready
     const timer = setTimeout(() => {
       otpRef.current?.focus();
-    }, 50);
+    }, INITIAL_FOCUS_DELAY_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  // ── Cooldown timer ──
+  /* ── Cooldown countdown ──────────────────────────────────────── */
   React.useEffect(() => {
     if (resendCooldown <= 0) return;
 
@@ -110,13 +186,13 @@ export const OtpContainer = ({
         }
         return prev - 1;
       });
-    }, 1000);
+    }, COOLDOWN_TICK_MS);
 
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // Clear error & success messages when user starts typing again
-  const otpValue = form.watch("otp");
+  /* ── Clear feedback when the user resumes typing ─────────────── */
+  const otpValue: string = form.watch("otp");
   React.useEffect(() => {
     if (otpValue.length > 0) {
       setErrorMessage(undefined);
@@ -124,10 +200,14 @@ export const OtpContainer = ({
     }
   }, [otpValue]);
 
-  // ── Helpers ──
+  /* ── Helpers ─────────────────────────────────────────────────── */
 
-  /** Clear all OTP slots and move focus back to the first slot. */
-  const clearAndRefocus = React.useCallback(() => {
+  /**
+   * Clear all OTP slots and move focus back to the first slot.
+   * Called after any verify-error or successful resend so the user
+   * can immediately start typing the next attempt.
+   */
+  const clearAndRefocus = React.useCallback((): void => {
     form.setValue("otp", "", { shouldValidate: false });
     // Allow the controlled value to propagate before refocusing
     requestAnimationFrame(() => {
@@ -135,33 +215,47 @@ export const OtpContainer = ({
     });
   }, [form]);
 
-  // ── Auto-submit when all 6 digits are entered ──
+  /* ── Submit handler ──────────────────────────────────────────── */
+
+  /**
+   * Verify the OTP against the backend. On success the useVerifyOtp
+   * hook itself handles JWT storage and navigation; we only need to
+   * clean up feedback state here on error.
+   */
+  const onSubmit = React.useCallback(
+    (data: OtpFormValues): void => {
+      const fullPhone = `${dialCode}${phone}`;
+      verifyOtpMutation.mutate(
+        { phone: fullPhone, code: data.otp },
+        {
+          onError: (err) => {
+            const message =
+              (err as ApiError).detail ?? DEFAULT_VERIFY_ERROR;
+            setErrorMessage(message);
+            setSuccessMessage(undefined);
+            clearAndRefocus();
+          },
+        },
+      );
+    },
+    [clearAndRefocus, dialCode, phone, verifyOtpMutation],
+  );
+
+  /* ── Auto-submit when all 6 digits are entered ───────────────── */
   React.useEffect(() => {
-    if (otpValue.length === 6 && !verifyOtpMutation.isPending) {
+    if (otpValue.length === OTP_LENGTH && !verifyOtpMutation.isPending) {
       form.handleSubmit(onSubmit)();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpValue]);
 
-  // ── Handlers ──
+  /* ── Resend handler ──────────────────────────────────────────── */
 
-  const onSubmit = (data: OtpFormValues) => {
-    const fullPhone = `${dialCode}${phone}`;
-    verifyOtpMutation.mutate(
-      { phone: fullPhone, code: data.otp },
-      {
-        onError: (err) => {
-          const message =
-            (err as ApiError).detail ?? "Invalid OTP. Please try again.";
-          setErrorMessage(message);
-          setSuccessMessage(undefined);
-          clearAndRefocus();
-        },
-      },
-    );
-  };
-
-  const handleResendOtp = () => {
+  /**
+   * Resend the OTP. Gated by the cooldown and in-flight state so the
+   * button can't be spammed. Starts a fresh 30s cooldown on success.
+   */
+  const handleResendOtp = React.useCallback((): void => {
     if (resendCooldown > 0 || resendOtpMutation.isPending) return;
 
     const fullPhone = `${dialCode}${phone}`;
@@ -170,19 +264,25 @@ export const OtpContainer = ({
       {
         onSuccess: () => {
           setResendCooldown(RESEND_COOLDOWN_SECONDS);
-          setSuccessMessage("New OTP sent successfully");
+          setSuccessMessage(RESEND_SUCCESS_MESSAGE);
           setErrorMessage(undefined);
           clearAndRefocus();
         },
         onError: (err) => {
           const message =
-            (err as ApiError).detail ?? "Failed to resend OTP";
+            (err as ApiError).detail ?? DEFAULT_RESEND_ERROR;
           setErrorMessage(message);
           setSuccessMessage(undefined);
         },
       },
     );
-  };
+  }, [clearAndRefocus, dialCode, phone, resendCooldown, resendOtpMutation]);
+
+  /* ── Derived render state ────────────────────────────────────── */
+
+  const isVerifying: boolean = verifyOtpMutation.isPending;
+  const isResending: boolean = resendOtpMutation.isPending;
+  const canSubmit: boolean = otpValue.length === OTP_LENGTH && !isVerifying;
 
   // ── Render ──
 
@@ -190,10 +290,10 @@ export const OtpContainer = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+          <Typography variant="h1" as="h2">
             Enter the OTP
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          </Typography>
+          <Typography variant="body" color="muted" className="mt-1">
             Sent to{" "}
             <span className="font-semibold text-foreground">
               {dialCode} {phone}
@@ -208,7 +308,7 @@ export const OtpContainer = ({
             >
               Change
             </Button>
-          </p>
+          </Typography>
         </div>
 
         <FormField
@@ -216,7 +316,9 @@ export const OtpContainer = ({
           name="otp"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-medium">6-digit OTP</FormLabel>
+              <FormLabel className="text-sm font-medium">
+                {OTP_LENGTH}-digit OTP
+              </FormLabel>
               <FormControl>
                 {/* Wrapper ensures click-to-focus works reliably.
                     input-otp sets pointer-events:none on its container;
@@ -225,8 +327,8 @@ export const OtpContainer = ({
                   className="cursor-text"
                   onClick={() => otpRef.current?.focus()}
                   onMouseDown={(e) => {
-                    // Prevent the mousedown from stealing focus from the input
-                    // if the hidden input is already focused
+                    // Prevent the mousedown from stealing focus from the
+                    // input if the hidden input is already focused
                     if (document.activeElement === otpRef.current) {
                       e.preventDefault();
                     }
@@ -234,13 +336,13 @@ export const OtpContainer = ({
                 >
                   <InputOTP
                     ref={otpRef}
-                    maxLength={6}
+                    maxLength={OTP_LENGTH}
                     value={field.value}
                     onChange={field.onChange}
                     autoFocus
                   >
                     <InputOTPGroup className="gap-1.5 sm:gap-2">
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                      {OTP_SLOT_INDICES.map((i) => (
                         <InputOTPSlot
                           key={i}
                           index={i}
@@ -255,39 +357,39 @@ export const OtpContainer = ({
 
               {/* Error feedback */}
               {errorMessage && (
-                <p className="flex items-center gap-1.5 text-sm text-destructive">
+                <Typography variant="body" color="destructive" className="flex items-center gap-1.5">
                   <AlertCircleIcon className="size-3" />
                   {errorMessage}
-                </p>
+                </Typography>
               )}
 
               {/* Resend success feedback */}
               {successMessage && !errorMessage && (
-                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                <Typography variant="caption" color="success" className="flex items-center gap-1.5">
                   <CheckCircle2Icon className="size-3" />
                   {successMessage}
-                </p>
+                </Typography>
               )}
 
-              <p className="text-xs text-muted-foreground">
+              <Typography variant="caption" color="muted">
                 Didn&apos;t receive it?{" "}
                 {resendCooldown > 0 ? (
-                  <span className="text-muted-foreground">
+                  <Typography color="muted" as="span">
                     Resend in {resendCooldown}s
-                  </span>
+                  </Typography>
                 ) : (
                   <Button
                     variant="link"
                     size="sm"
                     type="button"
                     onClick={handleResendOtp}
-                    disabled={resendOtpMutation.isPending}
+                    disabled={isResending}
                     className="h-auto p-0 text-primary underline underline-offset-4"
                   >
-                    {resendOtpMutation.isPending ? "Resending..." : "Resend OTP"}
+                    {isResending ? "Resending..." : "Resend OTP"}
                   </Button>
                 )}
-              </p>
+              </Typography>
             </FormItem>
           )}
         />
@@ -295,9 +397,9 @@ export const OtpContainer = ({
         <Button
           type="submit"
           className="w-full h-11"
-          disabled={verifyOtpMutation.isPending || otpValue.length < 6}
+          disabled={!canSubmit}
         >
-          {verifyOtpMutation.isPending ? (
+          {isVerifying ? (
             <span className="flex items-center gap-2">
               Verifying... <Loader2Icon className="size-4 animate-spin" />
             </span>

@@ -11,6 +11,7 @@ import { useLearn } from "@/data/learn-data";
 import { resolveIcon } from "@/lib/icon-resolver";
 import { lookupInteraction } from "@/lib/drug-utils";
 import { useLearnContext } from "@/data/learn-context-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    BROWSE TOOLS PANEL — right column
@@ -51,7 +52,7 @@ const MiniDrugChecker = ({ interactions }: MiniDrugCheckerProps) => {
     <div>
       <div className="flex items-center gap-1.5 px-1 mb-2">
         <PillIcon className="size-3 text-primary" />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick Drug Check</span>
+        <Typography variant="overline" color="muted" as="span">Quick Drug Check</Typography>
       </div>
       <div className="space-y-1.5">
         <input
@@ -87,8 +88,8 @@ const MiniDrugChecker = ({ interactions }: MiniDrugCheckerProps) => {
                   {severityConfig[result.severity].label}
                 </span>
               </div>
-              <p className="text-[11px] leading-relaxed">{result.effect}</p>
-              <p className="text-[10px] text-muted-foreground mt-1 italic">{result.advice}</p>
+              <Typography variant="micro">{result.effect}</Typography>
+              <Typography variant="micro" color="muted">{result.advice}</Typography>
             </div>
           ) : (
             <div className="rounded-lg p-2.5 bg-muted/40 text-xs text-muted-foreground">
@@ -107,7 +108,7 @@ const LabQuickRef = ({ labRefs }: { labRefs: Array<{ test: string; normal: strin
     <div>
       <div className="flex items-center gap-1.5 px-1 mb-2">
         <FlaskConicalIcon className="size-3 text-blue-500" />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Lab Reference</span>
+        <Typography variant="overline" color="muted" as="span">Lab Reference</Typography>
       </div>
       <div className="rounded-lg border border-border overflow-hidden">
         <table className="w-full text-[10px]">
@@ -165,9 +166,9 @@ export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPa
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <BookOpenIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Typography variant="overline" color="muted" as="span">
               {activeTopicId ? "Related Topics" : "Suggested"}
-            </span>
+            </Typography>
           </div>
           <div className="space-y-1">
             {relatedTopics.map((topic) => {
@@ -181,8 +182,8 @@ export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPa
                 >
                   <Icon className={cn("size-3.5 shrink-0", topic.categoryColor)} />
                   <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-medium line-clamp-1">{topic.title}</span>
-                    <span className="text-[10px] text-muted-foreground">{topic.readTime}</span>
+                    <Typography variant="micro" weight="medium" as="span" truncate="line-clamp-1">{topic.title}</Typography>
+                    <Typography variant="micro" color="muted" as="span">{topic.readTime}</Typography>
                   </div>
                   <ArrowRightIcon className="size-3 text-muted-foreground shrink-0" />
                 </button>
@@ -195,12 +196,12 @@ export const BrowseToolsPanel = ({ onSelectTopic, activeTopicId }: BrowseToolsPa
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <BotIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">AI Companion</span>
+            <Typography variant="overline" color="muted" as="span">AI Companion</Typography>
           </div>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <Typography variant="micro" className="text-muted-foreground">
               Have questions about what you&apos;re reading? Ask ArogyaAI for explanations, comparisons, or clinical insights.
-            </p>
+            </Typography>
             <button
               onClick={() => onSelectTopic("__ask_ai__")}
               className="mt-2 w-full flex items-center justify-center gap-1.5 h-7 rounded-lg border border-primary/30 text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer"

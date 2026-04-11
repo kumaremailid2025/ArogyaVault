@@ -1,6 +1,15 @@
 "use client";
 
 /**
+ * @file use-heartbeat.ts
+ * @description Lightweight session liveness checker that polls the backend
+ * while the user is authenticated.
+ *
+ * @packageDocumentation
+ * @category Hooks
+ */
+
+/**
  * useHeartbeat
  * ------------
  * Lightweight session liveness check that runs periodically while the
@@ -33,6 +42,14 @@ const HEARTBEAT_TIMEOUT_MS = 10 * 1000;
 
 /* ── Hook ─────────────────────────────────────────────────────────── */
 
+/**
+ * Mount this hook once at the top of the authenticated layout.
+ * It self-manages its interval and visibility listener — no return value needed.
+ *
+ * @returns `void` — side-effect only hook.
+ *
+ * @category Hooks
+ */
 export const useHeartbeat = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const clearUser = useAuthStore((s) => s.clearUser);

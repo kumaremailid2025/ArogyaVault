@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * Right panel for the feed tab with default, summary, replies, and reply-preview views.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
+ * Handles default (analytics/connection-info), summary (AI summary with replies),
+ * replies (thread view with compose), and reply-preview (AI rephrasing options) views
+ * for the feed tab. Component is memoized to prevent unnecessary re-renders from
+ * parent state changes.
+ */
+
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,33 +33,56 @@ import { useVoiceLanguages } from "@/data/voice-languages";
 import type { CommunityPost, LinkedPost } from "@/models/community";
 import type { CommunityVariant, PanelState } from "./types";
 import { getHasNative, getVoiceLangInfo } from "./right-panel-shared";
+import Typography from "@/components/ui/typography";
 
-/* ═══════════════════════════════════════════════════════════════════
-   FEED RIGHT PANEL — handles: default (analytics / connection-info),
-   summary, replies, reply-preview views for the feed tab.
-═══════════════════════════════════════════════════════════════════ */
+/* Feed panel props */
 
+/**
+ * Props for {@link FeedRightPanel}.
+ *
+ * @category Types
+ */
 interface FeedRightPanelProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Current panel state (which view to render). */
   panelState: PanelState;
+  /** The currently active post (null if no post selected). */
   activePost: (CommunityPost | LinkedPost) | null;
+  /** All posts in the feed. */
   posts: (CommunityPost | LinkedPost)[];
+  /** Pending reply being composed and previewed. */
   pendingReply: ComposeSubmitPayload | null;
+  /** Currently selected rephrase version (0=original, 1-2=AI rephrasings). */
   selectedVersion: 0 | 1 | 2;
+  /** Handler to close the panel (revert to default view). */
   onClosePanel: () => void;
+  /** Handler to open replies for a post. */
   onOpenReplies: (postId: number) => void;
+  /** Handler to preview and show rephrasing options for a reply. */
   onPreviewSend: (payload: ComposeSubmitPayload) => void;
+  /** Handler to go back from reply preview to compose. */
   onBackToCompose: () => void;
+  /** Handler to set the selected rephrase version. */
   onSetSelectedVersion: (version: 0 | 1 | 2) => void;
+  /** Handler to submit the reply. */
   onSubmitReply: () => void;
+  /** Optional AI summary text (invited variant). */
   linkedSummary?: string;
+  /** Optional AI response text (invited variant). */
   linkedAiResponse?: string;
-  /** For invited variant: member slug used in "Manage Group" link */
+  /** Member slug used in "Manage Group" link (invited variant only). */
   memberId?: string;
 }
 
-/* ── Component ──────────────────────────────────────────────────── */
-
+/**
+ * Render the right panel for the feed tab.
+ *
+ * @param props - Component props.
+ * @returns The rendered feed right panel.
+ *
+ * @category Containers
+ */
 export const FeedRightPanel = React.memo(
   ({
     variant,
@@ -100,9 +136,9 @@ export const FeedRightPanel = React.memo(
               <>
                 {/* Community Pulse */}
                 <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Typography variant="overline" color="muted">
                     <ZapIcon className="size-3 text-primary" /> Community Pulse
-                  </p>
+                  </Typography>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: "Members", value: "12,847" },
@@ -113,8 +149,8 @@ export const FeedRightPanel = React.memo(
                         key={s.label}
                         className="rounded-lg border border-border bg-background p-2 text-center"
                       >
-                        <p className="text-sm font-bold text-primary leading-tight">{s.value}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+                        <Typography variant="body" weight="bold" color="primary">{s.value}</Typography>
+                        <Typography variant="micro" color="muted">{s.label}</Typography>
                       </div>
                     ))}
                   </div>
@@ -122,17 +158,17 @@ export const FeedRightPanel = React.memo(
 
                 {/* Trending Topics */}
                 <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Typography variant="overline" color="muted">
                     <FlameIcon className="size-3 text-orange-500" /> Trending Topics
-                  </p>
+                  </Typography>
                   <div className="space-y-2">
                     {TRENDING_TOPICS.map((t) => (
                       <div key={t.topic}>
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs truncate flex-1">{t.topic}</span>
-                          <span className="text-[10px] text-muted-foreground ml-1 shrink-0">
+                          <Typography variant="caption" as="span" truncate={true} className="flex-1">{t.topic}</Typography>
+                          <Typography variant="micro" color="muted" as="span" className="ml-1 shrink-0">
                             {t.count}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
@@ -148,11 +184,11 @@ export const FeedRightPanel = React.memo(
                 {/* Help CTA */}
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
                   <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-                  <p className="text-xs text-muted-foreground mb-2 leading-snug">
+                  <Typography variant="caption" color="muted" className="mb-2 leading-snug">
                     Click any post to read replies or tap{" "}
                     <SparklesIcon className="size-3 inline-block text-violet-500 mx-0.5" /> AI
                     Summary for a quick digest.
-                  </p>
+                  </Typography>
                   <Button size="sm" variant="outline" className="text-xs border-primary/30 text-primary w-full">
                     Ask the Community
                   </Button>
@@ -163,9 +199,9 @@ export const FeedRightPanel = React.memo(
             {variant === "invited" && (
               <>
                 {/* Connection Details */}
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <Typography variant="overline" color="muted">
                   Connection Details
-                </p>
+                </Typography>
                 <div className="space-y-2">
                   {[
                     { label: "Relation", value: "Friend" },
@@ -176,29 +212,29 @@ export const FeedRightPanel = React.memo(
                       key={row.label}
                       className="rounded-lg border border-border bg-background px-3 py-2.5"
                     >
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
+                      <Typography variant="overline" color="muted">
                         {row.label}
-                      </p>
-                      <p className="text-xs leading-relaxed">{row.value}</p>
+                      </Typography>
+                      <Typography variant="caption">{row.value}</Typography>
                     </div>
                   ))}
                 </div>
 
                 {/* Shared Feed stats */}
                 <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  <Typography variant="overline" color="muted">
                     Shared Feed
-                  </p>
+                  </Typography>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-md bg-primary/5 p-2 text-center">
-                      <p className="text-sm font-bold text-primary">{posts.length}</p>
-                      <p className="text-[10px] text-muted-foreground">posts</p>
+                      <Typography variant="body" weight="bold" color="primary">{posts.length}</Typography>
+                      <Typography variant="micro" color="muted">posts</Typography>
                     </div>
                     <div className="rounded-md bg-primary/5 p-2 text-center">
-                      <p className="text-sm font-bold text-primary">
+                      <Typography variant="body" weight="bold" color="primary">
                         {posts.reduce((s, p) => s + p.replyCount, 0)}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">replies</p>
+                      </Typography>
+                      <Typography variant="micro" color="muted">replies</Typography>
                     </div>
                   </div>
                 </div>
@@ -206,11 +242,11 @@ export const FeedRightPanel = React.memo(
                 {/* Help CTA */}
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
                   <MessageSquareIcon className="size-5 text-primary/40 mx-auto mb-1.5" />
-                  <p className="text-xs text-muted-foreground mb-2 leading-snug">
+                  <Typography variant="caption" color="muted" className="mb-2 leading-snug">
                     Click any post to view replies, or tap{" "}
                     <SparklesIcon className="size-3 inline-block text-violet-500 mx-0.5" />{" "}
                     AI Summary for a quick digest.
-                  </p>
+                  </Typography>
                   <Button
                     asChild
                     size="sm"
@@ -233,7 +269,7 @@ export const FeedRightPanel = React.memo(
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <SparklesIcon className="size-4 text-violet-600" />
-                <span className="text-sm font-semibold">AI Summary</span>
+                <Typography variant="h4" as="span">AI Summary</Typography>
               </div>
               <Button
                 onClick={onClosePanel}
@@ -243,8 +279,8 @@ export const FeedRightPanel = React.memo(
               </Button>
             </div>
             <div className="rounded-lg bg-muted/50 border border-border/60 px-3 py-2.5">
-              <p className="text-[11px] font-semibold text-primary mb-1">{postSubtitle}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{activePost.text}</p>
+              <Typography variant="overline" color="primary">{postSubtitle}</Typography>
+              <Typography variant="caption" color="muted">{activePost.text}</Typography>
             </div>
             <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
               <div className="flex items-center gap-1.5 mb-2">
@@ -256,7 +292,7 @@ export const FeedRightPanel = React.memo(
                   {activePost.replyCount} {activePost.replyCount === 1 ? "reply" : "replies"} analysed
                 </Badge>
               </div>
-              <p className="text-xs leading-relaxed text-foreground/80">{summaryText}</p>
+              <Typography variant="caption" className="text-foreground/80">{summaryText}</Typography>
             </div>
             {/* AI perspective — only shown for invited variant when available */}
             {variant === "invited" && linkedAiResponse && (
@@ -269,7 +305,7 @@ export const FeedRightPanel = React.memo(
                     ArogyaAI&apos;s perspective
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-foreground/80">{linkedAiResponse}</p>
+                <Typography variant="caption" className="text-foreground/80">{linkedAiResponse}</Typography>
               </div>
             )}
             <Button
@@ -289,7 +325,7 @@ export const FeedRightPanel = React.memo(
             {/* ── Pinned header ── */}
             <div className="shrink-0 px-4 pt-4 pb-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">{replyCountLabel(activePost.replyCount)}</span>
+                <Typography variant="h4" as="span">{replyCountLabel(activePost.replyCount)}</Typography>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -301,10 +337,10 @@ export const FeedRightPanel = React.memo(
               </div>
               {/* Compact post quote */}
               <div className="rounded-lg bg-muted/50 border border-border/60 px-3 py-2">
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                <Typography variant="caption" color="muted" className="leading-relaxed line-clamp-2">
                   <span className="font-semibold text-primary">{activePost.author}</span>{" "}
                   {activePost.text}
-                </p>
+                </Typography>
               </div>
             </div>
 
@@ -312,9 +348,9 @@ export const FeedRightPanel = React.memo(
             <div className="flex-1 overflow-y-auto px-4 min-h-0">
               <div className="space-y-3 pb-2">
                 {(activePost.replies ?? []).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">
+                  <Typography variant="caption" color="muted" className="text-center py-3">
                     No replies yet — be the first.
-                  </p>
+                  </Typography>
                 ) : (
                   (activePost.replies ?? []).map((r, i) => (
                     <div key={i} className="flex gap-2">
@@ -325,10 +361,10 @@ export const FeedRightPanel = React.memo(
                       </Avatar>
                       <div className="flex-1 rounded-xl rounded-tl-sm bg-muted border border-border/60 px-3 py-2">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[11px] font-semibold">{r.author}</span>
-                          <span className="text-[10px] text-muted-foreground">{r.time}</span>
+                          <Typography variant="h5" weight="semibold" as="span" className="!text-[11px]">{r.author}</Typography>
+                          <Typography variant="micro" color="muted" as="span">{r.time}</Typography>
                         </div>
-                        <p className="text-xs leading-relaxed">{r.text}</p>
+                        <Typography variant="caption">{r.text}</Typography>
                       </div>
                     </div>
                   ))
@@ -360,7 +396,7 @@ export const FeedRightPanel = React.memo(
               >
                 <ArrowLeftIcon className="size-4" />
               </Button>
-              <span className="text-sm font-semibold flex-1">Review Your Reply</span>
+              <Typography variant="h4" as="span" className="flex-1">Review Your Reply</Typography>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -376,9 +412,9 @@ export const FeedRightPanel = React.memo(
 
                 {/* Original text — selectable card */}
                 <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  <Typography variant="overline" color="muted">
                     {hasNative ? "Your reply · English (Translated)" : "Your reply"}
-                  </p>
+                  </Typography>
                   <div
                     role="button"
                     tabIndex={0}
@@ -391,9 +427,9 @@ export const FeedRightPanel = React.memo(
                         : "border-border bg-background hover:border-primary/30"
                     )}
                   >
-                    <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{panelState.original}</p>
+                    <Typography variant="caption" className="whitespace-pre-wrap">{panelState.original}</Typography>
                     {selectedVersion === 0 && (
-                      <span className="text-[10px] text-primary font-medium mt-1 block">✓ Selected</span>
+                      <Typography variant="micro" color="primary" weight="medium" as="span" className="mt-1 block">✓ Selected</Typography>
                     )}
                   </div>
                 </div>
@@ -401,16 +437,16 @@ export const FeedRightPanel = React.memo(
                 {/* Attached document */}
                 {pendingReply?.attachedDoc && (
                   <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Typography variant="overline" color="muted">
                       <PaperclipIcon className="size-3" /> Attached Document
-                    </p>
+                    </Typography>
                     <div className="rounded-lg border border-border overflow-hidden">
                       {pendingReply.attachedDoc.isPdf ? (
                         <div className="flex items-center gap-3 bg-red-50 px-3 py-2.5">
                           <FileTextIcon className="size-7 text-red-400 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
-                            <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
+                            <Typography variant="h5" as="p" truncate={true}>{pendingReply.attachedDoc.filename}</Typography>
+                            <Typography variant="micro" color="muted">{pendingReply.attachedDoc.docType}</Typography>
                           </div>
                         </div>
                       ) : (
@@ -424,8 +460,8 @@ export const FeedRightPanel = React.memo(
                             unoptimized
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate">{pendingReply.attachedDoc.filename}</p>
-                            <p className="text-[10px] text-muted-foreground">{pendingReply.attachedDoc.docType}</p>
+                            <Typography variant="h5" as="p" truncate={true}>{pendingReply.attachedDoc.filename}</Typography>
+                            <Typography variant="micro" color="muted">{pendingReply.attachedDoc.docType}</Typography>
                           </div>
                         </div>
                       )}
@@ -436,29 +472,29 @@ export const FeedRightPanel = React.memo(
                 {/* Native voice recording */}
                 {hasNative && pendingReply?.voiceRecording && (
                   <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Typography variant="overline" color="muted">
                       <MicIcon className="size-3" />
                       {voiceLangInfo?.native ?? pendingReply.voiceRecording.lang} · Recorded
-                    </p>
+                    </Typography>
                     <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                           {voiceLangInfo?.label ?? pendingReply.voiceRecording.lang}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">→ Translated to English above</span>
+                        <Typography variant="micro" color="muted" as="span">→ Translated to English above</Typography>
                       </div>
-                      <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                      <Typography variant="caption" className="text-foreground/80 whitespace-pre-wrap">
                         {pendingReply.voiceRecording.original}
-                      </p>
+                      </Typography>
                     </div>
                   </div>
                 )}
 
                 {/* AI Rephrasings — selectable cards */}
                 <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Typography variant="overline" color="muted">
                     <SparklesIcon className="size-3 text-violet-500" /> AI Rephrasings
-                  </p>
+                  </Typography>
                   <div className="space-y-2">
                     {panelState.rephrasings.map((r, i) => (
                       <div
@@ -480,7 +516,7 @@ export const FeedRightPanel = React.memo(
                             <span className="text-[10px] text-violet-600 font-medium">✓ Selected</span>
                           )}
                         </div>
-                        <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{r}</p>
+                        <Typography variant="caption" className="whitespace-pre-wrap">{r}</Typography>
                       </div>
                     ))}
                   </div>
@@ -497,7 +533,7 @@ export const FeedRightPanel = React.memo(
                         ArogyaAI&apos;s perspective
                       </span>
                     </div>
-                    <p className="text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap">{aiPerspective}</p>
+                    <Typography variant="caption" className="text-foreground/80 whitespace-pre-wrap">{aiPerspective}</Typography>
                   </div>
                 )}
               </div>

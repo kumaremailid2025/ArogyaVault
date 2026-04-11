@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * Card component for displaying a community file.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Displays a single community file with metadata (size, category, uploader),
+ * type-specific icon, and action buttons (AI summary, Q&A). Memoized for performance.
+ */
+
 import * as React from "react";
 import {
   FileTextIcon, FileSpreadsheetIcon, FileIcon, ImageIcon,
@@ -8,11 +19,18 @@ import {
 import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
+import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import type { CommunityFile } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
-/* ── File type icon/color map ──────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Map of file type to icon, color, and background CSS classes.
+ */
 const FILE_TYPE_CONFIG: Record<
   CommunityFile["type"],
   { icon: typeof FileTextIcon; color: string; bg: string }
@@ -24,20 +42,47 @@ const FILE_TYPE_CONFIG: Record<
   png:  { icon: ImageIcon,           color: "text-amber-500",  bg: "bg-amber-50" },
 };
 
-/* ── Props ─────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for the file card component.
+ *
+ * @category Types
+ */
 interface FileCardProps {
+  /** File to display. */
   file: CommunityFile;
+  /** Whether this file is currently selected. */
   isActive: boolean;
+  /** Handler when the file card is clicked. */
   onSelect: (fileId: number) => void;
+  /** Handler to view AI summary for the file. */
   onAiSummary: (fileId: number) => void;
+  /** Handler to open Q&A for the file. */
   onQA: (fileId: number) => void;
 }
 
-/* ── Component ─────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render a community file card with metadata and action buttons.
+ *
+ * @param props - Component props.
+ * @param props.file - File to display.
+ * @param props.isActive - Whether the file is selected.
+ * @param props.onSelect - Callback when file is selected.
+ * @param props.onAiSummary - Callback to view AI summary.
+ * @param props.onQA - Callback to open Q&A.
+ * @returns The rendered file card.
+ *
+ * @category Components
+ */
 export const FileCard = React.memo(
-  ({ file, isActive, onSelect, onAiSummary, onQA }: FileCardProps) => {
+  ({ file, isActive, onSelect, onAiSummary, onQA }: FileCardProps): React.ReactElement => {
     const typeConfig = FILE_TYPE_CONFIG[file.type];
     const TypeIcon = typeConfig.icon;
 
@@ -66,7 +111,7 @@ export const FileCard = React.memo(
             {/* Row 1 — File name + actions */}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{file.name}</p>
+                <Typography variant="body" weight="medium" className="truncate">{file.name}</Typography>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Badge
                     variant="outline"
@@ -74,12 +119,12 @@ export const FileCard = React.memo(
                   >
                     {file.category}
                   </Badge>
-                  <span className="text-[11px] text-muted-foreground">
+                  <Typography variant="micro" color="muted" as="span">
                     {file.size}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
+                  </Typography>
+                  <Typography variant="micro" color="muted" as="span">
                     · {file.type.toUpperCase()}
-                  </span>
+                  </Typography>
                 </div>
               </div>
 
@@ -87,35 +132,37 @@ export const FileCard = React.memo(
               <div className="flex items-center gap-1 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         onAiSummary(file.id);
                       }}
-                      className="inline-flex items-center justify-center h-7 px-1.5 rounded-md text-muted-foreground transition-colors hover:text-violet-600 hover:bg-violet-50"
+                      className="text-muted-foreground hover:text-violet-600 hover:bg-violet-50 px-1.5"
                     >
                       <SparklesIcon className="size-3.5" />
-                    </button>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">AI Summary</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         onQA(file.id);
                       }}
-                      className="inline-flex items-center justify-center h-7 px-1.5 rounded-md gap-1 text-xs text-muted-foreground transition-colors hover:text-primary hover:bg-primary/5"
+                      className="gap-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 px-1.5"
                     >
                       <MessageSquareIcon className="size-3.5" />
                       {file.qaCount > 0 && (
                         <span>{file.qaCount}</span>
                       )}
-                    </button>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     {file.qaCount === 0
@@ -135,9 +182,9 @@ export const FileCard = React.memo(
                   {file.uploadedByInitials}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-[11px] text-muted-foreground">
+              <Typography variant="micro" color="muted" as="span">
                 {file.uploadedBy} · {file.uploadedAt}
-              </span>
+              </Typography>
             </div>
           </div>
         </div>

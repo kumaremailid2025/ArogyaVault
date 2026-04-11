@@ -9,6 +9,7 @@ import {
   UsersIcon, StarIcon, TagIcon, ThumbsUpIcon, MessageSquareIcon, ActivityIcon,
   VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores";
 import { useLogout } from "@/hooks/api";
 import { useSidebar } from "@/data/sidebar-data";
+import Typography from "@/components/ui/typography";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
 const InviteModal = dynamic(
@@ -50,17 +52,60 @@ const MY_VAULT_ITEMS = [
   { id: "topics",    label: "My Topics",           href: "/tags/diabetes", icon: TagIcon },
 ] as const;
 
+/* ── Invite level options ─────────────────────────────────────────
+   Mirror the final "Invite for" dropdown inside InviteModal so the
+   header split button exposes the same choices:
+     - "group" — create a brand-new shared group with the invitee
+     - "app"   — vault-only invite, no group is created
+   followed by every existing linked group owned by the inviter.
+────────────────────────────────────────────────────────────────── */
+const LEVEL_NEW_GROUP = "group";
+const LEVEL_APP_ONLY  = "app";
+
+interface InviteLevelItem {
+  id: string;
+  label: string;
+  sub: string;
+  icon: LucideIcon;
+}
+
 export const AppHeader = () => {
   const pathname = usePathname();
-  const { INVITE_GROUPS } = useSidebar();
+  const { LINKED_GROUPS } = useSidebar();
 
-  const [inviteOpen,    setInviteOpen]    = React.useState(false);
-  const [inviteContext, setInviteContext] = React.useState<string | undefined>(undefined);
-  const [notifOpen,     setNotifOpen]     = React.useState(false);
+  const [inviteOpen,   setInviteOpen]   = React.useState(false);
+  const [inviteLevel,  setInviteLevel]  = React.useState<string | undefined>(undefined);
+  const [notifOpen,    setNotifOpen]    = React.useState(false);
+
+  /* Build the level list — must match invite-modal.tsx exactly so the
+     header dropdown replicates the modal's "Invite for" field. */
+  const inviteLevels = React.useMemo<InviteLevelItem[]>(() => {
+    const base: InviteLevelItem[] = [
+      {
+        id: LEVEL_NEW_GROUP,
+        label: "Invite",
+        sub: "Create a new shared group",
+        icon: UserPlusIcon,
+      },
+      {
+        id: LEVEL_APP_ONLY,
+        label: "Invite to ArogyaVault",
+        sub: "App access only — no group created",
+        icon: HeartPulseIcon,
+      },
+    ];
+    const existing: InviteLevelItem[] = LINKED_GROUPS.map((g) => ({
+      id: g.slug,
+      label: g.name,
+      sub: `${g.rel} · ${g.sub}`,
+      icon: UsersIcon,
+    }));
+    return [...base, ...existing];
+  }, [LINKED_GROUPS]);
 
   /* ── Invite helpers ──────────────────────────────────────────── */
-  const openInvite = (groupId?: string) => {
-    setInviteContext(groupId);
+  const openInvite = (levelId?: string) => {
+    setInviteLevel(levelId);
     setInviteOpen(true);
   };
 
@@ -113,7 +158,7 @@ export const AppHeader = () => {
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <HeartPulseIcon className="size-3.5" />
           </div>
-          <span className="text-base tracking-tight">ArogyaVault</span>
+          <Typography variant="h4" as="span" className="tracking-tight">ArogyaVault</Typography>
         </Link>
 
         {/* ── Centred top nav ──────────────────────────────────── */}
@@ -217,27 +262,26 @@ export const AppHeader = () => {
                   <ChevronDownIcon className="size-3.5 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  onClick={() => openInvite()}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <UserPlusIcon className="size-3.5" />
-                  Invite
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {INVITE_GROUPS.map((g) => (
-                  <DropdownMenuItem
-                    key={g.id}
-                    onClick={() => openInvite(g.id)}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <UsersIcon className="size-3.5" />
-                    Invite to {g.name}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="w-72">
+                {inviteLevels.map((lvl, idx) => {
+                  const Icon = lvl.icon;
+                  const isLastFixed = idx === 1 && inviteLevels.length > 2;
+                  return (
+                    <React.Fragment key={lvl.id}>
+                      <DropdownMenuItem
+                        onClick={() => openInvite(lvl.id)}
+                        className="flex items-start gap-2 cursor-pointer py-2"
+                      >
+                        <Icon className="size-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+                        <div className="flex flex-col leading-tight">
+                          <Typography variant="caption" weight="medium" as="span">{lvl.label}</Typography>
+                          <Typography variant="micro" color="muted" as="span">{lvl.sub}</Typography>
+                        </div>
+                      </DropdownMenuItem>
+                      {isLastFixed && <DropdownMenuSeparator />}
+                    </React.Fragment>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -274,9 +318,9 @@ export const AppHeader = () => {
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="font-semibold">{displayName}</span>
+                  <Typography variant="body" weight="semibold" as="span">{displayName}</Typography>
                   {hasRealName && displayPhone && (
-                    <span className="text-xs font-normal text-muted-foreground">{displayPhone}</span>
+                    <Typography variant="caption" color="muted" as="span">{displayPhone}</Typography>
                   )}
                 </div>
               </DropdownMenuLabel>
@@ -303,11 +347,11 @@ export const AppHeader = () => {
         </div>
       </header>
 
-      {/* Global invite modal — groupContext drives the framing */}
+      {/* Global invite modal — selected level id pre-selects the "Invite for" dropdown */}
       <InviteModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        groupContext={inviteContext}
+        {...(inviteLevel ? { initialLevel: inviteLevel } : {})}
       />
     </>
   );

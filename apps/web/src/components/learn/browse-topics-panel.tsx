@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useLearn } from "@/data/learn-data";
 import { resolveIcon } from "@/lib/icon-resolver";
 import type { EduLevel } from "@/models/learn";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    BROWSE TOPICS PANEL — left column
@@ -131,13 +132,13 @@ export const BrowseTopicsPanel = ({ activeTopicId, onSelectTopic }: BrowseTopics
               <div className="flex items-start gap-2">
                 <Icon className={cn("size-3.5 mt-0.5 shrink-0", topic.categoryColor)} />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-medium leading-tight">{topic.title}</h4>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{topic.summary}</p>
+                  <Typography variant="caption" weight="medium" as="h4">{topic.title}</Typography>
+                  <Typography variant="micro" color="muted">{topic.summary}</Typography>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    <Typography variant="micro" color="muted" as="span" className="px-1.5 py-0.5 rounded-full bg-muted">
                       {topic.category}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground">{topic.readTime}</span>
+                    </Typography>
+                    <Typography variant="micro" color="muted" as="span">{topic.readTime}</Typography>
                     {topic.levels.includes("clinical") && (
                       <SparklesIcon className="size-2.5 text-violet-500 ml-auto" />
                     )}

@@ -7,6 +7,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useAiContext, type ChatSession } from "@/data/ai-context-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    CHAT SESSIONS PANEL — left column
@@ -108,17 +109,17 @@ export const ChatSessionsPanel = ({
               )} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
-                  <h4 className="text-xs font-medium truncate">{session.title}</h4>
-                  <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(session.date)}</span>
+                  <Typography variant="caption" weight="medium" as="h4">{session.title}</Typography>
+                  <Typography variant="micro" color="muted" as="span" className="shrink-0">{timeAgo(session.date)}</Typography>
                 </div>
-                <p className="text-[11px] text-muted-foreground truncate mt-0.5">{session.preview}</p>
+                <Typography variant="micro" color="muted">{session.preview}</Typography>
                 <div className="flex items-center gap-1 mt-1">
                   {session.tags.slice(0, 2).map((tag) => (
-                    <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    <Typography key={tag} variant="micro" color="muted" as="span" className="px-1.5 py-0.5 rounded-full bg-muted">
                       {tag}
-                    </span>
+                    </Typography>
                   ))}
-                  <span className="text-[9px] text-muted-foreground ml-auto">{session.messageCount} msgs</span>
+                  <Typography variant="micro" color="muted" as="span" className="ml-auto">{session.messageCount} msgs</Typography>
                 </div>
               </div>
             </div>

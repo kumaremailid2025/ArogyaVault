@@ -13,6 +13,7 @@ import { SparklesIcon, XIcon, MessageSquareIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
 import { useFeedContext } from "@/app/(app)/community/_context/feed-context";
 import { useCommunity } from "@/data/community-data";
+import Typography from "@/components/ui/typography";
 
 const GroupPostSummaryPage = () => {
   const { POST_SUMMARIES, POST_AI_RESPONSES } = useCommunity();
@@ -25,7 +26,7 @@ const GroupPostSummaryPage = () => {
   if (!activePost) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground">Post not found</p>
+        <Typography variant="caption" color="muted">Post not found</Typography>
       </div>
     );
   }
@@ -47,8 +48,8 @@ const GroupPostSummaryPage = () => {
         >
           <XIcon className="size-3.5" />
         </Link>
-        <p className="text-[11px] font-semibold text-primary mb-1">{postSubtitle}</p>
-        <p className="text-xs text-muted-foreground leading-relaxed">{activePost.text}</p>
+        <Typography variant="overline" color="primary">{postSubtitle}</Typography>
+        <Typography variant="caption" color="muted">{activePost.text}</Typography>
       </div>
 
       {/* AI Summary */}
@@ -57,9 +58,9 @@ const GroupPostSummaryPage = () => {
           <div className="flex size-5 items-center justify-center rounded-full bg-violet-100">
             <SparklesIcon className="size-3 text-violet-600" />
           </div>
-          <span className="text-[11px] font-semibold text-violet-700">ArogyaAI Summary</span>
+          <Typography variant="caption" weight="semibold" as="span" className="text-violet-700">ArogyaAI Summary</Typography>
         </div>
-        <p className="text-xs leading-relaxed text-foreground/80">{summaryText}</p>
+        <Typography variant="caption" className="text-foreground/80">{summaryText}</Typography>
       </div>
 
       <Button

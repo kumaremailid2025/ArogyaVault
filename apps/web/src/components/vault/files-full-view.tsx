@@ -9,6 +9,7 @@ import {
 import { Button } from "@/core/ui/button";
 import { cn } from "@/lib/utils";
 import { useVaultHealth, type MedFile } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    FILES FULL VIEW — shown when "Files" tab is active in banner
@@ -101,7 +102,7 @@ export const FilesFullView = ({ onFileClick, selectedFileId }: FilesFullViewProp
             <div className="flex items-start gap-3">
               <div className="mt-0.5 shrink-0">{CATEGORY_ICONS[file.category]}</div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium truncate">{file.name}</h4>
+                <Typography variant="body" weight="medium" as="h4" truncate={true}>{file.name}</Typography>
                 <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   <CalendarIcon className="size-3" />
                   <span>{formatDate(file.date)}</span>
@@ -112,9 +113,9 @@ export const FilesFullView = ({ onFileClick, selectedFileId }: FilesFullViewProp
                 {file.aiSummary && (
                   <div className="mt-2 flex items-start gap-1.5">
                     <SparklesIcon className="size-3 text-primary mt-0.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                    <Typography variant="caption" color="muted" className="leading-relaxed line-clamp-2">
                       {file.aiSummary}
-                    </p>
+                    </Typography>
                   </div>
                 )}
               </div>
@@ -126,14 +127,14 @@ export const FilesFullView = ({ onFileClick, selectedFileId }: FilesFullViewProp
       {filtered.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
           <FileIcon className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No documents match your search.</p>
+          <Typography variant="body" color="muted">No documents match your search.</Typography>
         </div>
       )}
 
       {/* Footer count */}
-      <div className="text-xs text-muted-foreground text-center">
+      <Typography variant="caption" color="muted" className="text-center">
         Showing {filtered.length} of {VAULT_FILES.length} documents
-      </div>
+      </Typography>
     </div>
   );
 };

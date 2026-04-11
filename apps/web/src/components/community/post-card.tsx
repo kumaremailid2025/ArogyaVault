@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * Card component for displaying a community post.
+ *
+ * @packageDocumentation
+ * @category Components
+ *
+ * @remarks
+ * Displays a single community post with metadata, actions (like, reply, favorite),
+ * and AI summary access. Memoized for performance.
+ */
+
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -12,20 +23,37 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { tagToSlug } from "@/stores";
 import type { CommunityPost, LinkedPost } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
+/**
+ * Props for {@link PostCard}.
+ */
 interface PostCardProps {
+  /** Post to display. */
   post: CommunityPost | LinkedPost;
+  /** Whether this post is currently selected. */
   isActive: boolean;
+  /** Whether the current user has liked this post. */
   isLiked: boolean;
+  /** Whether the current user has favorited this post. */
   isFavorited: boolean;
+  /** Handler to like/unlike the post. */
   onLike: (postId: number) => void;
+  /** Handler to open replies for the post. */
   onReplies: (postId: number) => void;
+  /** Handler to open AI summary for the post. */
   onSummary: (postId: number) => void;
+  /** Handler to favorite/unfavorite the post. */
   onFavorite: (post: CommunityPost | LinkedPost) => void;
 }
 
+/**
+ * Render a community post card with metadata and action buttons.
+ * @param props Component props.
+ * @returns React element.
+ */
 export const PostCard = React.memo(
-  ({ post, isActive, isLiked, isFavorited, onLike, onReplies, onSummary, onFavorite }: PostCardProps) => {
+  ({ post, isActive, isLiked, isFavorited, onLike, onReplies, onSummary, onFavorite }: PostCardProps): React.ReactElement => {
     const hasLocation = "location" in post && post.location;
 
     return (
@@ -48,10 +76,10 @@ export const PostCard = React.memo(
             {/* Row 1 — Author info (left) + Actions (right) */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                <span className="text-sm font-semibold">{post.author}</span>
-                <span className="text-xs text-muted-foreground">
+                <Typography variant="h4" as="span">{post.author}</Typography>
+                <Typography variant="caption" color="muted" as="span">
                   {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
-                </span>
+                </Typography>
                 <Link
                   href={`/tags/${tagToSlug(post.tag)}`}
                   onClick={(e) => e.stopPropagation()}
@@ -156,7 +184,7 @@ export const PostCard = React.memo(
             </div>
 
             {/* Row 2 — Post text */}
-            <p className="text-sm mt-1 leading-relaxed">{post.text}</p>
+            <Typography variant="body" className="mt-1">{post.text}</Typography>
           </div>
         </div>
       </div>

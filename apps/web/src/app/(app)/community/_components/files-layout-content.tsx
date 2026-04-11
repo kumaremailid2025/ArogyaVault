@@ -25,14 +25,26 @@ import { useFiles, useRecentFileQA, useAskFileQuestion } from "@/hooks/api";
 import { useCommunityFiles } from "@/data/community-files-data";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 
+/**
+ * Props for {@link FilesLayoutContent}.
+ */
 interface FilesLayoutContentProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
-  basePath: string; // "/community" or "/community/<uuid>"
+  /** Base route path: "/community" or "/community/<uuid>". */
+  basePath: string;
+  /** Route-driven right panel (children). */
   children: React.ReactNode;
 }
 
-export const FilesLayoutContent = ({ variant, group, basePath, children }: FilesLayoutContentProps) => {
+/**
+ * Render a two-column files layout (file list | right panel).
+ * @param props Component props.
+ * @returns React element.
+ */
+export const FilesLayoutContent = ({ variant, group, basePath, children }: FilesLayoutContentProps): React.ReactElement => {
   const { INVITED_FILES, RECENT_FILE_QA } = useCommunityFiles();
   const router = useRouter();
   const pathname = usePathname();

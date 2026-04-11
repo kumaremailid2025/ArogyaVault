@@ -8,6 +8,7 @@ import { Badge } from "@/core/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLearn } from "@/data/learn-data";
 import { useMedicalSystems } from "@/data/medical-systems-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    AROGYALEARN BANNER — route-driven tab navigation
@@ -85,9 +86,9 @@ export const LearnBanner = React.memo(() => {
         </div>
 
         {/* Row 2 — Description */}
-        <p className="mt-2 text-sm text-primary-foreground/80 leading-relaxed">
+        <Typography variant="body" color="inverse" className="mt-2 opacity-80">
           {DESCRIPTIONS[activeTab]}
-        </p>
+        </Typography>
       </div>
     </div>
   );

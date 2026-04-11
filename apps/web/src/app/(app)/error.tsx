@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import Link from "next/link";
+import Typography from "@/components/ui/typography";
 
 const AppError = ({
   error,
@@ -24,11 +25,11 @@ const AppError = ({
         </div>
 
         <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold">Something went wrong</h2>
-          <p className="text-sm text-muted-foreground">
+          <Typography variant="h2">Something went wrong</Typography>
+          <Typography variant="body" color="muted">
             An unexpected error occurred. Please try again or return to the
             home page.
-          </p>
+          </Typography>
         </div>
 
         <div className="flex items-center justify-center gap-3">

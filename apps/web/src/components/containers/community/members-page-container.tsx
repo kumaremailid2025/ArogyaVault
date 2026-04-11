@@ -1,8 +1,12 @@
 "use client";
 
 /**
- * MembersPageContainer
- * --------------------
+ * Container for the community members tab.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
  * Self-contained container for the members tab (/community/members or /community/[groupId]/members).
  * Owns all members-specific state: member list, selection, panel.
  *
@@ -39,19 +43,33 @@ const MembersRightPanel = dynamic(
   { ssr: false, loading: () => <PanelLoader /> },
 );
 
-/* ── Props ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Props for {@link MembersPageContainer}.
+ */
 interface MembersPageContainerProps {
+  /** Community variant (own or invited). */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
 }
 
-/* ── Component ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════════════ */
 
+/**
+ * Render the members tab for the community. Manages all members state and layout.
+ * @param props Component props.
+ * @returns React element.
+ */
 export const MembersPageContainer = ({
   variant,
   group,
-}: MembersPageContainerProps) => {
+}: MembersPageContainerProps): React.ReactElement => {
   const { INVITED_GROUP_MEMBERS } = useCommunityMembers();
   const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const isCommunity = variant === "community";

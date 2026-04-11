@@ -8,6 +8,7 @@ import {
   useRecords,
 } from "../../_components/records-shared";
 import { Button } from "@/core/ui/button";
+import Typography from "@/components/ui/typography";
 
 export default function SharedMemberPage({
   params,
@@ -23,16 +24,16 @@ export default function SharedMemberPage({
     <>
       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3">
         <UsersIcon className="size-4 text-primary shrink-0" />
-        <p className="text-sm text-primary font-medium">
+        <Typography variant="body" color="primary" className="font-medium">
           Showing shared documents from <strong>{memberName}</strong>
-        </p>
+        </Typography>
       </div>
 
       <div>
-        <h1 className="text-xl font-bold">{memberName}'s Documents</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <Typography variant="h1">{memberName}'s Documents</Typography>
+        <Typography variant="body" color="muted" className="mt-0.5">
           Shared medical records in this group.
-        </p>
+        </Typography>
       </div>
 
       <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border">

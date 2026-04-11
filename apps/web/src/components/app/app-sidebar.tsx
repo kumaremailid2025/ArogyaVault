@@ -10,6 +10,7 @@ import { useTagsStore, tagToSlug, useLikesStore, useRepliedStore, useFavoritesSt
 import { useCommunity } from "@/data/community-data";
 import { useLinkedMembers } from "@/data/linked-member-data";
 import { useSidebar } from "@/data/sidebar-data";
+import Typography from "@/components/ui/typography";
 
 /* Shared active / hover tokens */
 const ACTIVE  = "bg-primary text-primary-foreground";
@@ -58,10 +59,14 @@ const CommunitySidebar = () => {
           <COMMUNITY_GROUP.icon className="size-3.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-snug truncate">{COMMUNITY_GROUP.name}</p>
-          <p className={cn("text-[10px] truncate", isDefaultCommunity ? SUB_ON : SUB_OFF)}>
+          <Typography variant="h4" as="p" className="leading-snug truncate">{COMMUNITY_GROUP.name}</Typography>
+          <Typography
+            variant="micro"
+            truncate={true}
+            className={isDefaultCommunity ? SUB_ON : SUB_OFF}
+          >
             {COMMUNITY_GROUP.sub}
-          </p>
+          </Typography>
         </div>
       </Link>
 
@@ -97,16 +102,20 @@ const CommunitySidebar = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 min-w-0">
-                  <p className="text-xs font-semibold leading-snug truncate">{g.name}</p>
+                  <Typography variant="h5" as="p" truncate={true}>{g.name}</Typography>
                   {hasExtras && (
                     <span className={cn("text-[9px] font-medium shrink-0", isActive ? SUB_ON : SUB_OFF)}>
                       +{g.count}
                     </span>
                   )}
                 </div>
-                <p className={cn("text-[9px] truncate", isActive ? SUB_ON : SUB_OFF)}>
+                <Typography
+                  variant="micro"
+                  truncate={true}
+                  className={isActive ? SUB_ON : SUB_OFF}
+                >
                   {[g.rel, g.sub].filter(Boolean).join(" · ")}
-                </p>
+                </Typography>
               </div>
             </Link>
           );
@@ -148,8 +157,8 @@ const TagsSidebar = () => {
           <TagIcon className="size-3.5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-snug">Topics</p>
-          <p className="text-[10px] text-muted-foreground">{sortedTags.length} tags</p>
+          <Typography variant="h4" as="p" className="leading-snug">Topics</Typography>
+          <Typography variant="micro" color="muted">{sortedTags.length} tags</Typography>
         </div>
       </div>
 
@@ -211,8 +220,8 @@ const UserActivitySidebar = () => {
           <StarIcon className="size-3.5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-snug">My Activity</p>
-          <p className="text-[10px] text-muted-foreground">Posts you interacted with</p>
+          <Typography variant="h4" as="p" className="leading-snug">My Activity</Typography>
+          <Typography variant="micro" color="muted">Posts you interacted with</Typography>
         </div>
       </div>
 
@@ -235,7 +244,7 @@ const UserActivitySidebar = () => {
               )}>
                 <item.icon className="size-3" />
               </div>
-              <span className="text-xs font-medium flex-1 truncate">{item.label}</span>
+              <Typography variant="caption" weight="medium" as="span" className="flex-1" truncate={true}>{item.label}</Typography>
               <span className={cn(
                 "text-[10px] font-medium shrink-0 tabular-nums",
                 isActive ? SUB_ON : SUB_OFF

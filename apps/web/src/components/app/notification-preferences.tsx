@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Switch } from "@/core/ui/switch";
+import Typography from "@/components/ui/typography";
 
 type NotificationItem = { label: string; sub: string; on: boolean };
 
@@ -19,8 +20,8 @@ export const NotificationPreferences = ({ items }: { items: NotificationItem[] }
       {prefs.map((n, i) => (
         <div key={n.label} className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-sm font-medium">{n.label}</p>
-            <p className="text-xs text-muted-foreground">{n.sub}</p>
+            <Typography variant="body" weight="medium">{n.label}</Typography>
+            <Typography variant="caption" color="muted">{n.sub}</Typography>
           </div>
           <Switch
             checked={n.on}

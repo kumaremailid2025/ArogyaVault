@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useLearn } from "@/data/learn-data";
 import { resolveIcon } from "@/lib/icon-resolver";
 import type { EduLevel } from "@/models/learn";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    TOPIC READER — full content view for a selected topic
@@ -62,9 +63,9 @@ export const TopicReader = ({ topicId, onBack }: TopicReaderProps) => {
           <span className={cn("text-xs font-medium", topic.categoryColor)}>{topic.category}</span>
           <span className="text-xs text-muted-foreground">·</span>
           <ClockIcon className="size-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{topic.readTime} read</span>
+          <Typography variant="caption" color="muted" as="span">{topic.readTime} read</Typography>
         </div>
-        <h1 className="text-xl font-bold leading-tight">{topic.title}</h1>
+        <Typography variant="h1" className="leading-tight">{topic.title}</Typography>
 
         {/* Level pills */}
         <div className="flex items-center gap-1.5 mt-3">
@@ -92,22 +93,22 @@ export const TopicReader = ({ topicId, onBack }: TopicReaderProps) => {
       <div className="rounded-xl border border-border p-4 bg-muted/20">
         <div className="flex items-center gap-1.5 mb-2">
           <BookOpenIcon className="size-3.5 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Summary</span>
+          <Typography variant="overline" color="muted" as="span" className="text-xs">Summary</Typography>
         </div>
-        <p className="text-sm leading-relaxed">{topic.summary}</p>
+        <Typography variant="body">{topic.summary}</Typography>
       </div>
 
       {/* Key Facts */}
       <div className="rounded-xl border border-border p-4">
         <div className="flex items-center gap-1.5 mb-3">
           <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Facts</span>
+          <Typography variant="overline" color="muted" as="span" className="text-xs">Key Facts</Typography>
         </div>
         <div className="space-y-2">
           {topic.keyFacts.map((fact, i) => (
             <div key={i} className="flex items-start gap-2.5">
-              <span className="text-primary text-sm font-bold mt-0.5 shrink-0">{i + 1}</span>
-              <p className="text-sm leading-relaxed">{fact}</p>
+              <Typography variant="body-sm" weight="bold" color="primary" as="span" className="mt-0.5 shrink-0">{i + 1}</Typography>
+              <Typography variant="body">{fact}</Typography>
             </div>
           ))}
         </div>
@@ -117,10 +118,10 @@ export const TopicReader = ({ topicId, onBack }: TopicReaderProps) => {
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <div className="flex items-center gap-1.5 mb-2">
           <SparklesIcon className="size-3.5 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">AI Perspective</span>
-          <span className="text-[9px] text-muted-foreground ml-1">{LEVEL_CONFIG[activeLevel].label} level</span>
+          <Typography variant="overline" color="primary" as="span" className="text-xs">AI Perspective</Typography>
+          <Typography variant="micro" color="muted" as="span" className="ml-1">{LEVEL_CONFIG[activeLevel].label} level</Typography>
         </div>
-        <p className="text-sm leading-relaxed">{topic.aiPerspective}</p>
+        <Typography variant="body">{topic.aiPerspective}</Typography>
       </div>
 
       {/* Source */}

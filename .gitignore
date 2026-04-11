@@ -28,6 +28,9 @@ venv/
 # ── Turbo cache ──────────────────────────────────────────────────────────────
 .turbo/
 
+# ── TypeDoc generated API docs ───────────────────────────────────────────────
+apps/web/docs/
+
 # ── Flutter / Dart ───────────────────────────────────────────────────────────
 apps/mobile/.dart_tool/
 apps/mobile/.flutter-plugins

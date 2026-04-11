@@ -7,6 +7,7 @@ import { VaultBanner, type VaultTab } from "@/components/vault/vault-banner";
 import { FilesColumn } from "@/components/vault/files-column";
 import { useVaultHealth } from "@/data/vault-health-data";
 import { Button } from "@/core/ui/button";
+import Typography from "@/components/ui/typography";
 
 /* ── Lazy-loaded column/panel components ─────────────────────────── */
 
@@ -118,12 +119,12 @@ export const VaultContainer = () => {
               <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
                 <HeartPulseIcon className="size-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Your vault is ready</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              <Typography variant="h1" as="h2">Your vault is ready</Typography>
+              <Typography variant="body" color="muted" className="leading-relaxed mb-6">
                 Your personal health vault is where all your medical reports,
                 prescriptions, and vital readings will live. Add your first
                 document to unlock AI-powered insights and trend tracking.
-              </p>
+              </Typography>
               <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
                 <Button size="sm" className="w-full gap-2">
                   <UploadCloudIcon className="size-3.5" /> Upload your first report
@@ -132,9 +133,9 @@ export const VaultContainer = () => {
                   <SparklesIcon className="size-3.5" /> Ask ArogyaAI how this works
                 </Button>
               </div>
-              <p className="mt-6 text-[11px] text-muted-foreground/80">
+              <Typography variant="micro" color="muted" className="mt-6 opacity-80">
                 PDFs, images, and common lab report formats are all supported.
-              </p>
+              </Typography>
             </div>
           </div>
         ) : activeTab === "files" ? (

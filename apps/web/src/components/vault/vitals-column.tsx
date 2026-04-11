@@ -11,6 +11,7 @@ import {
   type VitalMetric,
   type HealthScore,
 } from "@/data/vault-health-data";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    VITALS COLUMN — narrow left panel
@@ -50,10 +51,10 @@ const HealthScoreRing = ({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold" style={{ color }}>{score}</span>
-          <span className="text-[10px] text-muted-foreground">/ 100</span>
+          <Typography variant="micro" color="muted" as="span">/ 100</Typography>
         </div>
       </div>
-      <span className="text-xs font-semibold text-muted-foreground">Health Score</span>
+      <Typography variant="caption" weight="semibold" color="muted" as="span">Health Score</Typography>
       {/* Mini breakdown */}
       <div className="flex flex-wrap justify-center gap-1 max-w-[200px]">
         {breakdown.map((b) => (
@@ -99,8 +100,8 @@ const VitalRow = ({
     >
       <span className="text-sm shrink-0">{metric.icon}</span>
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium truncate">{metric.label}</div>
-        <div className="text-[11px] text-muted-foreground">{metric.range}</div>
+        <Typography variant="caption" weight="medium" truncate={true} as="div">{metric.label}</Typography>
+        <Typography variant="micro" color="muted" as="div">{metric.range}</Typography>
       </div>
       <div className="text-right shrink-0 flex items-center gap-1">
         <span
@@ -113,7 +114,7 @@ const VitalRow = ({
         >
           {metric.value}
         </span>
-        <span className="text-[10px] text-muted-foreground">{metric.unit}</span>
+        <Typography variant="micro" color="muted" as="span">{metric.unit}</Typography>
         <TrendIcon trend={metric.trend} />
       </div>
       <ChevronRightIcon className="size-3.5 text-muted-foreground shrink-0" />
@@ -195,8 +196,8 @@ export const VitalsColumn = ({ onMetricClick, activeMetricId }: VitalsColumnProp
               <div key={med.name} className="flex items-start gap-2 py-1.5">
                 <div className="size-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-xs font-medium">{med.name} {med.dose}</div>
-                  <div className="text-[10px] text-muted-foreground">{med.frequency} · Since {med.since}</div>
+                  <Typography variant="caption" weight="medium" as="div">{med.name} {med.dose}</Typography>
+                  <Typography variant="micro" color="muted" as="div">{med.frequency} · Since {med.since}</Typography>
                 </div>
               </div>
             ))}
@@ -226,7 +227,7 @@ export const VitalsColumn = ({ onMetricClick, activeMetricId }: VitalsColumnProp
                   alert.severity === "warning" && "text-amber-500",
                   alert.severity === "info" && "text-blue-500",
                 )} />
-                <span className="text-[11px] leading-tight">{alert.message}</span>
+                <Typography variant="micro" as="span" className="leading-tight">{alert.message}</Typography>
               </button>
             ))}
           </div>

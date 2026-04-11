@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useMedicalSystems } from "@/data/medical-systems-data";
 import type { RawMedSystem } from "@/data/medical-systems-data";
 import { resolveIcon } from "@/lib/icon-resolver";
+import Typography from "@/components/ui/typography";
 
 /* ═══════════════════════════════════════════════════════════════════
    SYSTEMS TAB — three-column layout
@@ -68,8 +69,8 @@ const SystemListPanel = ({
               <div className="flex items-start gap-2">
                 <Icon className={cn("size-4 mt-0.5 shrink-0", sys.color)} />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-medium">{sys.name}</h4>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{sys.origin}</p>
+                  <Typography variant="caption" weight="medium" as="h4">{sys.name}</Typography>
+                  <Typography variant="micro" color="muted">{sys.origin}</Typography>
                 </div>
               </div>
             </button>
@@ -91,19 +92,19 @@ const SystemDetail = ({ system }: { system: RawMedSystem }) => {
           <Icon className={cn("size-5", system.color)} />
         </div>
         <div>
-          <h1 className="text-xl font-bold">{system.name}</h1>
-          <p className="text-xs text-muted-foreground">{system.origin}</p>
+          <Typography variant="h1">{system.name}</Typography>
+          <Typography variant="caption" color="muted">{system.origin}</Typography>
         </div>
       </div>
 
       {/* Principles */}
       <div className="rounded-xl border border-border p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Core Principles</h3>
+        <Typography variant="h5" as="h3">Core Principles</Typography>
         <div className="space-y-2">
           {system.principles.map((p, i) => (
             <div key={i} className="flex items-start gap-2.5">
-              <span className="text-primary text-sm font-bold mt-0.5 shrink-0">{i + 1}</span>
-              <p className="text-sm leading-relaxed">{p}</p>
+              <Typography variant="body-sm" weight="bold" color="primary" as="span" className="mt-0.5 shrink-0">{i + 1}</Typography>
+              <Typography variant="body">{p}</Typography>
             </div>
           ))}
         </div>
@@ -114,26 +115,26 @@ const SystemDetail = ({ system }: { system: RawMedSystem }) => {
         <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/30 p-4">
           <div className="flex items-center gap-1.5 mb-3">
             <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Strengths</h3>
+            <Typography variant="h5" as="h3">Strengths</Typography>
           </div>
           <div className="space-y-1.5">
             {system.strengths.map((s, i) => (
-              <p key={i} className="text-xs leading-relaxed flex items-start gap-1.5">
+              <Typography key={i} variant="body-sm" className="flex items-start gap-1.5">
                 <span className="text-emerald-500 mt-0.5 shrink-0">•</span> {s}
-              </p>
+              </Typography>
             ))}
           </div>
         </div>
         <div className="rounded-xl border border-amber-200 dark:border-amber-800/30 p-4">
           <div className="flex items-center gap-1.5 mb-3">
             <AlertTriangleIcon className="size-3.5 text-amber-500" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-600">Limitations</h3>
+            <Typography variant="h5" as="h3">Limitations</Typography>
           </div>
           <div className="space-y-1.5">
             {system.limitations.map((l, i) => (
-              <p key={i} className="text-xs leading-relaxed flex items-start gap-1.5">
+              <Typography key={i} variant="body-sm" className="flex items-start gap-1.5">
                 <span className="text-amber-500 mt-0.5 shrink-0">•</span> {l}
-              </p>
+              </Typography>
             ))}
           </div>
         </div>
@@ -141,7 +142,7 @@ const SystemDetail = ({ system }: { system: RawMedSystem }) => {
 
       {/* Key Practices */}
       <div className="rounded-xl border border-border p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Key Practices</h3>
+        <Typography variant="h5" as="h3">Key Practices</Typography>
         <div className="flex flex-wrap gap-2">
           {system.keyPractices.map((p) => (
             <span key={p} className={cn("text-xs px-3 py-1.5 rounded-full border", system.border, system.bg, system.color)}>
@@ -155,10 +156,10 @@ const SystemDetail = ({ system }: { system: RawMedSystem }) => {
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <div className="flex items-center gap-1.5 mb-2">
           <ShieldCheckIcon className="size-3.5 text-primary" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-primary">Integration & Recognition</h3>
+          <Typography variant="h5" as="h3">Integration & Recognition</Typography>
         </div>
-        <p className="text-sm leading-relaxed">{system.integration}</p>
-        <p className="text-xs text-muted-foreground mt-2 italic">{system.govtRecognition}</p>
+        <Typography variant="body">{system.integration}</Typography>
+        <Typography variant="caption" color="muted" className="mt-2 italic">{system.govtRecognition}</Typography>
       </div>
     </div>
   );
@@ -178,7 +179,7 @@ const SystemInfoPanel = ({
         <div>
           <div className="flex items-center gap-1.5 px-1 mb-2">
             <GlobeIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">All Systems</span>
+            <Typography variant="overline" color="muted" as="span">All Systems</Typography>
           </div>
           <div className="space-y-1.5">
             {systems.map((sys) => {
@@ -195,9 +196,9 @@ const SystemInfoPanel = ({
                 >
                   <div className="flex items-center gap-2">
                     <Icon className={cn("size-3.5", sys.color)} />
-                    <span className="text-[11px] font-medium">{sys.name}</span>
+                    <Typography variant="micro" weight="medium" as="span">{sys.name}</Typography>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{sys.origin}</p>
+                  <Typography variant="micro" color="muted">{sys.origin}</Typography>
                 </div>
               );
             })}
@@ -208,11 +209,11 @@ const SystemInfoPanel = ({
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
           <div className="flex items-center gap-1.5 mb-1">
             <BookOpenIcon className="size-3 text-primary" />
-            <span className="text-[10px] font-semibold text-primary">About Systems</span>
+            <Typography variant="micro" weight="semibold" color="primary" as="span">About Systems</Typography>
           </div>
-          <p className="text-[10px] leading-relaxed text-muted-foreground">
+          <Typography variant="micro" color="muted">
             ArogyaLearn covers major medical systems practised worldwide. Each system is presented with its principles, evidence base, and integration status to help you understand diverse approaches to health.
-          </p>
+          </Typography>
         </div>
       </div>
     </div>
@@ -230,10 +231,10 @@ const SystemsLanding = ({
     <div className="max-w-3xl mx-auto py-6 space-y-6">
       <div className="text-center mb-6">
         <GlobeIcon className="size-8 mx-auto text-primary mb-2" />
-        <h2 className="text-lg font-bold">Medical Systems of the World</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <Typography variant="h2" as="h2">Medical Systems of the World</Typography>
+        <Typography variant="body" color="muted" className="mt-1">
           Explore and compare different approaches to health and healing
-        </p>
+        </Typography>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {systems.map((sys) => {
@@ -252,14 +253,14 @@ const SystemsLanding = ({
                   <Icon className={cn("size-5", sys.color)} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold">{sys.name}</h3>
-                  <p className="text-[11px] text-muted-foreground">{sys.origin}</p>
+                  <Typography variant="h4" as="h3">{sys.name}</Typography>
+                  <Typography variant="micro" color="muted">{sys.origin}</Typography>
                 </div>
                 <ArrowRightIcon className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+              <Typography variant="caption" color="muted" className="mt-2 line-clamp-2">
                 {sys.principles[0]}
-              </p>
+              </Typography>
             </button>
           );
         })}

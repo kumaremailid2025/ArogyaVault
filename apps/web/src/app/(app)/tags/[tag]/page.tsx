@@ -29,6 +29,7 @@ import type { CommunityPost } from "@/models/community";
 /* Static data to seed the store if user navigates directly */
 import { useCommunity } from "@/data/community-data";
 import { useLinkedMembers } from "@/data/linked-member-data";
+import Typography from "@/components/ui/typography";
 
 const TagPage = () => {
   const { tag: tagSlug } = useParams<{ tag: string }>();
@@ -75,9 +76,9 @@ const TagPage = () => {
           { label: `${posts.length} ${posts.length === 1 ? "post" : "posts"}`, icon: <TagIcon className="size-2.5" /> },
         ]}
         description={
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
             All posts tagged with &ldquo;{tagLabel}&rdquo; across the community and linked groups.
-          </p>
+          </Typography>
         }
       />
 
@@ -87,10 +88,10 @@ const TagPage = () => {
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <TagIcon className="size-10 text-muted-foreground/30 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">No posts with this tag</p>
-              <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+              <Typography variant="body" weight="medium" color="muted">No posts with this tag</Typography>
+              <Typography variant="caption" color="muted" className="/70 mt-1 max-w-xs">
                 Posts tagged &ldquo;{tagLabel}&rdquo; will appear here once they are created.
-              </p>
+              </Typography>
               <Button asChild variant="outline" size="sm" className="mt-4">
                 <Link href="/community">Back to Community</Link>
               </Button>
@@ -115,10 +116,10 @@ const TagPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                            <span className="text-sm font-semibold">{post.author}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <Typography variant="h4" as="span">{post.author}</Typography>
+                            <Typography variant="caption" color="muted" as="span">
                               {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
-                            </span>
+                            </Typography>
                             <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
                               {post.tag}
                             </Badge>
@@ -142,15 +143,15 @@ const TagPage = () => {
                                 {isFav ? "Remove from favorites" : "Add to favorites"}
                               </TooltipContent>
                             </Tooltip>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Typography variant="caption" color="muted" as="span" className="flex items-center gap-1">
                               <ThumbsUpIcon className="size-3" /> {post.likes}
-                            </span>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1">
+                            </Typography>
+                            <Typography variant="caption" color="muted" as="span" className="flex items-center gap-1 ml-1">
                               <MessageSquareIcon className="size-3" /> {post.replyCount}
-                            </span>
+                            </Typography>
                           </div>
                         </div>
-                        <p className="text-sm mt-1 leading-relaxed">{post.text}</p>
+                        <Typography variant="body" className="mt-1">{post.text}</Typography>
                       </div>
                     </div>
                   </div>

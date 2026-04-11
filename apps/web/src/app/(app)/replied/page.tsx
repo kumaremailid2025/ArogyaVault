@@ -17,6 +17,7 @@ import { Button } from "@/core/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/core/ui/tooltip";
 import { useRepliedStore, useFavoritesStore, useLikesStore, tagToSlug } from "@/stores";
 import type { CommunityPost } from "@/models/community";
+import Typography from "@/components/ui/typography";
 
 const RepliedPage = () => {
   const { getReplies } = useRepliedStore();
@@ -38,9 +39,9 @@ const RepliedPage = () => {
           { label: `${entries.length} ${entries.length === 1 ? "post" : "posts"}`, icon: <MessageSquareIcon className="size-2.5" /> },
         ]}
         description={
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
             Posts you have replied to, along with your reply. Reply to a post in the community to see it here.
-          </p>
+          </Typography>
         }
       />
 
@@ -49,10 +50,10 @@ const RepliedPage = () => {
         {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <MessageSquareIcon className="size-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No replies yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+            <Typography variant="body" weight="medium" color="muted">No replies yet</Typography>
+            <Typography variant="caption" color="muted" className="/70 mt-1 max-w-xs">
               Reply to posts in the community and they will appear here.
-            </p>
+            </Typography>
             <Button asChild variant="outline" size="sm" className="mt-4">
               <Link href="/community">Back to Community</Link>
             </Button>
@@ -81,10 +82,10 @@ const RepliedPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                            <span className="text-sm font-semibold">{post.author}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <Typography variant="h4" as="span">{post.author}</Typography>
+                            <Typography variant="caption" color="muted" as="span">
                               {hasLocation ? `${(post as CommunityPost).location} · ` : ""}{post.time}
-                            </span>
+                            </Typography>
                             <Link href={`/tags/${tagToSlug(post.tag)}`}>
                               <Badge variant="outline" className="text-[10px] text-primary border-primary/30 hover:bg-primary/10 cursor-pointer transition-colors">
                                 {post.tag}
@@ -122,7 +123,7 @@ const RepliedPage = () => {
                             </Tooltip>
                           </div>
                         </div>
-                        <p className="text-sm mt-1 leading-relaxed">{post.text}</p>
+                        <Typography variant="body" className="mt-1">{post.text}</Typography>
                       </div>
                     </div>
                   </div>
@@ -137,12 +138,12 @@ const RepliedPage = () => {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold">Your reply</span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <Typography variant="h5" as="span">Your reply</Typography>
+                          <Typography variant="micro" color="muted" as="span">
                             {new Date(entry.repliedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                          </Typography>
                         </div>
-                        <p className="text-xs mt-0.5 leading-relaxed text-muted-foreground">{entry.replyText}</p>
+                        <Typography variant="caption" color="muted" className="mt-0.5">{entry.replyText}</Typography>
                       </div>
                     </div>
                   </div>

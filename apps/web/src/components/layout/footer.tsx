@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HeartPulseIcon, MailIcon, PhoneIcon, MapPinIcon } from "lucide-react";
 import { Container, Grid, Stack, Row, Divider } from "@/core/primitives";
 import { Muted, Small, Text, H4 } from "@/core/primitives";
+import Typography from "@/components/ui/typography";
 
 const PRODUCT_LINKS = [
   { label: "Features",     href: "/features" },
@@ -49,7 +50,7 @@ export const Footer = () => {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <HeartPulseIcon className="size-4" />
                 </div>
-                <span className="text-lg tracking-tight">ArogyaVault</span>
+                <Typography variant="h4" as="span" className="tracking-tight">ArogyaVault</Typography>
               </Link>
               <Muted className="max-w-xs leading-relaxed">
                 Your complete family health records platform. Secure, AI-powered, and always accessible.

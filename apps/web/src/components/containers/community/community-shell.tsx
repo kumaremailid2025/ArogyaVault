@@ -1,14 +1,18 @@
 "use client";
 
 /**
- * CommunityShell
- * --------------
+ * Layout wrapper for community routes.
+ *
+ * @packageDocumentation
+ * @category Containers
+ *
+ * @remarks
  * Thin layout wrapper for all community routes.
  * Renders: banner (with tab navigation) + invite modal + {children}.
  *
  * Used by:
- *   - community/layout.tsx  (variant="community")
- *   - community/[groupId]/layout.tsx  (variant="invited")
+ * - community/layout.tsx  (variant="community")
+ * - community/[groupId]/layout.tsx  (variant="invited")
  *
  * The active tab is derived from the current pathname — no prop needed.
  * Children are the active route's page component (feed, files, or members).
@@ -24,20 +28,44 @@ import {
   ArrowRightLeftIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { Button } from "@/core/ui/button";
 
 import { CommunityBanner } from "@/components/community/community-banner";
 import { useLinkedMembers } from "@/data/linked-member-data";
 import type { CommunityTab, CommunityVariant, BannerConfig } from "./types";
 import { GROUP_SLUG_TO_UUID } from "./types";
+import Typography from "@/components/ui/typography";
+
+/* ══════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════════════════ */
+
+/** Community title for the main (user's own) community. */
+const COMMUNITY_TITLE = "Arogya Community";
+
+/** Badge label indicating the community is public. */
+const PUBLIC_BADGE_LABEL = "Public";
+
+/** Members count badge label. */
+const MEMBERS_COUNT_BADGE_LABEL = "12,847 members";
+
+/** Description text for the main community. */
+const COMMUNITY_DESCRIPTION =
+  "Connect with other ArogyaVault members. Ask questions, share experiences, support each other.";
 
 /** UUID regex — dynamic invite groups use their UUID directly as the slug. */
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/* ══════════════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════════════ */
+
 /**
  * Resolve a group slug (or UUID) to the UUID segment we use in URLs.
  * - Static seed slugs ("ravi") → UUID via GROUP_SLUG_TO_UUID.
  * - Dynamic invite groups already pass in their UUID → return as-is.
+ * - Invalid slugs return an empty string.
  */
 const slugToRouteId = (group: string): string => {
   const mapped = GROUP_SLUG_TO_UUID[group];
@@ -56,18 +84,22 @@ const InviteModal = dynamic(
   { ssr: false, loading: () => null },
 );
 
-/* ── Derive active tab from pathname ──────────────────────────────── */
-
+/**
+ * Derive the active tab from the current pathname.
+ * Matches tab routes and their sub-routes (e.g., "/files" or "/files/123").
+ */
 const deriveTab = (pathname: string): CommunityTab => {
-  // Match whether the path is the tab itself (".../members") OR a
-  // sub-route under it (".../members/123"). Same for files.
   if (/\/files(\/|$)/.test(pathname)) return "files";
   if (/\/members(\/|$)/.test(pathname)) return "members";
   return "feed";
 };
 
-/* ── Banner config builders ───────────────────────────────────────── */
-
+/**
+ * Build the banner config for the user's own community.
+ * @param tab The currently active tab.
+ * @param onInvite Handler called when the invite link is clicked.
+ * @returns Complete banner configuration.
+ */
 const buildCommunityBanner = (
   tab: CommunityTab,
   onInvite: () => void,
@@ -77,27 +109,27 @@ const buildCommunityBanner = (
       <MessageSquareIcon className="size-4" />
     </div>
   ),
-  title: "Arogya Community",
+  title: COMMUNITY_TITLE,
   badges: [
-    { label: "Public", icon: <GlobeIcon className="size-2.5" /> },
-    { label: "12,847 members", icon: <UsersIcon className="size-2.5" /> },
+    { label: PUBLIC_BADGE_LABEL, icon: <GlobeIcon className="size-2.5" /> },
+    {
+      label: MEMBERS_COUNT_BADGE_LABEL,
+      icon: <UsersIcon className="size-2.5" />,
+    },
   ],
   description: (
-    <p className="text-sm text-primary-foreground/80 leading-relaxed">
-      Connect with other ArogyaVault members. Ask questions, share experiences,
-      support each other.{" "}
+    <Typography variant="body" color="inverse" className="opacity-80 leading-relaxed">
+      {COMMUNITY_DESCRIPTION}{" "}
       <span className="text-primary-foreground/50 mx-1">·</span>
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          onInvite();
-        }}
-        className="inline-flex items-center gap-1 underline underline-offset-2 text-primary-foreground/90 hover:text-primary-foreground"
+      <Button
+        variant="link"
+        size="sm"
+        onClick={onInvite}
+        className="inline-flex items-center gap-1 underline underline-offset-2 text-primary-foreground/90 hover:text-primary-foreground h-auto p-0"
       >
         <UserPlusIcon className="size-3" /> Invite someone to community
-      </a>
-    </p>
+      </Button>
+    </Typography>
   ),
   tabs: [
     { key: "feed" as const, label: "Feed", href: "/community" },
@@ -111,6 +143,14 @@ const buildCommunityBanner = (
   activeTab: tab,
 });
 
+/**
+ * Build the banner config for an invited (linked) group.
+ * @param group The group slug or UUID.
+ * @param tab The currently active tab.
+ * @param onInvite Handler called when the invite link is clicked.
+ * @param linkedMemberData Linked member data lookup (from useLinkedMembers hook).
+ * @returns Complete banner configuration.
+ */
 const buildInvitedBanner = (
   group: string,
   tab: CommunityTab,
@@ -149,16 +189,14 @@ const buildInvitedBanner = (
           {member.scope}
         </span>
         <span className="text-xs text-primary-foreground/50 mx-1">·</span>
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onInvite();
-          }}
-          className="inline-flex items-center gap-1 text-xs underline underline-offset-2 text-primary-foreground/90 hover:text-primary-foreground"
+        <Button
+          variant="link"
+          size="sm"
+          onClick={onInvite}
+          className="inline-flex items-center gap-1 text-xs underline underline-offset-2 text-primary-foreground/90 hover:text-primary-foreground h-auto p-0"
         >
           <UserPlusIcon className="size-3" /> Invite to this group
-        </a>
+        </Button>
       </div>
     ),
     tabs: [
@@ -180,17 +218,36 @@ const buildInvitedBanner = (
 
 /* ── Shell component ──────────────────────────────────────────────── */
 
+/**
+ * Props for the community shell component.
+ *
+ * @category Types
+ */
 interface CommunityShellProps {
+  /** Whether this is the user's own community or an invited group. */
   variant: CommunityVariant;
+  /** Group slug or UUID. */
   group: string;
+  /** Child routes to render in the main content area. */
   children: React.ReactNode;
 }
 
+/**
+ * Render a community shell with banner, modal, and child routes.
+ *
+ * @param props - Component props.
+ * @param props.variant - Community variant (own or invited).
+ * @param props.group - Group slug or UUID.
+ * @param props.children - Nested route content.
+ * @returns The rendered shell.
+ *
+ * @category Containers
+ */
 export const CommunityShell = ({
   variant,
   group,
   children,
-}: CommunityShellProps) => {
+}: CommunityShellProps): React.ReactElement => {
   const { LINKED_MEMBER_DATA } = useLinkedMembers();
   const pathname = usePathname();
   const tab = deriveTab(pathname);

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { useMembersContext } from "@/app/(app)/community/_context/members-context";
 import { ACTIVITY_ICON_MAP } from "@/components/containers/community/right-panel-shared";
+import Typography from "@/components/ui/typography";
 
 interface MemberDetailPageProps {
   params: {
@@ -34,7 +35,7 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
   if (!activeMember) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <p className="text-sm text-muted-foreground">Member not found</p>
+        <Typography variant="body" color="muted">Member not found</Typography>
       </div>
     );
   }
@@ -44,7 +45,7 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
       {/* ── Pinned header: member profile card ── */}
       <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold">Member Profile</span>
+          <Typography variant="h4" as="span">Member Profile</Typography>
           <Link href={`${basePath}/members`}>
             <Button
               variant="ghost"
@@ -74,7 +75,7 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold truncate">{activeMember.name}</span>
+              <Typography variant="h4" as="span" truncate={true}>{activeMember.name}</Typography>
               <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
                 {activeMember.role}
               </Badge>
@@ -119,8 +120,8 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
           ].map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-background p-1.5 text-center">
               <s.icon className="size-3 text-primary/60 mx-auto mb-0.5" />
-              <p className="text-xs font-bold text-primary leading-tight">{s.value}</p>
-              <p className="text-[9px] text-muted-foreground">{s.label}</p>
+              <Typography variant="caption" weight="bold" color="primary">{s.value}</Typography>
+              <Typography variant="micro" color="muted">{s.label}</Typography>
             </div>
           ))}
         </div>
@@ -129,14 +130,14 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
       {/* ── Scrollable activity feed ── */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="px-4 py-3">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Typography variant="overline" color="muted">
             <ZapIcon className="size-3 text-primary" />
             Recent Activity
-          </p>
+          </Typography>
 
           {activeMember.activities.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-center">
-              <p className="text-xs text-muted-foreground">No recent activity.</p>
+              <Typography variant="caption" color="muted">No recent activity.</Typography>
             </div>
           ) : (
             <div className="relative">
@@ -161,23 +162,23 @@ export default function MemberDetailPage({ params }: MemberDetailPageProps) {
                       {/* Content */}
                       <div className="flex-1 min-w-0 pt-0.5">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                          <Typography variant="overline" color="muted" as="span">
                             {iconConfig.label}
-                          </span>
+                          </Typography>
                           {activity.tag && (
                             <Badge variant="outline" className="text-[9px] border-primary/20 text-primary">
                               {activity.tag}
                             </Badge>
                           )}
-                          <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+                          <Typography variant="micro" color="muted" as="span" className="ml-auto shrink-0">
                             {activity.time}
-                          </span>
+                          </Typography>
                         </div>
-                        <p className="text-xs leading-relaxed">{activity.text}</p>
+                        <Typography variant="caption">{activity.text}</Typography>
                         {activity.context && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 italic">
+                          <Typography variant="micro" color="muted">
                             {activity.context}
-                          </p>
+                          </Typography>
                         )}
                       </div>
                     </div>

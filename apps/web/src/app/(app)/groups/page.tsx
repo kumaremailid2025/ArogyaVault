@@ -10,6 +10,7 @@ import { Badge } from "@/core/ui/badge";
 import { Avatar, AvatarFallback } from "@/core/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useGroups } from "./_components/groups-shared";
+import Typography from "@/components/ui/typography";
 
 /* ── All groups list (default view) ─────────────────────────────── */
 const AllGroupsView = () => {
@@ -18,10 +19,10 @@ const AllGroupsView = () => {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Groups & Sharing</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <Typography variant="h1">Groups &amp; Sharing</Typography>
+          <Typography variant="body" color="muted" className="mt-0.5">
             Manage who has access to your records and what they can see.
-          </p>
+          </Typography>
         </div>
         <Button size="sm" className="flex items-center gap-1.5">
           <PlusCircleIcon className="size-4" /> Invite Person
@@ -39,7 +40,7 @@ const AllGroupsView = () => {
           >
             <cfg.icon className={cn("size-3.5", cfg.color)} />
             <span className={cfg.color}>{cfg.label}</span>
-            <span className="text-muted-foreground">— {cfg.desc}</span>
+            <Typography color="muted" as="span">— {cfg.desc}</Typography>
           </div>
         ))}
       </div>
@@ -74,12 +75,12 @@ const AllGroupsView = () => {
                       <span className={cfg.color}>{cfg.label}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
+                  <Typography variant="caption" color="muted" className="mt-1.5">
                     {g.members} members · Joined {g.joined}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  </Typography>
+                  <Typography variant="caption" color="muted" className="mt-0.5">
                     {g.last}
-                  </p>
+                  </Typography>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Link href={`/groups/${g.id}`}>
@@ -107,13 +108,13 @@ const AllGroupsView = () => {
 
       <div className="rounded-xl border border-dashed border-border p-6 text-center">
         <UsersIcon className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-        <h3 className="font-semibold text-sm mb-1">
+        <Typography variant="h4" className="mb-1">
           Add a doctor or family member
-        </h3>
-        <p className="text-xs text-muted-foreground mb-3 max-w-sm mx-auto">
+        </Typography>
+        <Typography variant="caption" color="muted" className="mb-3 max-w-sm mx-auto">
           Enter their mobile number to send a secure invite. They control
           whether to accept.
-        </p>
+        </Typography>
         <Button
           size="sm"
           variant="outline"

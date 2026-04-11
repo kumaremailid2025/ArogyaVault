@@ -1,5 +1,6 @@
 import { FileQuestion, Home } from "lucide-react";
 import Link from "next/link";
+import Typography from "@/components/ui/typography";
 
 const AppNotFound = () => (
   <div className="flex h-full items-center justify-center p-6">
@@ -9,10 +10,10 @@ const AppNotFound = () => (
       </div>
 
       <div className="space-y-1.5">
-        <h2 className="text-lg font-semibold">Page not found</h2>
-        <p className="text-sm text-muted-foreground">
+        <Typography variant="h2">Page not found</Typography>
+        <Typography variant="body" color="muted">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
+        </Typography>
       </div>
 
       <Link

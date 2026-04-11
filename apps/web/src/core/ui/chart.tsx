@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
+import Typography from "@/components/ui/typography";
 
 const THEMES = { light: "", dark: ".dark" } as const;
 
@@ -111,7 +112,7 @@ const ChartTooltipContent = ({ active, payload, className, indicator = "dot", hi
                   <div className={cn("flex flex-1 justify-between leading-none", nestLabel ? "items-end" : "items-center")}>
                     <div className="grid gap-1.5">
                       {nestLabel ? tooltipLabel : null}
-                      <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+                      <Typography color="muted" as="span">{itemConfig?.label || item.name}</Typography>
                     </div>
                     {item.value !== undefined && (
                       <span className="font-mono font-medium tabular-nums text-foreground">{item.value.toLocaleString()}</span>
