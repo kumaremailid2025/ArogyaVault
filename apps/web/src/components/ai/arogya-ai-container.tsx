@@ -19,6 +19,8 @@ import { useSendAiMessage } from "@/hooks/api";
 /* ── Sidebar panels — always visible in chat tab, static import ──── */
 import { ChatSessionsPanel } from "@/components/ai/chat-sessions-panel";
 import { AiContextPanel } from "@/components/ai/ai-context-panel";
+import { AiFilesView } from "@/components/ai/ai-files-view";
+import { AiCompanionView } from "@/components/ai/ai-companion-view";
 
 /* ═══════════════════════════════════════════════════════════════════
    BUBBLE — conversation message
@@ -134,7 +136,7 @@ export const ArogyaAiContainer = () => {
   const searchParams = useSearchParams();
   const router       = useRouter();
 
-  const [activeTab, setActiveTab]           = React.useState<AiTab>("chat");
+  const [activeTab, setActiveTab]           = React.useState<AiTab>("ai-chat");
   const [messages, setMessages]             = React.useState<ConversationMessage[]>([]);
   const [inputText, setInputText]           = React.useState("");
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
@@ -150,7 +152,7 @@ export const ArogyaAiContainer = () => {
   React.useEffect(() => {
     if (incomingQ && incomingQ !== processedQ.current) {
       processedQ.current = incomingQ;
-      setActiveTab("chat");
+      setActiveTab("ai-chat");
       addToConversation(incomingQ);
       router.replace("/arogya-ai");
     }
@@ -200,7 +202,7 @@ export const ArogyaAiContainer = () => {
     setMessages([]);
     setInputText("");
     setActiveSessionId(null);
-    setActiveTab("chat");
+    setActiveTab("ai-chat");
   };
 
   const handleSelectSession = (sessionId: string) => {
@@ -208,7 +210,7 @@ export const ArogyaAiContainer = () => {
     const session = CHAT_SESSIONS.find((s) => s.id === sessionId);
     if (!session) return;
     setActiveSessionId(sessionId);
-    setActiveTab("chat");
+    setActiveTab("ai-chat");
     /* Load the session with the preview as the user message, then fetch
        the AI reply from the backend. */
     setMessages([{ role: "user", text: session.preview }]);
@@ -235,123 +237,129 @@ export const ArogyaAiContainer = () => {
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Banner */}
-      <ArogyaAiBanner
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        sessionCount={CHAT_SESSIONS.length}
-      />
+    <div className="h-full flex overflow-hidden">
 
-      {/* Content area */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === "history" ? (
-          /* ─── HISTORY TAB ─── */
-          <div className="h-full overflow-y-auto px-5 lg:px-6">
-            <HistoryView sessions={CHAT_SESSIONS} onSelectSession={handleSelectSession} />
-          </div>
-        ) : (
-          /* ─── CHAT TAB — three-column layout ─── */
-          <div className="h-full flex overflow-hidden">
-            {/* Left — Chat sessions (narrow) */}
-            <div className="w-[240px] shrink-0 border-r border-border overflow-hidden">
-              <ChatSessionsPanel
-                activeSessionId={activeSessionId}
-                onSelectSession={handleSelectSession}
-                onNewChat={handleNewChat}
-              />
-            </div>
+      {/* ── LEFT — Sessions panel (260px, matches community sidebar) ── */}
+      <div className="w-[260px] shrink-0 border-r border-border overflow-hidden flex flex-col">
+        <ChatSessionsPanel
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+          onNewChat={handleNewChat}
+        />
+      </div>
 
-            {/* Center — Chat or Landing (flexible) */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {!hasConversation ? (
-                /* Landing state */
-                <>
-                  <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
-                    <AskAiLanding onAsk={addToConversation} />
+      {/* ── CONTENT AREA — Banner spans full width, then (chat | context) below ── */}
+      {/* Mirrors community-shell: flex-col → [Banner] [flex-1 flex row → content + right panel] */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        {/* Banner — full width of content area (sessions panel excluded) */}
+        <ArogyaAiBanner
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          sessionCount={CHAT_SESSIONS.length}
+        />
+
+        {/* Below-banner row: chat/history (flex-1) + context panel (360px) */}
+        <div className="flex-1 overflow-hidden flex min-h-0">
+
+          {/* ── CHAT / HISTORY / FILES / COMPANION ── */}
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+            {activeTab === "history" ? (
+              /* ─── HISTORY TAB ─── */
+              <div className="h-full overflow-y-auto px-5 lg:px-6">
+                <HistoryView sessions={CHAT_SESSIONS} onSelectSession={handleSelectSession} />
+              </div>
+            ) : activeTab === "files" ? (
+              /* ─── FILES TAB ─── */
+              <AiFilesView onAsk={(q) => { addToConversation(q); setActiveTab("ai-chat"); }} />
+            ) : activeTab === "companion" ? (
+              /* ─── COMPANION TAB ─── */
+              <AiCompanionView />
+            ) : !hasConversation ? (
+              /* ─── AI CHAT TAB — Landing state ─── */
+              <>
+                <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+                  <AskAiLanding onAsk={addToConversation} />
+                </div>
+                <div className="shrink-0 px-4 pb-3">
+                  <SmartInput
+                    value={inputText}
+                    onChange={setInputText}
+                    onSubmit={handleInputSubmit}
+                    placeholder="Ask ArogyaAI about your health records…"
+                    submitLabel="Ask"
+                    disabled={isTyping}
+                    modes={["text", "voice", "image", "attach"]}
+                    autoFocus
+                    maxRows={4}
+                    layout="chat"
+                  />
+                </div>
+              </>
+            ) : (
+              /* ─── AI CHAT TAB — Conversation state ─── */
+              <>
+                <div className="flex-1 overflow-y-auto px-4">
+                  <div className="max-w-2xl mx-auto flex flex-col gap-4 py-4">
+                    {messages.map((msg, i) => (
+                      <Bubble key={i} msg={msg} />
+                    ))}
+                    {isTyping && (
+                      <div className="flex gap-3 justify-start">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground mt-0.5">
+                          <BrainCircuitIcon className="size-3.5" />
+                        </div>
+                        <div className="rounded-2xl rounded-tl-sm px-4 py-3 bg-muted border border-border text-sm flex items-center gap-2 text-muted-foreground">
+                          <LoaderIcon className="size-3.5 animate-spin" />
+                          ArogyaAI is thinking…
+                        </div>
+                      </div>
+                    )}
+                    <div ref={bottomRef} />
                   </div>
-                  <div className="shrink-0 px-4 pb-3">
-                    <div className="max-w-3xl mx-auto">
-                      <SmartInput
-                        value={inputText}
-                        onChange={setInputText}
-                        onSubmit={handleInputSubmit}
-                        placeholder="Ask ArogyaAI about your health records…"
-                        submitLabel="Ask"
-                        disabled={isTyping}
-                        modes={["text", "voice", "image", "attach"]}
-                        autoFocus
-                        maxRows={4}
-                        layout="chat"
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                /* Conversation state */
-                <>
-                  <div className="flex-1 overflow-y-auto px-4">
-                    <div className="max-w-3xl mx-auto flex flex-col gap-4 py-4">
-                      {messages.map((msg, i) => (
-                        <Bubble key={i} msg={msg} />
+                </div>
+                <div className="shrink-0 px-4 pb-3">
+                  {!isTyping && messages.length <= 4 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {SMART_SUGGESTIONS.slice(0, 4).map((s) => (
+                        <button
+                          key={s.text}
+                          onClick={() => addToConversation(s.text)}
+                          className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors cursor-pointer"
+                        >
+                          {s.text}
+                        </button>
                       ))}
-
-                      {isTyping && (
-                        <div className="flex gap-3 justify-start">
-                          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground mt-0.5">
-                            <BrainCircuitIcon className="size-3.5" />
-                          </div>
-                          <div className="rounded-2xl rounded-tl-sm px-4 py-3 bg-muted border border-border text-sm flex items-center gap-2 text-muted-foreground">
-                            <LoaderIcon className="size-3.5 animate-spin" />
-                            ArogyaAI is thinking…
-                          </div>
-                        </div>
-                      )}
-                      <div ref={bottomRef} />
                     </div>
-                  </div>
+                  )}
+                  <SmartInput
+                    value={inputText}
+                    onChange={setInputText}
+                    onSubmit={handleInputSubmit}
+                    placeholder="Ask a follow-up question…"
+                    submitLabel="Ask"
+                    disabled={isTyping}
+                    modes={["text", "voice", "image", "attach"]}
+                    autoFocus={false}
+                    maxRows={5}
+                    layout="chat"
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
-                  {/* Suggestions + input */}
-                  <div className="shrink-0 px-4 pb-3 space-y-2">
-                    <div className="max-w-3xl mx-auto">
-                      {!isTyping && messages.length <= 4 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {SMART_SUGGESTIONS.slice(0, 4).map((s) => (
-                            <button
-                              key={s.text}
-                              onClick={() => addToConversation(s.text)}
-                              className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              {s.text}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <SmartInput
-                        value={inputText}
-                        onChange={setInputText}
-                        onSubmit={handleInputSubmit}
-                        placeholder="Ask a follow-up question…"
-                        submitLabel="Ask"
-                        disabled={isTyping}
-                        modes={["text", "voice", "image", "attach"]}
-                        autoFocus={false}
-                        maxRows={5}
-                        layout="chat"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Right — Context panel (narrow) */}
-            <div className="w-[280px] shrink-0 border-l border-border overflow-hidden">
+          {/* ── RIGHT — Context panel (360px, matches community right panel) ── */}
+          {/* Hidden for Files and Companion tabs which are full-width experiences */}
+          {activeTab !== "files" && activeTab !== "companion" && (
+            <div className="w-[360px] shrink-0 border-l border-border overflow-hidden">
               <AiContextPanel onAsk={addToConversation} />
             </div>
-          </div>
-        )}
+          )}
+
+        </div>
       </div>
+
     </div>
   );
 };

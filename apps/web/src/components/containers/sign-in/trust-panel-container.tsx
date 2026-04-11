@@ -103,7 +103,7 @@ export const TrustPanelContainer = (): React.ReactElement => {
           <Typography variant="body" color="inverse" className="opacity-60 text-sm font-medium uppercase tracking-widest">
             Welcome back
           </Typography>
-          <Typography variant="hero">
+          <Typography variant="hero" color="inverse">
             Your health records,
             <br />
             always with you.
@@ -139,7 +139,7 @@ export const TrustPanelContainer = (): React.ReactElement => {
             />
           ))}
         </Row>
-        <Typography variant="body" color="primary" className="-foreground/85 leading-relaxed italic">
+        <Typography variant="body" color="inverse" className="opacity-85 leading-relaxed italic">
           &ldquo;{TESTIMONIAL.quote}&rdquo;
         </Typography>
         <Typography variant="caption" color="inverse" weight="medium" className="opacity-60">

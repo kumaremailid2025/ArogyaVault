@@ -59,7 +59,7 @@ const CommunitySidebar = () => {
           <COMMUNITY_GROUP.icon className="size-3.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <Typography variant="h4" as="p" className="leading-snug truncate">{COMMUNITY_GROUP.name}</Typography>
+          <Typography variant="h4" as="p" className="leading-snug truncate" color={isDefaultCommunity ? "inverse" : "default"}>{COMMUNITY_GROUP.name}</Typography>
           <Typography
             variant="micro"
             truncate={true}
@@ -102,7 +102,7 @@ const CommunitySidebar = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 min-w-0">
-                  <Typography variant="h5" as="p" truncate={true}>{g.name}</Typography>
+                  <Typography variant="h5" as="p" truncate={true} color={isActive ? "inverse" : "default"}>{g.name}</Typography>
                   {hasExtras && (
                     <span className={cn("text-[9px] font-medium shrink-0", isActive ? SUB_ON : SUB_OFF)}>
                       +{g.count}
@@ -244,7 +244,7 @@ const UserActivitySidebar = () => {
               )}>
                 <item.icon className="size-3" />
               </div>
-              <Typography variant="caption" weight="medium" as="span" className="flex-1" truncate={true}>{item.label}</Typography>
+              <Typography variant="caption" weight="medium" as="span" className="flex-1" truncate={true} color={isActive ? "inverse" : "default"}>{item.label}</Typography>
               <span className={cn(
                 "text-[10px] font-medium shrink-0 tabular-nums",
                 isActive ? SUB_ON : SUB_OFF
