@@ -17,6 +17,7 @@ import type { CommunityVariant } from "@/components/containers/community/types";
 
 import { FilesProvider } from "@/app/(app)/community/_context/files-context";
 import { FilesContainer } from "@/components/containers/community/files-container";
+import { CommunityColumns } from "@/components/community/community-columns";
 
 /* ── API hooks ────────────────────────────────────────────────── */
 import { useFiles, useRecentFileQA, useAskFileQuestion } from "@/hooks/api";
@@ -175,25 +176,21 @@ export const FilesLayoutContent = ({ variant, group, basePath, children }: Files
   /* ── Render ── */
   return (
     <FilesProvider value={contextValue}>
-      <>
-        {/* LEFT — Files list with search/filter */}
-        <FilesContainer
-          title={filesTitle}
-          files={communityFiles}
-          selectedFileId={selectedFileId}
-          onSelectFile={handleSelectFile}
-          onAiSummary={handleFileAiSummary}
-          onQA={handleFileQA}
-        />
-
-        {/* Vertical divider */}
-        <div className="w-px bg-border shrink-0" />
-
-        {/* RIGHT — Child panel page */}
-        <div className="w-[360px] shrink-0 border-l border-border overflow-hidden flex flex-col">
-          {children}
-        </div>
-      </>
+      <CommunityColumns
+        left={
+          <FilesContainer
+            title={filesTitle}
+            files={communityFiles}
+            selectedFileId={selectedFileId}
+            onSelectFile={handleSelectFile}
+            onAiSummary={handleFileAiSummary}
+            onQA={handleFileQA}
+          />
+        }
+        right={children}
+        rightPanelActive={selectedFileId !== null}
+        onCloseRightPanel={() => router.push(`${basePath}/files`)}
+      />
     </FilesProvider>
   );
 };

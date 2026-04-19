@@ -16,6 +16,7 @@ import type { CommunityVariant } from "@/components/containers/community/types";
 
 import { MembersProvider } from "@/app/(app)/community/_context/members-context";
 import { MembersContainer } from "@/components/containers/community/members-container";
+import { CommunityColumns } from "@/components/community/community-columns";
 
 /* ── API hooks ────────────────────────────────────────────────── */
 import { useMembers } from "@/hooks/api";
@@ -103,24 +104,20 @@ export const MembersLayoutContent = ({ variant, group, basePath, children }: Mem
   /* ── Render ── */
   return (
     <MembersProvider value={contextValue}>
-      <>
-        {/* LEFT — Members list with search/filter */}
-        <MembersContainer
-          title={membersTitle}
-          memberCount={memberCount}
-          members={membersList}
-          selectedMemberId={selectedMemberId}
-          onSelectMember={handleSelectMember}
-        />
-
-        {/* Vertical divider */}
-        <div className="w-px bg-border shrink-0" />
-
-        {/* RIGHT — Child panel page */}
-        <div className="w-[360px] shrink-0 border-l border-border overflow-hidden flex flex-col">
-          {children}
-        </div>
-      </>
+      <CommunityColumns
+        left={
+          <MembersContainer
+            title={membersTitle}
+            memberCount={memberCount}
+            members={membersList}
+            selectedMemberId={selectedMemberId}
+            onSelectMember={handleSelectMember}
+          />
+        }
+        right={children}
+        rightPanelActive={selectedMemberId !== null}
+        onCloseRightPanel={() => router.push(`${basePath}/members`)}
+      />
     </MembersProvider>
   );
 };

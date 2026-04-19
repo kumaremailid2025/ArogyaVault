@@ -8,6 +8,7 @@ import {
   SettingsIcon, LogOutIcon, UserCircleIcon, UserPlusIcon,
   UsersIcon, StarIcon, TagIcon, ThumbsUpIcon, MessageSquareIcon, ActivityIcon,
   VaultIcon, BotIcon, MessageCircleIcon, GraduationCapIcon,
+  MenuIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/core/ui/button";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores";
 import { useLogout } from "@/hooks/api";
 import { useSidebar } from "@/data/sidebar-data";
+import { useSidebarOverlay } from "@/components/app/sidebar-overlay-context";
 import Typography from "@/components/ui/typography";
 
 /* InviteModal only needed when the Invite button is clicked — load on demand */
@@ -76,6 +78,16 @@ export const AppHeader = () => {
   const [inviteOpen,   setInviteOpen]   = React.useState(false);
   const [inviteLevel,  setInviteLevel]  = React.useState<string | undefined>(undefined);
   const [notifOpen,    setNotifOpen]    = React.useState(false);
+
+  /* ── Sidebar overlay (< lg) — only wired for /community today ──
+     Spec: .spec/web/page/page-responsive.spec.md §2.2/§2.3/§3.1.
+     The hamburger is shown only below `lg` AND only when the overlay
+     is CLOSED — while the overlay is latched open the user is already
+     inside the Left Panel, so the button hides. */
+  const { open: sidebarOpen, toggle: toggleSidebar } = useSidebarOverlay();
+  const isCommunityRoute =
+    pathname === "/community" || pathname.startsWith("/community/");
+  const showHamburger = isCommunityRoute && !sidebarOpen;
 
   /* Build the level list — must match invite-modal.tsx exactly so the
      header dropdown replicates the modal's "Invite for" field. */
@@ -153,13 +165,29 @@ export const AppHeader = () => {
     <>
       <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 relative">
 
-        {/* ── Logo ─────────────────────────────────────────────── */}
-        <Link href="/community" className="flex items-center gap-2 font-bold text-primary cursor-pointer shrink-0">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <HeartPulseIcon className="size-3.5" />
-          </div>
-          <Typography variant="h4" as="span" className="tracking-tight">ArogyaVault</Typography>
-        </Link>
+        {/* ── Left cluster: (hamburger at < lg on /community) + Logo ── */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Hamburger — < lg only, hidden while overlay is latched open.
+              Clicking toggles the sidebar overlay (see AppSidebar). */}
+          {showHamburger && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open menu"
+              onClick={toggleSidebar}
+              className="lg:hidden size-9 -ml-1"
+            >
+              <MenuIcon className="size-5" />
+            </Button>
+          )}
+
+          <Link href="/community" className="flex items-center gap-2 font-bold text-primary cursor-pointer">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <HeartPulseIcon className="size-3.5" />
+            </div>
+            <Typography variant="h4" as="span" className="tracking-tight">ArogyaVault</Typography>
+          </Link>
+        </div>
 
         {/* ── Centred top nav ──────────────────────────────────── */}
         <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-0.5">

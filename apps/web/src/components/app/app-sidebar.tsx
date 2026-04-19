@@ -10,6 +10,7 @@ import { useTagsStore, tagToSlug, useLikesStore, useRepliedStore, useFavoritesSt
 import { useCommunity } from "@/data/community-data";
 import { useLinkedMembers } from "@/data/linked-member-data";
 import { useSidebar } from "@/data/sidebar-data";
+import { useSidebarOverlay } from "@/components/app/sidebar-overlay-context";
 import Typography from "@/components/ui/typography";
 
 /* Shared active / hover tokens */
@@ -265,17 +266,74 @@ const UserActivitySidebar = () => {
 
 export const AppSidebar = () => {
   const pathname = usePathname();
+  const { open: latchedOpen, setOpen } = useSidebarOverlay();
+  const [hovered, setHovered] = React.useState(false);
 
   const isCommunityRoute = pathname === "/community" || pathname.startsWith("/community/");
   const isTagsRoute = pathname.startsWith("/tags");
   const isActivityRoute = pathname === "/favorites" || pathname === "/likes" || pathname === "/replied" || pathname === "/activity";
 
+  /* Collapse the overlay & hover state whenever the pathname changes —
+     selecting an item in the Left Panel updates the URL, at which point
+     the overlay must auto-close per page-responsive.spec.md §4.1. */
+  React.useEffect(() => {
+    setOpen(false);
+    setHovered(false);
+  }, [pathname, setOpen]);
+
   /* Only show sidebar on supported routes */
   if (!isCommunityRoute && !isTagsRoute && !isActivityRoute) return null;
 
+  /* /community — responsive overlay (< lg) + in-flow (lg+).
+     Other routes keep the original hidden-below-lg behaviour; the
+     overlay / hamburger rollout is scoped to /community for now. */
+  if (isCommunityRoute) {
+    const overlayVisible = latchedOpen || hovered;
+    return (
+      <>
+        {/* Hover-reveal hit strip — 8px wide along the left edge.
+            Only below `lg`; no-op on desktop since the sidebar is in flow. */}
+        <div
+          className="fixed left-0 top-14 bottom-0 w-2 z-30 lg:hidden"
+          onMouseEnter={() => setHovered(true)}
+          aria-hidden="true"
+        />
+
+        {/* Click-outside scrim — latched state only. */}
+        {latchedOpen && (
+          <div
+            className="fixed inset-0 top-14 z-30 bg-black/20 lg:hidden"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        <aside
+          role={latchedOpen ? "dialog" : undefined}
+          aria-modal={latchedOpen ? true : undefined}
+          aria-label="Community navigation"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          className={cn(
+            /* Shared chrome */
+            "flex flex-col border-r border-border bg-background overflow-y-auto shrink-0",
+            /* < lg: fixed overlay under the 56px header, 260px wide */
+            "fixed top-14 bottom-0 left-0 w-[260px] z-40",
+            "transition-transform duration-150 ease-out motion-reduce:transition-none",
+            overlayVisible ? "translate-x-0" : "-translate-x-full",
+            /* lg+: in-flow column, always visible */
+            "lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-[260px] lg:translate-x-0",
+          )}
+        >
+          <CommunitySidebar />
+        </aside>
+      </>
+    );
+  }
+
+  /* /tags and /activity — unchanged (hidden below lg). */
   return (
     <aside className="hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border bg-background overflow-y-auto">
-      {isCommunityRoute && <CommunitySidebar />}
       {isTagsRoute && <TagsSidebar />}
       {isActivityRoute && <UserActivitySidebar />}
     </aside>

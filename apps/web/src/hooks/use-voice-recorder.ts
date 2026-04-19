@@ -90,17 +90,29 @@ export const useVoiceRecorder = (lang: string): UseVoiceRecorderReturn => {
   };
 
   const stopRecording = () => {
+    /**
+     * Only stop the underlying recogniser + timer here.
+     *
+     * We deliberately DO NOT clear `liveTranscript`, `finalTranscriptRef`, or
+     * `voiceState` — doing so would race with the async `recognition.onend`
+     * handler below, which needs `finalTranscriptRef.current` intact in order
+     * to commit the captured speech into `voiceRecording` and transition the
+     * state to `"translating"` / `"done"`.
+     *
+     * If you want to wipe the captured speech entirely, call {@link reset}.
+     */
+    recognitionRef.current?.stop();
+    stopTimer();
+  };
+
+  const reset = () => {
     recognitionRef.current?.stop();
     stopTimer();
     setVoiceState("idle");
     setLiveTranscript("");
     setRecordingSeconds(0);
-    finalTranscriptRef.current = "";
-  };
-
-  const reset = () => {
-    stopRecording();
     setVoiceRecording(null);
+    finalTranscriptRef.current = "";
   };
 
   const startRecording = async () => {

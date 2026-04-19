@@ -166,4 +166,10 @@ export type AttachedDoc = {
   docType: string;
   /** Whether the attached file is a PDF (used to choose the preview renderer). */
   isPdf: boolean;
+  /**
+   * Optional caption typed by the user during the attach preview step.
+   * Used as the message body at submit time when the user hasn't typed
+   * anything in the main textarea.
+   */
+  caption?: string;
 } | null;

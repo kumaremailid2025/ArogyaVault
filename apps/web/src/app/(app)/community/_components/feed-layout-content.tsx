@@ -20,6 +20,7 @@ import type { CommunityVariant, PanelState } from "@/components/containers/commu
 
 import { PostCard } from "@/components/community/post-card";
 import { SmartInput } from "@/components/shared/smart-input";
+import { CommunityColumns } from "@/components/community/community-columns";
 import { FeedProvider } from "@/app/(app)/community/_context/feed-context";
 import { GROUP_SLUG_TO_UUID } from "@/components/containers/community/types";
 import { useFavoritesStore, useTagsStore, useLikesStore, useRepliedStore, recordActivity } from "@/stores";
@@ -308,78 +309,76 @@ export const FeedLayoutContent = ({ variant, group, basePath, children }: FeedLa
     linkedAiResponse,
   };
 
+  const left = (
+    <>
+      <div className="flex-1 overflow-y-auto px-5 pb-4 lg:px-6">
+        <div className="space-y-3 pt-3">
+          {posts.length === 0 && !isCommunity ? (
+            <div className="flex flex-col items-center justify-center text-center py-12 px-4 max-w-md mx-auto">
+              <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 mb-3">
+                <Typography variant="h2" as="span" color="primary">
+                  {member?.initials ?? ""}
+                </Typography>
+              </div>
+              <Typography variant="h3" as="p" className="mb-1">
+                Say hi to {member?.name.split(" ")[0] ?? "your group"} 👋
+              </Typography>
+              <Typography variant="body" color="muted" className="leading-snug mb-4">
+                This is your shared space. Share a report, ask a question,
+                or send a quick message using the box below — {member?.name.split(" ")[0] ?? "they"} will see it instantly.
+              </Typography>
+              <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
+                <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-left">
+                  <Typography variant="h5" as="p" className="text-primary mb-0.5">Tip</Typography>
+                  <Typography variant="micro" color="muted">
+                    Use the attach button in the compose box to share a
+                    lab report, prescription, or any PDF with the group.
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          ) : (
+            posts.map((p) => (
+              <PostCard
+                key={p.id}
+                post={p}
+                isActive={urlPostId === p.id}
+                isLiked={likedPosts.has(p.id)}
+                isFavorited={favoriteIds.has(p.id)}
+                onLike={toggleLike}
+                onReplies={openReplies}
+                onSummary={openSummary}
+                onFavorite={toggleFavorite}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Pinned compose at bottom ── */}
+      <div className="shrink-0 border-t border-border px-4 pt-2 pb-3">
+        <SmartInput
+          value={composeText}
+          onChange={setComposeText}
+          onSubmit={handlePost}
+          placeholder={composePlaceholder ?? "Share a tip, ask the community, or start a discussion…"}
+          submitLabel="Post"
+          modes={["text", "voice", "image", "attach"]}
+          maxRows={4}
+          layout="compose"
+        />
+      </div>
+    </>
+  );
+
   return (
     <FeedProvider value={contextValue}>
-      <>
-        {/* LEFT — Posts (scrollable) + Compose (pinned bottom) */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-5 pb-4 lg:px-6">
-            <div className="space-y-3 pt-3">
-              {posts.length === 0 && !isCommunity ? (
-                <div className="flex flex-col items-center justify-center text-center py-12 px-4 max-w-md mx-auto">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 mb-3">
-                    <Typography variant="h2" as="span" color="primary">
-                      {member?.initials ?? ""}
-                    </Typography>
-                  </div>
-                  <Typography variant="h3" as="p" className="mb-1">
-                    Say hi to {member?.name.split(" ")[0] ?? "your group"} 👋
-                  </Typography>
-                  <Typography variant="body" color="muted" className="leading-snug mb-4">
-                    This is your shared space. Share a report, ask a question,
-                    or send a quick message using the box below — {member?.name.split(" ")[0] ?? "they"} will see it instantly.
-                  </Typography>
-                  <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
-                    <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-left">
-                      <Typography variant="h5" as="p" className="text-primary mb-0.5">Tip</Typography>
-                      <Typography variant="micro" color="muted">
-                        Use the attach button in the compose box to share a
-                        lab report, prescription, or any PDF with the group.
-                      </Typography>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                posts.map((p) => (
-                  <PostCard
-                    key={p.id}
-                    post={p}
-                    isActive={urlPostId === p.id}
-                    isLiked={likedPosts.has(p.id)}
-                    isFavorited={favoriteIds.has(p.id)}
-                    onLike={toggleLike}
-                    onReplies={openReplies}
-                    onSummary={openSummary}
-                    onFavorite={toggleFavorite}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* ── Pinned compose at bottom ── */}
-          <div className="shrink-0 border-t border-border px-4 pt-2 pb-3">
-            <SmartInput
-              value={composeText}
-              onChange={setComposeText}
-              onSubmit={handlePost}
-              placeholder={composePlaceholder ?? "Share a tip, ask the community, or start a discussion…"}
-              submitLabel="Post"
-              modes={["text", "voice", "image", "attach"]}
-              maxRows={4}
-              layout="compose"
-            />
-          </div>
-        </div>
-
-        {/* Vertical divider */}
-        <div className="w-px bg-border shrink-0" />
-
-        {/* RIGHT — Route-driven panel */}
-        <div className="w-[360px] shrink-0 border-l border-border overflow-hidden flex flex-col">
-          {children}
-        </div>
-      </>
+      <CommunityColumns
+        left={left}
+        right={children}
+        rightPanelActive={urlPostId !== null}
+        onCloseRightPanel={() => router.push(basePath)}
+      />
     </FeedProvider>
   );
 };

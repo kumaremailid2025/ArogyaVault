@@ -105,9 +105,12 @@ export const SmartInput = ({
   /* ── Mode switching ───────────────────────────────────────────────── */
   const switchMode = (next: InputMode) => {
     if (next === mode) return;
-    /* Tear down the outgoing mode */
+    /* Tear down the outgoing mode.
+       For image/attach we only clear the in-progress wizard — a confirmed
+       `attachedDoc` survives mode switches so the user can, e.g., attach
+       an image and then switch to text to type a message. */
     if (mode === "voice")                         voice.reset();
-    if (mode === "image" || mode === "attach")    attach.resetAttach();
+    if (mode === "image" || mode === "attach")    attach.clearAttachWizard();
     setMode(next);
     onModeChange?.(next);
     /* Refocus textarea when going back to text */
@@ -123,7 +126,12 @@ export const SmartInput = ({
   };
 
   const handleSubmit = () => {
-    const text = resolveText();
+    /* If the user didn't type in the main textarea / transcribe anything,
+       fall back to the caption they typed during the image-attach preview. */
+    let text = resolveText();
+    if (!text && attach.attachedDoc?.caption) {
+      text = attach.attachedDoc.caption;
+    }
     if (!text && !attach.attachedDoc) return;
 
     onSubmit({
@@ -133,9 +141,12 @@ export const SmartInput = ({
       mode,
     });
 
-    /* Reset all state */
+    /* Reset all state.
+       IMPORTANT: use `clearAfterSubmit` (NOT `resetAttach`) — the parent
+       now owns the object URL we just handed it via `attachedDoc.previewUrl`,
+       and revoking it here would break any preview the parent renders. */
     voice.reset();
-    attach.resetAttach();
+    attach.clearAfterSubmit();
     onChange?.("");
     setMode("text");
     /* Shrink textarea back to one line */
@@ -312,8 +323,18 @@ export const SmartInput = ({
           {/* Step: preview */}
           {attach.attachState.step === "preview" && (() => {
             const s = attach.attachState as Extract<AttachStep, { step: "preview" }>;
+            const isImage = s.file.type.startsWith("image/");
             return (
               <div className="space-y-2">
+                {/* Image thumbnail — shown for images in either image or attach mode */}
+                {isImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={s.previewUrl}
+                    alt={s.file.name}
+                    className="block max-h-40 w-auto mx-auto rounded-lg border border-border bg-muted/20 object-contain"
+                  />
+                )}
                 <div className="rounded-lg border border-border bg-muted/30 p-2.5 flex items-center gap-2">
                   <ImageIcon className="size-4 text-muted-foreground shrink-0" />
                   <span className="flex-1 text-xs truncate">{s.file.name}</span>
@@ -355,8 +376,9 @@ export const SmartInput = ({
             </div>
           )}
 
-          {/* Step: analyzed */}
-          {attach.attachState.step === "analyzed" && (() => {
+          {/* Step: analyzed — hidden once the user confirms with "Use this".
+              The confirmed attachment shows up in the badge below instead. */}
+          {attach.attachState.step === "analyzed" && !attach.attachedDoc && (() => {
             const s = attach.attachState as Extract<AttachStep, { step: "analyzed" }>;
             return (
               <div className="space-y-2">
@@ -373,14 +395,10 @@ export const SmartInput = ({
                     size="sm"
                     className="flex-1 gap-1"
                     onClick={() =>
-                      attach.handleUseAttachment(s.file, s.previewUrl, s.docType)
+                      attach.handleUseAttachment(s.file, s.previewUrl, s.docType, s.caption)
                     }
-                    disabled={attach.attachedDoc !== null}
                   >
-                    {attach.attachedDoc
-                      ? "Attached ✓"
-                      : <><ArrowRightIcon className="size-3" /> Use this</>
-                    }
+                    <ArrowRightIcon className="size-3" /> Use this
                   </Button>
                   <Button
                     size="sm"
@@ -408,7 +426,7 @@ export const SmartInput = ({
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => attach.setAttachedDoc(null)}
+            onClick={attach.removeAttachedDoc}
             aria-label="Remove attachment"
             className="text-muted-foreground hover:text-foreground shrink-0"
           >
